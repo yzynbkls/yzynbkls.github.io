@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="无参数读文件," />
+  <meta name="keywords" content="str_replace函数," />
 
 
 
@@ -79,20 +79,18 @@
 
 
 
-<meta name="description" content="无参数读文件什么是无参数？ 顾名思义，就是只使用函数，且函数不能带有参数，这里有种种限制：比如我们选择的函数必须能接受其括号内函数的返回值；使用的函数规定必须参数为空或者为一个参数等。 举个例子： a(b(c()));可以使用，但是a(‘b’)或者a(‘b’,‘c’)这种含有参数的都不能使用 所以我们要使用无参数的函数进行文件读取或者命令执行。 首先，print_r(scandir(’.’))可以">
+<meta name="description" content="实例把字符串 “Hello world!” 中的字符 “world” 替换为 “Shanghai”： 123&lt;?phpecho str_replace(&quot;world&quot;,&quot;Shanghai&quot;,&quot;Hello world!&quot;);?&gt;    定义和用法str_replace() 函数以其他字符替换字符串中的一些字符（区分大小写）。 该">
 <meta property="og:type" content="article">
-<meta property="og:title" content="无参数读文件">
-<meta property="og:url" content="http://example.com/2022/01/05/%E6%97%A0%E5%8F%82%E6%95%B0%E8%AF%BB%E6%96%87%E4%BB%B6/index.html">
+<meta property="og:title" content="str_replace函数">
+<meta property="og:url" content="http://example.com/2022/01/13/str-replace%E5%87%BD%E6%95%B0/index.html">
 <meta property="og:site_name" content="web地板成长之路">
-<meta property="og:description" content="无参数读文件什么是无参数？ 顾名思义，就是只使用函数，且函数不能带有参数，这里有种种限制：比如我们选择的函数必须能接受其括号内函数的返回值；使用的函数规定必须参数为空或者为一个参数等。 举个例子： a(b(c()));可以使用，但是a(‘b’)或者a(‘b’,‘c’)这种含有参数的都不能使用 所以我们要使用无参数的函数进行文件读取或者命令执行。 首先，print_r(scandir(’.’))可以">
+<meta property="og:description" content="实例把字符串 “Hello world!” 中的字符 “world” 替换为 “Shanghai”： 123&lt;?phpecho str_replace(&quot;world&quot;,&quot;Shanghai&quot;,&quot;Hello world!&quot;);?&gt;    定义和用法str_replace() 函数以其他字符替换字符串中的一些字符（区分大小写）。 该">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://example.com/2022/01/05/%E6%97%A0%E5%8F%82%E6%95%B0%E8%AF%BB%E6%96%87%E4%BB%B6/wucanshu.png">
-<meta property="article:published_time" content="2022-01-05T11:38:23.000Z">
-<meta property="article:modified_time" content="2022-01-05T11:45:04.931Z">
+<meta property="article:published_time" content="2022-01-13T11:37:52.000Z">
+<meta property="article:modified_time" content="2022-01-13T11:42:48.567Z">
 <meta property="article:author" content="John Doe">
-<meta property="article:tag" content="无参数读文件">
+<meta property="article:tag" content="str_replace函数">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://example.com/2022/01/05/%E6%97%A0%E5%8F%82%E6%95%B0%E8%AF%BB%E6%96%87%E4%BB%B6/wucanshu.png">
 
 
 
@@ -122,13 +120,13 @@
 
 
 
-  <link rel="canonical" href="http://example.com/2022/01/05/无参数读文件/"/>
+  <link rel="canonical" href="http://example.com/2022/01/13/str-replace函数/"/>
 
 
 
 
 
-  <title>无参数读文件 | web地板成长之路</title>
+  <title>str_replace函数 | web地板成长之路</title>
   
 
 
@@ -265,7 +263,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/01/05/%E6%97%A0%E5%8F%82%E6%95%B0%E8%AF%BB%E6%96%87%E4%BB%B6/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/01/13/str-replace%E5%87%BD%E6%95%B0/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="">
@@ -282,7 +280,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">无参数读文件</h1>
+          <h1 class="post-title" itemprop="name headline">str_replace函数</h1>
         
 
         <div class="post-meta">
@@ -294,8 +292,8 @@
               
                 <span class="post-meta-item-text">Posted on</span>
               
-              <time title="Post created" itemprop="dateCreated datePublished" datetime="2022-01-05T19:38:23+08:00">
-                2022-01-05
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2022-01-13T19:37:52+08:00">
+                2022-01-13
               </time>
             
 
@@ -354,23 +352,47 @@
       
 
       
-        <h1 id="无参数读文件"><a href="#无参数读文件" class="headerlink" title="无参数读文件"></a>无参数读文件</h1><p>什么是无参数？</p>
-<p>顾名思义，就是只使用函数，且函数不能带有参数，这里有种种限制：比如我们选择的函数必须能接受其括号内函数的返回值；使用的函数规定必须参数为空或者为一个参数等。</p>
-<p>举个例子：</p>
-<p>a(b(c()));可以使用，但是a(‘b’)或者a(‘b’,‘c’)这种含有参数的都不能使用</p>
-<p>所以我们要使用无参数的函数进行文件读取或者命令执行。</p>
-<p>首先，print_r(scandir(’.’))可以用于可以用来查看当前目录所有文件名。那么要做到无参数，就要构造替代 ‘.’ 。</p>
-<p>常见方法：</p>
-<p>localeconv() 函数返回一包含本地数字及货币格式信息的数组。而数组第一项就是”.”</p>
-<p>current() 函数返回数组中的当前元素（单元）,默认取第一个值，</p>
-<p>pos() 同 current() ,是current()的别名</p>
-<p>reset() 函数返回数组第一个单元的值，如果数组为空则返回 FALSE</p>
-<p>phpversion()返回PHP版本，如5.5.9</p>
-<p>next() 函数将内部指针指向数组中的下一个元素，并输出。</p>
-<p>show_source() 函数对文件进行 PHP 语法高亮显示。语法通过使用 HTML 标签进行高亮。</p>
-<p>例题：ctfshow web40</p>
-<p><img src="/2022/01/05/%E6%97%A0%E5%8F%82%E6%95%B0%E8%AF%BB%E6%96%87%E4%BB%B6/wucanshu.png" alt="wucanshu"></p>
-<p>解：<br>1 ?c=print_r(scandir(pos(localeconv())));   发现flag.php在倒数第二个<br>2 ?c=show_source(next(array_reverse(scandir(pos(localeconv())))));<br>我们可以通过 array_reverse 进行逆转数组，然后用next()函数进行下一个值的读取，成功读取flag.php文件</p>
+        <h1 id="实例"><a href="#实例" class="headerlink" title="实例"></a>实例</h1><p>把字符串 “Hello world!” 中的字符 “world” 替换为 “Shanghai”：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">echo str_replace(&quot;world&quot;,&quot;Shanghai&quot;,&quot;Hello world!&quot;);</span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="定义和用法"><a href="#定义和用法" class="headerlink" title="定义和用法"></a>定义和用法</h1><p>str_replace() 函数以其他字符替换字符串中的一些字符（区分大小写）。</p>
+<p>该函数必须遵循下列规则：</p>
+<ul>
+<li>如果搜索的字符串是数组，那么它将返回数组。</li>
+<li>如果搜索的字符串是数组，那么它将对数组中的每个元素进行查找和替换。</li>
+<li>如果同时需要对数组进行查找和替换，并且需要执行替换的元素少于查找到的元素的数量，那么多余元素将用空字符串进行替换</li>
+<li>如果查找的是数组，而替换的是字符串，那么替代字符串将对所有查找到的值起作用。</li>
+</ul>
+<p>注释：该函数区分大小写。请使用 <a target="_blank" rel="noopener" href="https://www.w3school.com.cn/php/func_string_str_ireplace.asp">str_ireplace()</a> 函数执行不区分大小写的搜索。</p>
+<p>注释：该函数是二进制安全的。</p>
+<h1 id="语法"><a href="#语法" class="headerlink" title="语法"></a>语法</h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">str_replace(find,replace,string,count)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><em>find</em></td>
+<td>必需。规定要查找的值。</td>
+</tr>
+<tr>
+<td><em>replace</em></td>
+<td>必需。规定替换 <em>find</em> 中的值的值。</td>
+</tr>
+<tr>
+<td><em>string</em></td>
+<td>必需。规定被搜索的字符串。</td>
+</tr>
+<tr>
+<td><em>count</em></td>
+<td>可选。对替换数进行计数的变量</td>
+</tr>
+</tbody></table>
 
       
     </div>
@@ -388,7 +410,7 @@
       
         <div class="post-tags">
           
-            <a href="/tags/%E6%97%A0%E5%8F%82%E6%95%B0%E8%AF%BB%E6%96%87%E4%BB%B6/" rel="tag"># 无参数读文件</a>
+            <a href="/tags/str-replace%E5%87%BD%E6%95%B0/" rel="tag"># str_replace函数</a>
           
         </div>
       
@@ -401,8 +423,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2021/12/31/ctfshow-web29/" rel="next" title="ctfshow-web29">
-                <i class="fa fa-chevron-left"></i> ctfshow-web29
+              <a href="/2022/01/10/ctfshow-web55/" rel="next" title="ctfshow-web55">
+                <i class="fa fa-chevron-left"></i> ctfshow-web55
               </a>
             
           </div>
@@ -410,10 +432,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2022/01/05/%E8%BF%87%E6%BB%A4cat%E3%80%81%E7%A9%BA%E6%A0%BC/" rel="prev" title="过滤cat、空格">
-                过滤cat、空格 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -545,7 +563,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%97%A0%E5%8F%82%E6%95%B0%E8%AF%BB%E6%96%87%E4%BB%B6"><span class="nav-number">1.</span> <span class="nav-text">无参数读文件</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%9E%E4%BE%8B"><span class="nav-number">1.</span> <span class="nav-text">实例</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%9A%E4%B9%89%E5%92%8C%E7%94%A8%E6%B3%95"><span class="nav-number">2.</span> <span class="nav-text">定义和用法</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%AF%AD%E6%B3%95"><span class="nav-number">3.</span> <span class="nav-text">语法</span></a></li></ol></div>
             
 
           </div>
