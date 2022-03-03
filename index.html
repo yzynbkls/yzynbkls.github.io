@@ -259,7 +259,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/02/ctfshow-web99-100/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/03/ctfshow-web101/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="">
@@ -278,7 +278,7 @@
         
           <h1 class="post-title" itemprop="name headline">
                 
-                <a class="post-title-link" href="/2022/03/02/ctfshow-web99-100/" itemprop="url">ctfshow-web99-100</a></h1>
+                <a class="post-title-link" href="/2022/03/03/ctfshow-web101/" itemprop="url">ctfshow-web101-104</a></h1>
         
 
         <div class="post-meta">
@@ -290,8 +290,8 @@
               
                 <span class="post-meta-item-text">Posted on</span>
               
-              <time title="Post created" itemprop="dateCreated datePublished" datetime="2022-03-02T20:50:06+08:00">
-                2022-03-02
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2022-03-03T19:33:35+08:00">
+                2022-03-03
               </time>
             
 
@@ -300,6 +300,28 @@
             
           </span>
 
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E9%A2%98%E5%BA%93/" itemprop="url" rel="index">
+                    <span itemprop="name">题库</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
           
 
           
@@ -330,21 +352,18 @@
       
         
           
-          web99
-rand:
+          web101
+和100类似，不过过滤了一堆字符和数字。
+.
+ReflectionClass的作用就是得到类的有关信息。 
+123?v1=1&amp;v2=echo new Reflectionclass&amp;v3=;
 
-
-
-分析：在数组allow后加了一个随机数，get传参n，如果在allow数组中能查找到n（这里利用了in_array函数的缺陷），就把一个字符串写入文件中。
-get传n=1.php
-post传content= 
-然后访问1.php
-发现flag的文件，在传cat
-在in_
+web102
+考察点：hex2bin函数的使用 （将十六进制转化为ASCII
           ...
           <!--noindex-->
           <div class="post-button text-center">
-            <a class="btn" href="/2022/03/02/ctfshow-web99-100/#more" rel="contents">
+            <a class="btn" href="/2022/03/03/ctfshow-web101/#more" rel="contents">
               Read more &raquo;
             </a>
           </div>
@@ -1801,7 +1820,7 @@ file_put_contents() 函数把一个字符串写入文件中。
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-count">35</span>
                   <span class="site-state-item-name">tags</span>
                 </a>
               </div>
