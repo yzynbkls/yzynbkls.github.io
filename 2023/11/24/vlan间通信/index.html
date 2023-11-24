@@ -19,23 +19,32 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.18.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
 
-    <meta property="og:type" content="website">
-<meta property="og:title" content="Hey Bro">
-<meta property="og:url" content="http://example.com/index.html">
+    <meta name="description" content="VLAN间通信实验拓扑 详解：R2划入vlan2，R3划入vlan3，与交换机之间采用access口，由于交换机g0&#x2F;0&#x2F;1需要通过多个vlan，所以配成trunk口。R2和R3相当于主机，发送和接受的数据都不带标签，交换机g0&#x2F;0&#x2F;2收到R2发送的数据，打上标签vlan2，然后发出去；交换机g0&#x2F;0&#x2F;1收到数据后，发现vlan的标签允许">
+<meta property="og:type" content="article">
+<meta property="og:title" content="vlan间通信">
+<meta property="og:url" content="http://example.com/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/index.html">
 <meta property="og:site_name" content="Hey Bro">
+<meta property="og:description" content="VLAN间通信实验拓扑 详解：R2划入vlan2，R3划入vlan3，与交换机之间采用access口，由于交换机g0&#x2F;0&#x2F;1需要通过多个vlan，所以配成trunk口。R2和R3相当于主机，发送和接受的数据都不带标签，交换机g0&#x2F;0&#x2F;2收到R2发送的数据，打上标签vlan2，然后发出去；交换机g0&#x2F;0&#x2F;1收到数据后，发现vlan的标签允许">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/vlantx001.png">
+<meta property="article:published_time" content="2023-11-24T07:17:21.000Z">
+<meta property="article:modified_time" content="2023-11-24T07:44:38.988Z">
 <meta property="article:author" content="Yang">
+<meta property="article:tag" content="vlan间通信">
+<meta property="article:tag" content="dot1q">
+<meta property="article:tag" content="vlanif">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/vlantx001.png">
 
 
-<link rel="canonical" href="http://example.com/">
+<link rel="canonical" href="http://example.com/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/">
 
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":true,"isPost":false,"lang":"zh-CN","comments":"","permalink":"","path":"index.html","title":""}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/","path":"2023/11/24/vlan间通信/","title":"vlan间通信"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>Hey Bro</title>
+<title>vlan间通信 | Hey Bro</title>
   
 
 
@@ -68,7 +77,7 @@
 
     <a href="/" class="brand" rel="start">
       <i class="logo-line"></i>
-      <h1 class="site-title">Hey Bro</h1>
+      <p class="site-title">Hey Bro</p>
       <i class="logo-line"></i>
     </a>
   </div>
@@ -121,7 +130,7 @@
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-overview-active">
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           文章目录
@@ -134,6 +143,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#VLAN%E9%97%B4%E9%80%9A%E4%BF%A1"><span class="nav-number">1.</span> <span class="nav-text">VLAN间通信</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E9%AA%8C%E6%8B%93%E6%89%91"><span class="nav-number">1.1.</span> <span class="nav-text">实验拓扑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">1.2.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Access%E6%8E%A5%E5%8F%A3"><span class="nav-number">1.3.</span> <span class="nav-text">Access接口</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Trunk%E6%8E%A5%E5%8F%A3"><span class="nav-number">1.4.</span> <span class="nav-text">Trunk接口</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Hybrid%E6%8E%A5%E5%8F%A3"><span class="nav-number">1.5.</span> <span class="nav-text">Hybrid接口</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PVID"><span class="nav-number">1.6.</span> <span class="nav-text">PVID</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E9%AA%8C%E9%85%8D%E7%BD%AE%E8%BF%87%E7%A8%8B"><span class="nav-number">1.7.</span> <span class="nav-text">实验配置过程</span></a></li></ol></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -175,16 +185,17 @@
 
     </div>
 
-    <div class="main-inner index posts-expand">
+    <div class="main-inner post posts-expand">
 
-    
+
+  
 
 
 <div class="post-block">
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://example.com/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -198,13 +209,13 @@
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | Hey Bro">
+      <meta itemprop="name" content="vlan间通信 | Hey Bro">
       <meta itemprop="description" content="">
     </span>
       <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/" class="post-title-link" itemprop="url">vlan间通信</a>
-        </h2>
+        <h1 class="post-title" itemprop="name headline">
+          vlan间通信
+        </h1>
 
         <div class="post-meta-container">
           <div class="post-meta">
@@ -228,6 +239,13 @@
     </span>
 
   
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
     <span class="post-meta-break"></span>
     <span class="post-meta-item" title="本文字数">
       <span class="post-meta-item-icon">
@@ -251,8 +269,7 @@
     
     
     
-    <div class="post-body" itemprop="articleBody">
-          <h1 id="VLAN间通信"><a href="#VLAN间通信" class="headerlink" title="VLAN间通信"></a>VLAN间通信</h1><h2 id="实验拓扑"><a href="#实验拓扑" class="headerlink" title="实验拓扑"></a>实验拓扑</h2><p><img src="/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/vlantx001.png" alt="vlantx001"></p>
+    <div class="post-body" itemprop="articleBody"><h1 id="VLAN间通信"><a href="#VLAN间通信" class="headerlink" title="VLAN间通信"></a>VLAN间通信</h1><h2 id="实验拓扑"><a href="#实验拓扑" class="headerlink" title="实验拓扑"></a>实验拓扑</h2><p><img src="/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/vlantx001.png" alt="vlantx001"></p>
 <p>详解：R2划入vlan2，R3划入vlan3，与交换机之间采用access口，由于交换机g0&#x2F;0&#x2F;1需要通过多个vlan，所以配成trunk口。R2和R3相当于主机，发送和接受的数据都不带标签，交换机g0&#x2F;0&#x2F;2收到R2发送的数据，打上标签vlan2，然后发出去；交换机g0&#x2F;0&#x2F;1收到数据后，发现vlan的标签允许通过，则数据带着vlan2的标签通过；然后交换机g0&#x2F;0&#x2F;3口转发数据时，发现自己的pvid是vlan3，和vlan2不一样，所以不接受，则vlan2和vlan3不能通信。</p>
 <p>在某些场景下，需要特定vlan之间通信</p>
 <p>方法一：dot1q接口</p>
@@ -379,7 +396,6 @@
 <p> 2 192.168.3.1 40 ms  30 ms  40 ms</p>
 <p>此时VLAN2和VLAN3之间已经可以正常的互访。</p>
 
-      
     </div>
 
     
@@ -387,11 +403,18 @@
     
 
     <footer class="post-footer">
-        <div class="post-eof"></div>
-      
+          <div class="post-tags">
+              <a href="/tags/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/" rel="tag"># vlan间通信</a>
+              <a href="/tags/dot1q/" rel="tag"># dot1q</a>
+              <a href="/tags/vlanif/" rel="tag"># vlanif</a>
+          </div>
+
+        
+
     </footer>
   </article>
 </div>
+
 
 
 
