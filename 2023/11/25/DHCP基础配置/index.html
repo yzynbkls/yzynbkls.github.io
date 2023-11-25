@@ -20,23 +20,35 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":"flase","version":"8.18.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
 
-    <meta property="og:type" content="website">
-<meta property="og:title" content="Hey Bro">
-<meta property="og:url" content="http://example.com/index.html">
+    <meta name="description" content="DHCP是一种终端自动配置协议，客户端通过DHCP协议可获取一个合法的动态IP地址。 概述 随着网络规模的扩大和网络复杂度的提高，网络配置越来越复杂，经常出现计算机位置变化（如便携机或无线网络）和计算机数量超过可分配的IP地址的情况。动态主机配置协议DHCP（Dynamic Host Configuration Protocol）就是为满足这些需求而发展起来的。 DHCP协议以服务器&#x2F;客户端（Se">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DHCP基础配置">
+<meta property="og:url" content="http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/index.html">
 <meta property="og:site_name" content="Hey Bro">
+<meta property="og:description" content="DHCP是一种终端自动配置协议，客户端通过DHCP协议可获取一个合法的动态IP地址。 概述 随着网络规模的扩大和网络复杂度的提高，网络配置越来越复杂，经常出现计算机位置变化（如便携机或无线网络）和计算机数量超过可分配的IP地址的情况。动态主机配置协议DHCP（Dynamic Host Configuration Protocol）就是为满足这些需求而发展起来的。 DHCP协议以服务器&#x2F;客户端（Se">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/dhcpzz111.png">
+<meta property="og:image" content="http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/macsiis30.png">
+<meta property="og:image" content="http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/mac0234.png">
+<meta property="og:image" content="http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/3chakan0.png">
+<meta property="og:image" content="http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/relayallss7.png">
+<meta property="article:published_time" content="2023-11-25T06:34:51.000Z">
+<meta property="article:modified_time" content="2023-11-25T07:26:45.490Z">
 <meta property="article:author" content="Yang">
+<meta property="article:tag" content="DHCP Relay">
+<meta property="article:tag" content="DHCP">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/dhcpzz111.png">
 
 
-<link rel="canonical" href="http://example.com/">
+<link rel="canonical" href="http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/">
 
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":true,"isPost":false,"lang":"zh-CN","comments":"","permalink":"","path":"index.html","title":""}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/","path":"2023/11/25/DHCP基础配置/","title":"DHCP基础配置"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>Hey Bro</title>
+<title>DHCP基础配置 | Hey Bro</title>
   
 
 
@@ -69,7 +81,7 @@
 
     <a href="/" class="brand" rel="start">
       <i class="logo-line"></i>
-      <h1 class="site-title">Hey Bro</h1>
+      <p class="site-title">Hey Bro</p>
       <i class="logo-line"></i>
     </a>
   </div>
@@ -122,7 +134,7 @@
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-overview-active">
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           文章目录
@@ -135,6 +147,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A6%82%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DHCP%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="nav-number">2.</span> <span class="nav-text">DHCP服务器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DHCP%E4%B8%AD%E7%BB%A7"><span class="nav-number">3.</span> <span class="nav-text">DHCP中继</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-number"></span> <span class="nav-text">DHCP基础配置</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E9%AA%8C%E6%AD%A5%E9%AA%A4"><span class="nav-number"></span> <span class="nav-text">实验步骤</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BAVLAN"><span class="nav-number">1.</span> <span class="nav-text">创建VLAN</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE%E6%8E%A5%E5%8F%A3%E6%94%BE%E9%80%9A%E7%9B%B8%E5%BA%94%E7%9A%84VLAN"><span class="nav-number">2.</span> <span class="nav-text">配置接口放通相应的VLAN</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#VLANIF%E9%85%8D%E7%BD%AE"><span class="nav-number">3.</span> <span class="nav-text">VLANIF配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%80%E5%90%AFDHCP%E6%9C%8D%E5%8A%A1"><span class="nav-number">4.</span> <span class="nav-text">开启DHCP服务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%9C%B0%E5%9D%80%E6%B1%A0VLAN10%EF%BC%8C%E7%94%A8%E4%BA%8E%E7%BB%99S4%E7%9A%84VLANIF10%E5%88%86%E9%85%8D%E5%9C%B0%E5%9D%80"><span class="nav-number">5.</span> <span class="nav-text">创建地址池VLAN10，用于给S4的VLANIF10分配地址</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%9C%B0%E5%9D%80%E6%B1%A0VLAN20%EF%BC%8C%E7%94%A8%E4%BA%8E%E7%BB%99S4%E7%9A%84VLANIF20%E5%88%86%E9%85%8D%E5%9C%B0%E5%9D%80"><span class="nav-number">6.</span> <span class="nav-text">创建地址池VLAN20，用于给S4的VLANIF20分配地址</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%9C%B0%E5%9D%80%E6%B1%A0VLAN30%EF%BC%8C%E7%94%A8%E4%BA%8E%E7%BB%99S4%E7%9A%84VLANIF30%E5%88%86%E9%85%8D%E5%9C%B0%E5%9D%80"><span class="nav-number">7.</span> <span class="nav-text">创建地址池VLAN30，用于给S4的VLANIF30分配地址</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8Bs4%E7%9A%84vlanif30%E7%9A%84mac"><span class="nav-number">8.</span> <span class="nav-text">查看s4的vlanif30的mac</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A8S1%E4%B8%8A%E4%B8%BAS4%E7%9A%84VLANIF30%E9%85%8D%E7%BD%AE%E9%9D%99%E6%80%81%E5%9C%B0%E5%9D%80%E5%88%86%E9%85%8D"><span class="nav-number">9.</span> <span class="nav-text">在S1上为S4的VLANIF30配置静态地址分配</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A8VLANIF40%E6%8E%A5%E5%8F%A3%E4%B8%8B%E4%BD%BF%E8%83%BDDHCP-Server"><span class="nav-number">10.</span> <span class="nav-text">在VLANIF40接口下使能DHCP Server</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8BIP%E5%9C%B0%E5%9D%80%E6%B1%A0%E9%85%8D%E7%BD%AE%E6%83%85%E5%86%B5"><span class="nav-number">11.</span> <span class="nav-text">查看IP地址池配置情况</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE%E5%89%8D%E5%BE%80%E7%94%A8%E6%88%B7%E7%BD%91%E6%AE%B5%E7%9A%84%E8%B7%AF%E7%94%B1"><span class="nav-number">12.</span> <span class="nav-text">配置前往用户网段的路由</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%80%E5%90%AFDHCP%E6%9C%8D%E5%8A%A1-2"><span class="nav-number">13.</span> <span class="nav-text">开启DHCP服务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A8%E6%8E%A5%E5%8F%A3%E4%B8%8A%E9%85%8D%E7%BD%AEDHCP-Relay%EF%BC%8C%E6%8C%87%E5%AE%9ADHCP-Server"><span class="nav-number">14.</span> <span class="nav-text">在接口上配置DHCP Relay，指定DHCP Server</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8Brelay%E9%85%8D%E7%BD%AE"><span class="nav-number">15.</span> <span class="nav-text">查看relay配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DHCP-Client%E9%85%8D%E7%BD%AE"><span class="nav-number">16.</span> <span class="nav-text">DHCP Client配置</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%BC%80%E5%90%AFDHCP%E6%9C%8D%E5%8A%A1-3"><span class="nav-number">16.1.</span> <span class="nav-text">开启DHCP服务</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%BC%80%E5%90%AF%E6%8E%A5%E5%8F%A3%E9%80%9A%E8%BF%87DHCP%E8%8E%B7%E5%8F%96%E5%9C%B0%E5%9D%80"><span class="nav-number">16.2.</span> <span class="nav-text">开启接口通过DHCP获取地址</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8B%E5%90%84%E4%B8%AA%E6%8E%A5%E5%8F%A3IP%E5%9C%B0%E5%9D%80%E8%8E%B7%E5%8F%96%E6%83%85%E5%86%B5"><span class="nav-number">16.3.</span> <span class="nav-text">查看各个接口IP地址获取情况</span></a></li></ol></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -176,16 +189,17 @@
 
     </div>
 
-    <div class="main-inner index posts-expand">
+    <div class="main-inner post posts-expand">
 
-    
+
+  
 
 
 <div class="post-block">
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -199,13 +213,13 @@
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | Hey Bro">
+      <meta itemprop="name" content="DHCP基础配置 | Hey Bro">
       <meta itemprop="description" content="">
     </span>
       <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/" class="post-title-link" itemprop="url">DHCP基础配置</a>
-        </h2>
+        <h1 class="post-title" itemprop="name headline">
+          DHCP基础配置
+        </h1>
 
         <div class="post-meta-container">
           <div class="post-meta">
@@ -229,6 +243,13 @@
     </span>
 
   
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
     <span class="post-meta-break"></span>
     <span class="post-meta-item" title="本文字数">
       <span class="post-meta-item-icon">
@@ -252,8 +273,7 @@
     
     
     
-    <div class="post-body" itemprop="articleBody">
-          <p>DHCP是一种终端自动配置协议，客户端通过DHCP协议可获取一个合法的动态IP地址。</p>
+    <div class="post-body" itemprop="articleBody"><p>DHCP是一种终端自动配置协议，客户端通过DHCP协议可获取一个合法的动态IP地址。</p>
 <h3 id="概述">概述</h3>
 <p>随着网络规模的扩大和网络复杂度的提高，网络配置越来越复杂，经常出现计算机位置变化（如便携机或无线网络）和计算机数量超过可分配的IP地址的情况。动态主机配置协议DHCP（Dynamic Host Configuration Protocol）就是为满足这些需求而发展起来的。</p>
 <p>DHCP协议以服务器/客户端（Server/Client）模式工作，DHCP客户端向DHCP服务器动态地请求配置信息，DHCP服务器可以很方便地为客户端动态发送配置信息。</p>
@@ -404,7 +424,6 @@
 <p>Internet Address is allocated by DHCP, 10.0.30.2/24</p>
 <p>接口已经通过DHCP获取到IP地址，并且VLANIF30的地址为静态分配的地址：10.0.30.2。</p>
 
-      
     </div>
 
     
@@ -412,238 +431,26 @@
     
 
     <footer class="post-footer">
-        <div class="post-eof"></div>
-      
+          <div class="post-tags">
+              <a href="/tags/DHCP-Relay/" rel="tag"># DHCP Relay</a>
+              <a href="/tags/DHCP/" rel="tag"># DHCP</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/" rel="prev" title="vlan间通信">
+                  <i class="fa fa-angle-left"></i> vlan间通信
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
     </footer>
   </article>
 </div>
 
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="Yang">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hey Bro">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | Hey Bro">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/" class="post-title-link" itemprop="url">vlan间通信</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-      
-
-      <time title="创建时间：2023-11-24 15:17:21 / 修改时间：15:44:38" itemprop="dateCreated datePublished" datetime="2023-11-24T15:17:21+08:00">2023-11-24</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ip%E5%AE%9E%E9%AA%8C/" itemprop="url" rel="index"><span itemprop="name">ip实验</span></a>
-        </span>
-    </span>
-
-  
-    <span class="post-meta-break"></span>
-    <span class="post-meta-item" title="本文字数">
-      <span class="post-meta-item-icon">
-        <i class="far fa-file-word"></i>
-      </span>
-      <span class="post-meta-item-text">本文字数：</span>
-      <span>5.1k</span>
-    </span>
-    <span class="post-meta-item" title="阅读时长">
-      <span class="post-meta-item-icon">
-        <i class="far fa-clock"></i>
-      </span>
-      <span class="post-meta-item-text">阅读时长 &asymp;</span>
-      <span>5 分钟</span>
-    </span>
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h1>VLAN间通信</h1>
-<h2 id="实验拓扑">实验拓扑</h2>
-<p><img src="/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/vlantx001.png" alt="vlantx001"></p>
-<p>详解：R2划入vlan2，R3划入vlan3，与交换机之间采用access口，由于交换机g0/0/1需要通过多个vlan，所以配成trunk口。R2和R3相当于主机，发送和接受的数据都不带标签，交换机g0/0/2收到R2发送的数据，打上标签vlan2，然后发出去；交换机g0/0/1收到数据后，发现vlan的标签允许通过，则数据带着vlan2的标签通过；然后交换机g0/0/3口转发数据时，发现自己的pvid是vlan3，和vlan2不一样，所以不接受，则vlan2和vlan3不能通信。</p>
-<p>在某些场景下，需要特定vlan之间通信</p>
-<p>方法一：dot1q接口</p>
-<p>在r1上配置两个dot1q接口，g0/0/1.1和g0/0/1.2，分别对应vlan2和vlan3，作用就是可以终结vlan标签（剥离），vlan2的标签到r1后，被剥离掉vlan2的标签，然后转发时又被g0/0/1.2打上vlan3的标签，交换机g0/0/1通过，到g0/0/3，access口发现和自己的pvid一样，然后剥离掉标签，转发数据帧给r3.</p>
-<p>方法二：vlanif接口：交换机上配置vlanif2和vlanif3，ip地址配成192.168.2.254和192.168.3.254</p>
-<p>其实就是相当于两个不同网段的网关，然后实现三层的转发</p>
-<h2 id="背景">背景</h2>
-<p>划分VLAN后，不同VLAN的用户间不能二层互访，这样能起到隔离广播的作用。但实际应用中，不同VLAN的用户又常有互访的需求，此时就需要实现不同VLAN的用户互访，简称VLAN间互访。</p>
-<p>华为提供了多种技术实现VLAN间互访，常用的两种技术为VLANIF接口和Dot1q终结子接口。</p>
-<h2 id="Access接口">Access接口</h2>
-<p>交换机上常用来连接用户PC、服务器等终端设备的接口。Access接口所连接的这些设备的网卡往往只收发无标记帧。Access接口只能加入一个VLAN。只能允许一个VLAN通过。</p>
-<p><strong>转发原则</strong></p>
-<p>接收原则：</p>
-<p>①收到不带标签的数据帧，打上标签，vlan id=端口的PVID</p>
-<p>②收到带标签的数据帧，检查数据帧vlan id是否和端口的PVID相同，相同直接接收；不同拒绝接收</p>
-<p>发送原则：</p>
-<p>①数据帧vlan id和端口PVID 相同，剥离标签发送；</p>
-<p>②数据帧vlan id和端口PVID 不同，禁止发送。</p>
-<h2 id="Trunk接口">Trunk接口</h2>
-<p>Trunk接口允许多个VLAN的数据帧通过，这些数据帧通过802.1Q Tag实现区分。Trunk接口常用于交换机之间的互联，也用于连接路由器、防火墙等设备的</p>
-<p>子接口</p>
-<p><strong>转发原则</strong></p>
-<p>接收原则：</p>
-<p>①收到不带标签的数据帧，打上标签，vlan id=端口的PVID，然后查看该vlanid是否在允许列表中，是–接收，不是–拒绝</p>
-<p>②收到带标签的数据帧，查看该vlan id是否在允许列表中，是–接收，不是–拒绝</p>
-<p>发送原则：</p>
-<p>查看vlan id是否在允许列表中，I:不是–拒绝发送；II：是，查看接口的PVID和vlan id是否相同，相同–剥标签发送；不同–直接发送。</p>
-<h2 id="Hybrid接口">Hybrid接口</h2>
-<p>Hybrid接口与Trunk接口类似，也允许多个VLAN的数据帧通过，这些数据帧通过802.1Q Tag实现区分。用户可以灵活指定Hybrid接口在发送某个（或某些）VLAN的数据帧时是否携带Tag</p>
-<p><strong>转发原则</strong></p>
-<p>接收原则：</p>
-<p>①收到不带标签的数据帧，打上标签，vlan id=端口的PVID，然后查看该vlanid是否在允许列表中，是–接收，不是–拒绝</p>
-<p>②收到带标签的数据帧，查看该vlan id是否在允许列表中，是–接收，不是–拒绝发送原则：查看vlan id是否在允许列表中，I:不是–拒绝发送；II：是，是否带标签发送取决于接口的配置。</p>
-<h2 id="PVID">PVID</h2>
-<p>可以手工修改，默认是1，access口的就是本身的vlan号，trunk可以有一个主vlan和多个副vlan，收到的数据和主vlan相同就剥离转发，收到和主vlan不一样的标签，查表，看看是不是在允许通过的列表，如果有，就带着原来的转发，要是没有，就不让过去啦。</p>
-<h2 id="实验配置过程">实验配置过程</h2>
-<p># R2和R3的IP地址及网关配置</p>
-<p><R2> system-view</R2></p>
-<p>Enter system view, return user view with Ctrl+Z.</p>
-<p>[R2]interface GigabitEthernet 0/0/1</p>
-<p>[R2-GigabitEthernet0/0/1]ip address 192.168.2.1 24</p>
-<p>[R2-GigabitEthernet0/0/1]quit</p>
-<p>[R2]ip route-static 0.0.0.0 0 192.168.2.254</p>
-<p>配置默认路由，相当于给设备配置了网关。</p>
-<p><R3>system-view</R3></p>
-<p>Enter system view, return user view with Ctrl+Z.</p>
-<p>[R3]interface GigabitEthernet 0/0/1</p>
-<p>[R3-GigabitEthernet0/0/1]ip address 192.168.3.1 24</p>
-<p>[R3-GigabitEthernet0/0/1]quit</p>
-<p>[R3]ip route-static 0.0.0.0 0 192.168.3.254</p>
-<p># 在S1上对R2和R3进行VLAN划分</p>
-<p>[S1]vlan batch 2 3</p>
-<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
-<p>[S1]interface GigabitEthernet 0/0/2</p>
-<p>[S1-GigabitEthernet0/0/2]port link-type access</p>
-<p>[S1-GigabitEthernet0/0/2]port default vlan 2</p>
-<p>[S1-GigabitEthernet0/0/2]quit</p>
-<p>[S1]interface GigabitEthernet 0/0/3</p>
-<p>[S1-GigabitEthernet0/0/3]port link-type access</p>
-<p>[S1-GigabitEthernet0/0/3]port default vlan 3</p>
-<p>步骤 1 通过Dot1q终结子接口实现VLAN间互访</p>
-<p># 配置S1上的Trunk接口</p>
-<p>[S1]interface GigabitEthernet 0/0/1</p>
-<p>[S1-GigabitEthernet0/0/1]port trunk allow-pass vlan 2 3</p>
-<p><em>因为VLAN间<strong>互访数据要</strong>由R1来终结VLAN</em>*，<strong>所以S1和R1之间</strong>的链路要允许<strong>VLAN2和VLAN3通过</strong>。*</p>
-<p># 在R1上创建并配置Dot1q终结子接口</p>
-<p>[R1]interface GigabitEthernet 0/0/1.2</p>
-<p>创建并进入子接口视图。2代表子接口的编号，一般建议子接口编号与VLAN ID相同，方便记忆。</p>
-<p>[R1-GigabitEthernet0/0/1.2]dot1q termination vid 2</p>
-<p><strong>dot1q termination vid</strong> <em>vlan-id</em>命令用来配置子接口Dot1q终结的VLAN ID。</p>
-<p>以此配置为例：当GigabitEthernet0/0/1接口收到带有VLAN 2标签的数据之后，会交由2号子接口进行VLAN终结操作并做后续处理。从2号子接口发出的数据也会带上VLAN 2的标签。</p>
-<p>[R1-GigabitEthernet0/0/1.2]arp broadcast enable</p>
-<p>终结子接口不能转发广播报文，在收到广播报文后它们直接把该报文丢弃。为了允许终结子接口能转发广播报文，可以通过在子接口上执行命令<strong>arp broadcast enable</strong>使能终结子接口的ARP广播功能。部分设备默认使能该功能，此命令的配置根据设备而定。</p>
-<p>[R1-GigabitEthernet0/0/1.2]ip address 192.168.2.254 24</p>
-<p>[R1-GigabitEthernet0/0/1.2]quit</p>
-<p>[R1]interface GigabitEthernet 0/0/1.3</p>
-<p>[R1-GigabitEthernet0/0/1.3]dot1q termination vid 3</p>
-<p>[R1-GigabitEthernet0/0/1.3]arp broadcast enable</p>
-<p>[R1-GigabitEthernet0/0/1.3]ip address 192.168.3.254 24</p>
-<p>[R1-GigabitEthernet0/0/1.3]quit</p>
-<p># 检测VLAN间互访联通性</p>
-<p><R2>ping 192.168.3.1</R2></p>
-<p>PING 192.168.3.1: 56  data bytes, press CTRL_C to break</p>
-<p>Reply from 192.168.3.1: bytes=56 Sequence=1 ttl=254 time=60 ms</p>
-<p>Reply from 192.168.3.1: bytes=56 Sequence=2 ttl=254 time=40 ms</p>
-<p>Reply from 192.168.3.1: bytes=56 Sequence=3 ttl=254 time=110 ms</p>
-<p>Reply from 192.168.3.1: bytes=56 Sequence=4 ttl=254 time=70 ms</p>
-<p>Reply from 192.168.3.1: bytes=56 Sequence=5 ttl=254 time=100 ms</p>
-<p>— 192.168.3.1 ping statistics —</p>
-<p>5 packet(s) transmitted</p>
-<p>5 packet(s) received</p>
-<p>0.00% packet loss</p>
-<p>round-trip min/avg/max = 40/76/110 ms</p>
-<p><R2>tracert 192.168.3.1</R2></p>
-<p>traceroute to  192.168.3.1(192.168.3.1), max hops: 30 ,packet length: 40,press CTRL_C to break</p>
-<p>1 192.168.2.254 30 ms  50 ms  50 ms</p>
-<p>2 192.168.3.1 70 ms  60 ms  60 ms</p>
-<p>此时VLAN2和VLAN3之间已经可以正常的互访。</p>
-<p>步骤 2 通过VLANIF接口实现VLAN间互访</p>
-<p># 清除上一步配置</p>
-<p>[S1]interface GigabitEthernet 0/0/1</p>
-<p>[S1-GigabitEthernet0/0/1]undo port trunk allow-pass vlan 2 3</p>
-<p>[S1-GigabitEthernet0/0/1]undo port link-type</p>
-<p>[R1]undo interface GigabitEthernet 0/0/1.2</p>
-<p>[R1]undo interface GigabitEthernet 0/0/1.3</p>
-<p># 在S1上创建相应的VLANIF接口</p>
-<p>[S1]interface Vlanif 2</p>
-<p><strong>interface vlanif</strong> <em>vlan-id</em>命令用来创建VLANIF接口并进入VLANIF接口视图。只有先通过命令创建VLAN后，才能执行interface vlanif命令创建VLANIF接口。</p>
-<p>[S1-Vlanif2]ip address 192.168.2.254 24</p>
-<p>[S1-Vlanif2]quit</p>
-<p>[S1]interface Vlanif 3</p>
-<p>[S1-Vlanif3]ip address 192.168.3.254 24</p>
-<p>[S1-Vlanif3]quit</p>
-<p># 检测VLAN间互访联通性</p>
-<p><R2>ping 192.168.3.1</R2></p>
-<p>PING 192.168.3.1: 56  data bytes, press CTRL_C to break</p>
-<p>Reply from 192.168.3.1: bytes=56 Sequence=1 ttl=254 time=100 ms</p>
-<p>Reply from 192.168.3.1: bytes=56 Sequence=2 ttl=254 time=50 ms</p>
-<p>Reply from 192.168.3.1: bytes=56 Sequence=3 ttl=254 time=50 ms</p>
-<p>Reply from 192.168.3.1: bytes=56 Sequence=4 ttl=254 time=60 ms</p>
-<p>Reply from 192.168.3.1: bytes=56 Sequence=5 ttl=254 time=70 ms</p>
-<p>— 192.168.3.1 ping statistics —</p>
-<p>5 packet(s) transmitted</p>
-<p>5 packet(s) received</p>
-<p>0.00% packet loss</p>
-<p>round-trip min/avg/max = 50/66/100 ms</p>
-<p><R2>tracert 192.168.3.1</R2></p>
-<p>traceroute to  192.168.3.1(192.168.3.1), max hops: 30 ,packet length: 40,press CTRL_C to break</p>
-<p>1 192.168.2.254 40 ms  30 ms  20 ms</p>
-<p>2 192.168.3.1 40 ms  30 ms  40 ms</p>
-<p>此时VLAN2和VLAN3之间已经可以正常的互访。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
 
 
 
