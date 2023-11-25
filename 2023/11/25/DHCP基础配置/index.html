@@ -20,12 +20,12 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":"flase","version":"8.18.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
 
-    <meta name="description" content="DHCP是一种终端自动配置协议，客户端通过DHCP协议可获取一个合法的动态IP地址。 概述 随着网络规模的扩大和网络复杂度的提高，网络配置越来越复杂，经常出现计算机位置变化（如便携机或无线网络）和计算机数量超过可分配的IP地址的情况。动态主机配置协议DHCP（Dynamic Host Configuration Protocol）就是为满足这些需求而发展起来的。 DHCP协议以服务器&#x2F;客户端（Se">
+    <meta name="description" content="DHCP是一种终端自动配置协议，客户端通过DHCP协议可获取一个合法的动态IP地址。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="DHCP基础配置">
 <meta property="og:url" content="http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/index.html">
 <meta property="og:site_name" content="Hey Bro">
-<meta property="og:description" content="DHCP是一种终端自动配置协议，客户端通过DHCP协议可获取一个合法的动态IP地址。 概述 随着网络规模的扩大和网络复杂度的提高，网络配置越来越复杂，经常出现计算机位置变化（如便携机或无线网络）和计算机数量超过可分配的IP地址的情况。动态主机配置协议DHCP（Dynamic Host Configuration Protocol）就是为满足这些需求而发展起来的。 DHCP协议以服务器&#x2F;客户端（Se">
+<meta property="og:description" content="DHCP是一种终端自动配置协议，客户端通过DHCP协议可获取一个合法的动态IP地址。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/dhcpzz111.png">
 <meta property="og:image" content="http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/macsiis30.png">
@@ -33,7 +33,7 @@
 <meta property="og:image" content="http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/3chakan0.png">
 <meta property="og:image" content="http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/relayallss7.png">
 <meta property="article:published_time" content="2023-11-25T06:34:51.000Z">
-<meta property="article:modified_time" content="2023-11-25T07:26:45.490Z">
+<meta property="article:modified_time" content="2023-11-25T07:52:19.845Z">
 <meta property="article:author" content="Yang">
 <meta property="article:tag" content="DHCP Relay">
 <meta property="article:tag" content="DHCP">
@@ -147,7 +147,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A6%82%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DHCP%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="nav-number">2.</span> <span class="nav-text">DHCP服务器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DHCP%E4%B8%AD%E7%BB%A7"><span class="nav-number">3.</span> <span class="nav-text">DHCP中继</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-number"></span> <span class="nav-text">DHCP基础配置</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E9%AA%8C%E6%AD%A5%E9%AA%A4"><span class="nav-number"></span> <span class="nav-text">实验步骤</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BAVLAN"><span class="nav-number">1.</span> <span class="nav-text">创建VLAN</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE%E6%8E%A5%E5%8F%A3%E6%94%BE%E9%80%9A%E7%9B%B8%E5%BA%94%E7%9A%84VLAN"><span class="nav-number">2.</span> <span class="nav-text">配置接口放通相应的VLAN</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#VLANIF%E9%85%8D%E7%BD%AE"><span class="nav-number">3.</span> <span class="nav-text">VLANIF配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%80%E5%90%AFDHCP%E6%9C%8D%E5%8A%A1"><span class="nav-number">4.</span> <span class="nav-text">开启DHCP服务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%9C%B0%E5%9D%80%E6%B1%A0VLAN10%EF%BC%8C%E7%94%A8%E4%BA%8E%E7%BB%99S4%E7%9A%84VLANIF10%E5%88%86%E9%85%8D%E5%9C%B0%E5%9D%80"><span class="nav-number">5.</span> <span class="nav-text">创建地址池VLAN10，用于给S4的VLANIF10分配地址</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%9C%B0%E5%9D%80%E6%B1%A0VLAN20%EF%BC%8C%E7%94%A8%E4%BA%8E%E7%BB%99S4%E7%9A%84VLANIF20%E5%88%86%E9%85%8D%E5%9C%B0%E5%9D%80"><span class="nav-number">6.</span> <span class="nav-text">创建地址池VLAN20，用于给S4的VLANIF20分配地址</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%9C%B0%E5%9D%80%E6%B1%A0VLAN30%EF%BC%8C%E7%94%A8%E4%BA%8E%E7%BB%99S4%E7%9A%84VLANIF30%E5%88%86%E9%85%8D%E5%9C%B0%E5%9D%80"><span class="nav-number">7.</span> <span class="nav-text">创建地址池VLAN30，用于给S4的VLANIF30分配地址</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8Bs4%E7%9A%84vlanif30%E7%9A%84mac"><span class="nav-number">8.</span> <span class="nav-text">查看s4的vlanif30的mac</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A8S1%E4%B8%8A%E4%B8%BAS4%E7%9A%84VLANIF30%E9%85%8D%E7%BD%AE%E9%9D%99%E6%80%81%E5%9C%B0%E5%9D%80%E5%88%86%E9%85%8D"><span class="nav-number">9.</span> <span class="nav-text">在S1上为S4的VLANIF30配置静态地址分配</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A8VLANIF40%E6%8E%A5%E5%8F%A3%E4%B8%8B%E4%BD%BF%E8%83%BDDHCP-Server"><span class="nav-number">10.</span> <span class="nav-text">在VLANIF40接口下使能DHCP Server</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8BIP%E5%9C%B0%E5%9D%80%E6%B1%A0%E9%85%8D%E7%BD%AE%E6%83%85%E5%86%B5"><span class="nav-number">11.</span> <span class="nav-text">查看IP地址池配置情况</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE%E5%89%8D%E5%BE%80%E7%94%A8%E6%88%B7%E7%BD%91%E6%AE%B5%E7%9A%84%E8%B7%AF%E7%94%B1"><span class="nav-number">12.</span> <span class="nav-text">配置前往用户网段的路由</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%80%E5%90%AFDHCP%E6%9C%8D%E5%8A%A1-2"><span class="nav-number">13.</span> <span class="nav-text">开启DHCP服务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A8%E6%8E%A5%E5%8F%A3%E4%B8%8A%E9%85%8D%E7%BD%AEDHCP-Relay%EF%BC%8C%E6%8C%87%E5%AE%9ADHCP-Server"><span class="nav-number">14.</span> <span class="nav-text">在接口上配置DHCP Relay，指定DHCP Server</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8Brelay%E9%85%8D%E7%BD%AE"><span class="nav-number">15.</span> <span class="nav-text">查看relay配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DHCP-Client%E9%85%8D%E7%BD%AE"><span class="nav-number">16.</span> <span class="nav-text">DHCP Client配置</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%BC%80%E5%90%AFDHCP%E6%9C%8D%E5%8A%A1-3"><span class="nav-number">16.1.</span> <span class="nav-text">开启DHCP服务</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%BC%80%E5%90%AF%E6%8E%A5%E5%8F%A3%E9%80%9A%E8%BF%87DHCP%E8%8E%B7%E5%8F%96%E5%9C%B0%E5%9D%80"><span class="nav-number">16.2.</span> <span class="nav-text">开启接口通过DHCP获取地址</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8B%E5%90%84%E4%B8%AA%E6%8E%A5%E5%8F%A3IP%E5%9C%B0%E5%9D%80%E8%8E%B7%E5%8F%96%E6%83%85%E5%86%B5"><span class="nav-number">16.3.</span> <span class="nav-text">查看各个接口IP地址获取情况</span></a></li></ol></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A6%82%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DHCP%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="nav-number">2.</span> <span class="nav-text">DHCP服务器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DHCP%E4%B8%AD%E7%BB%A7"><span class="nav-number">3.</span> <span class="nav-text">DHCP中继</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE"><span class="nav-number"></span> <span class="nav-text">DHCP基础配置</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E9%AA%8C%E6%AD%A5%E9%AA%A4"><span class="nav-number"></span> <span class="nav-text">实验步骤</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BAVLAN"><span class="nav-number">1.</span> <span class="nav-text">创建VLAN</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE%E6%8E%A5%E5%8F%A3%E6%94%BE%E9%80%9A%E7%9B%B8%E5%BA%94%E7%9A%84VLAN"><span class="nav-number">2.</span> <span class="nav-text">配置接口放通相应的VLAN</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#VLANIF%E9%85%8D%E7%BD%AE"><span class="nav-number">3.</span> <span class="nav-text">VLANIF配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%80%E5%90%AFDHCP%E6%9C%8D%E5%8A%A1"><span class="nav-number">4.</span> <span class="nav-text">开启DHCP服务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%9C%B0%E5%9D%80%E6%B1%A0VLAN10%EF%BC%8C%E7%94%A8%E4%BA%8E%E7%BB%99S4%E7%9A%84VLANIF10%E5%88%86%E9%85%8D%E5%9C%B0%E5%9D%80"><span class="nav-number">5.</span> <span class="nav-text">创建地址池VLAN10，用于给S4的VLANIF10分配地址</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%9C%B0%E5%9D%80%E6%B1%A0VLAN20%EF%BC%8C%E7%94%A8%E4%BA%8E%E7%BB%99S4%E7%9A%84VLANIF20%E5%88%86%E9%85%8D%E5%9C%B0%E5%9D%80"><span class="nav-number">6.</span> <span class="nav-text">创建地址池VLAN20，用于给S4的VLANIF20分配地址</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%9C%B0%E5%9D%80%E6%B1%A0VLAN30%EF%BC%8C%E7%94%A8%E4%BA%8E%E7%BB%99S4%E7%9A%84VLANIF30%E5%88%86%E9%85%8D%E5%9C%B0%E5%9D%80"><span class="nav-number">7.</span> <span class="nav-text">创建地址池VLAN30，用于给S4的VLANIF30分配地址</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8Bs4%E7%9A%84vlanif30%E7%9A%84mac"><span class="nav-number">8.</span> <span class="nav-text">查看s4的vlanif30的mac</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A8S1%E4%B8%8A%E4%B8%BAS4%E7%9A%84VLANIF30%E9%85%8D%E7%BD%AE%E9%9D%99%E6%80%81%E5%9C%B0%E5%9D%80%E5%88%86%E9%85%8D"><span class="nav-number">9.</span> <span class="nav-text">在S1上为S4的VLANIF30配置静态地址分配</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A8VLANIF40%E6%8E%A5%E5%8F%A3%E4%B8%8B%E4%BD%BF%E8%83%BDDHCP-Server"><span class="nav-number">10.</span> <span class="nav-text">在VLANIF40接口下使能DHCP Server</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8BIP%E5%9C%B0%E5%9D%80%E6%B1%A0%E9%85%8D%E7%BD%AE%E6%83%85%E5%86%B5"><span class="nav-number">11.</span> <span class="nav-text">查看IP地址池配置情况</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE%E5%89%8D%E5%BE%80%E7%94%A8%E6%88%B7%E7%BD%91%E6%AE%B5%E7%9A%84%E8%B7%AF%E7%94%B1"><span class="nav-number">12.</span> <span class="nav-text">配置前往用户网段的路由</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%80%E5%90%AFDHCP%E6%9C%8D%E5%8A%A1-1"><span class="nav-number">13.</span> <span class="nav-text">开启DHCP服务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A8%E6%8E%A5%E5%8F%A3%E4%B8%8A%E9%85%8D%E7%BD%AEDHCP-Relay%EF%BC%8C%E6%8C%87%E5%AE%9ADHCP-Server"><span class="nav-number">14.</span> <span class="nav-text">在接口上配置DHCP Relay，指定DHCP Server</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8Brelay%E9%85%8D%E7%BD%AE"><span class="nav-number">15.</span> <span class="nav-text">查看relay配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DHCP-Client%E9%85%8D%E7%BD%AE"><span class="nav-number">16.</span> <span class="nav-text">DHCP Client配置</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%BC%80%E5%90%AFDHCP%E6%9C%8D%E5%8A%A1-2"><span class="nav-number">16.1.</span> <span class="nav-text">开启DHCP服务</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%BC%80%E5%90%AF%E6%8E%A5%E5%8F%A3%E9%80%9A%E8%BF%87DHCP%E8%8E%B7%E5%8F%96%E5%9C%B0%E5%9D%80"><span class="nav-number">16.2.</span> <span class="nav-text">开启接口通过DHCP获取地址</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8B%E5%90%84%E4%B8%AA%E6%8E%A5%E5%8F%A3IP%E5%9C%B0%E5%9D%80%E8%8E%B7%E5%8F%96%E6%83%85%E5%86%B5"><span class="nav-number">16.3.</span> <span class="nav-text">查看各个接口IP地址获取情况</span></a></li></ol></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -230,7 +230,7 @@
       <span class="post-meta-item-text">发表于</span>
       
 
-      <time title="创建时间：2023-11-25 14:34:51 / 修改时间：15:26:45" itemprop="dateCreated datePublished" datetime="2023-11-25T14:34:51+08:00">2023-11-25</time>
+      <time title="创建时间：2023-11-25 14:34:51 / 修改时间：15:52:19" itemprop="dateCreated datePublished" datetime="2023-11-25T14:34:51+08:00">2023-11-25</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -256,7 +256,7 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>4.4k</span>
+      <span>4.6k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
@@ -273,41 +273,34 @@
     
     
     
-    <div class="post-body" itemprop="articleBody"><p>DHCP是一种终端自动配置协议，客户端通过DHCP协议可获取一个合法的动态IP地址。</p>
-<h3 id="概述">概述</h3>
-<p>随着网络规模的扩大和网络复杂度的提高，网络配置越来越复杂，经常出现计算机位置变化（如便携机或无线网络）和计算机数量超过可分配的IP地址的情况。动态主机配置协议DHCP（Dynamic Host Configuration Protocol）就是为满足这些需求而发展起来的。</p>
-<p>DHCP协议以服务器/客户端（Server/Client）模式工作，DHCP客户端向DHCP服务器动态地请求配置信息，DHCP服务器可以很方便地为客户端动态发送配置信息。</p>
-<h3 id="DHCP服务器">DHCP服务器</h3>
-<p>DHCP Server即DHCP服务器，负责客户端IP地址的分配。客户端向服务器发送配置申请报文（包括IP地址、子网掩码、缺省网关等参数），服务器根据策略返回携带相应配置信息的报文，请求报文和回应报文都采用UDP进行封装。</p>
-<h3 id="DHCP中继">DHCP中继</h3>
-<p>DHCP Relay即DHCP中继，它是为解决服务器和客户端不在同一个网段而提出来的，它提供了对DHCP广播报文的透明传输功能，能够把DHCP客户端的广播报文透明地传送到其它网段的DHCP服务器上，同样能够把DHCP服务器端的广播报文透明地传送到其它网段的DHCP客户端。</p>
-<h1>DHCP基础配置</h1>
-<p><img src="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/dhcpzz111.png" alt="dhcpzz111">交换机4上有多个vlan，交换机1模拟dhcp服务器实现为多个vlan分配地址，交换机3作为dhcp终极连接服务器和客户端</p>
-<h2 id="实验步骤">实验步骤</h2>
-<h3 id="创建VLAN">创建VLAN</h3>
-<p>[S1]vlan 40</p>
+    <div class="post-body" itemprop="articleBody"><p> DHCP是一种终端自动配置协议，客户端通过DHCP协议可获取一个合法的动态IP地址。</p>
+<span id="more"></span>
+
+<h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><p>随着网络规模的扩大和网络复杂度的提高，网络配置越来越复杂，经常出现计算机位置变化（如便携机或无线网络）和计算机数量超过可分配的IP地址的情况。动态主机配置协议DHCP（Dynamic Host Configuration Protocol）就是为满足这些需求而发展起来的。DHCP协议以服务器&#x2F;客户端（Server&#x2F;Client）模式工作，DHCP客户端向DHCP服务器动态地请求配置信息，DHCP服务器可以很方便地为客户端动态发送配置信息。</p>
+<h3 id="DHCP服务器"><a href="#DHCP服务器" class="headerlink" title="DHCP服务器"></a>DHCP服务器</h3><p>DHCP Server即DHCP服务器，负责客户端IP地址的分配。客户端向服务器发送配置申请报文（包括IP地址、子网掩码、缺省网关等参数），服务器根据策略返回携带相应配置信息的报文，请求报文和回应报文都采用UDP进行封装。</p>
+<h3 id="DHCP中继"><a href="#DHCP中继" class="headerlink" title="DHCP中继"></a>DHCP中继</h3><p>DHCP Relay即DHCP中继，它是为解决服务器和客户端不在同一个网段而提出来的，它提供了对DHCP广播报文的透明传输功能，能够把DHCP客户端的广播报文透明地传送到其它网段的DHCP服务器上，同样能够把DHCP服务器端的广播报文透明地传送到其它网段的DHCP客户端。</p>
+<h1 id="DHCP基础配置"><a href="#DHCP基础配置" class="headerlink" title="DHCP基础配置"></a>DHCP基础配置</h1><p><img src="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/dhcpzz111.png" alt="dhcpzz111">交换机4上有多个vlan，交换机1模拟dhcp服务器实现为多个vlan分配地址，交换机3作为dhcp终极连接服务器和客户端</p>
+<h2 id="实验步骤"><a href="#实验步骤" class="headerlink" title="实验步骤"></a>实验步骤</h2><h3 id="创建VLAN"><a href="#创建VLAN" class="headerlink" title="创建VLAN"></a>创建VLAN</h3><p>[S1]vlan 40</p>
 <p>[S3]vlan batch 10 20 30 40</p>
 <p>[S4]vlan batch 10 20 30</p>
-<h3 id="配置接口放通相应的VLAN">配置接口放通相应的VLAN</h3>
-<p>[S4]interface GigabitEthernet0/0/3</p>
-<p>[S4-GigabitEthernet0/0/3] port link-type trunk</p>
-<p>[S4-GigabitEthernet0/0/3] port trunk allow-pass vlan 10 20 30</p>
-<p>[S4-GigabitEthernet0/0/3] quit</p>
-<p>[S3]interface GigabitEthernet0/0/1</p>
-<p>[S3-GigabitEthernet0/0/1] port link-type access</p>
-<p>[S3-GigabitEthernet0/0/1] port default vlan 40</p>
-<p>[S3-GigabitEthernet0/0/1] quit</p>
-<p>[S3]interface GigabitEthernet0/0/3</p>
-<p>[S3-GigabitEthernet0/0/3] port link-type trunk</p>
-<p>[S3-GigabitEthernet0/0/3] port trunk allow-pass vlan 10 20 30</p>
-<p>[S3-GigabitEthernet0/0/3] quit</p>
-<p>[S1]interface GigabitEthernet0/0/12</p>
-<p>[S1-GigabitEthernet0/0/12] port link-type access</p>
-<p>[S1-GigabitEthernet0/0/12] port default vlan 40</p>
-<p>[S1-GigabitEthernet0/0/12] quit</p>
-<p>交换机4和交换机3之间因为放通多个vlan，所以使用trunk口，交换机3和交换机1之间只有一个vlan40，所以配置access口，pvid=40</p>
-<h3 id="VLANIF配置">VLANIF配置</h3>
-<p>[S4]interface Vlanif 10</p>
+<h3 id="配置接口放通相应的VLAN"><a href="#配置接口放通相应的VLAN" class="headerlink" title="配置接口放通相应的VLAN"></a>配置接口放通相应的VLAN</h3><p>[S4]interface GigabitEthernet0&#x2F;0&#x2F;3</p>
+<p>[S4-GigabitEthernet0&#x2F;0&#x2F;3] port link-type trunk</p>
+<p>[S4-GigabitEthernet0&#x2F;0&#x2F;3] port trunk allow-pass vlan 10 20 30</p>
+<p>[S4-GigabitEthernet0&#x2F;0&#x2F;3] quit</p>
+<p>[S3]interface GigabitEthernet0&#x2F;0&#x2F;1</p>
+<p>[S3-GigabitEthernet0&#x2F;0&#x2F;1] port link-type access</p>
+<p>[S3-GigabitEthernet0&#x2F;0&#x2F;1] port default vlan 40</p>
+<p>[S3-GigabitEthernet0&#x2F;0&#x2F;1] quit</p>
+<p>[S3]interface GigabitEthernet0&#x2F;0&#x2F;3</p>
+<p>[S3-GigabitEthernet0&#x2F;0&#x2F;3] port link-type trunk</p>
+<p>[S3-GigabitEthernet0&#x2F;0&#x2F;3] port trunk allow-pass vlan 10 20 30</p>
+<p>[S3-GigabitEthernet0&#x2F;0&#x2F;3] quit</p>
+<p>[S1]interface GigabitEthernet0&#x2F;0&#x2F;12</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12] port link-type access</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12] port default vlan 40</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12] quit</p>
+<p>交换机4和交换机3之间因为放通多个vlan，所以使用trunk口，交换机3和交换机1之间只有一个vlan40，所以配置access口，pvid&#x3D;40</p>
+<h3 id="VLANIF配置"><a href="#VLANIF配置" class="headerlink" title="VLANIF配置"></a>VLANIF配置</h3><p>[S4]interface Vlanif 10</p>
 <p>[S4-Vlanif10] quit</p>
 <p>[S4]interface Vlanif 20</p>
 <p>[S4-Vlanif20] quit</p>
@@ -330,49 +323,38 @@
 <p>[S1-Vlanif40] quit</p>
 <p>检查一下交换机3和1之间的连通性</p>
 <p>（开启DHCP服务，配置全局地址池，同时为S4上的VLANIF30分配静态IP地址。）：</p>
-<h3 id="开启DHCP服务">开启DHCP服务</h3>
-<p>[S1]dhcp enable</p>
-<h3 id="创建地址池VLAN10，用于给S4的VLANIF10分配地址">创建地址池VLAN10，用于给S4的VLANIF10分配地址</h3>
-<p>[S1]ip pool vlan10 //创建地址池名为vlan10</p>
-<p>[S1-ip-pool-vlan10] gateway-list 10.0.10.3  //网关是中继上的vlanif 10</p>
-<p>[S1-ip-pool-vlan10] network 10.0.10.0 mask 255.255.255.0 <a href="//xn--ip10-pg9f84x2x2aez8b5zgprxk5n.0.10.1-10.0.10.255">//设置分配ip范围是10.0.10.1-10.0.10.255</a></p>
+<h3 id="开启DHCP服务"><a href="#开启DHCP服务" class="headerlink" title="开启DHCP服务"></a>开启DHCP服务</h3><p>[S1]dhcp enable</p>
+<h3 id="创建地址池VLAN10，用于给S4的VLANIF10分配地址"><a href="#创建地址池VLAN10，用于给S4的VLANIF10分配地址" class="headerlink" title="创建地址池VLAN10，用于给S4的VLANIF10分配地址"></a>创建地址池VLAN10，用于给S4的VLANIF10分配地址</h3><p>[S1]ip pool vlan10 &#x2F;&#x2F;创建地址池名为vlan10</p>
+<p>[S1-ip-pool-vlan10] gateway-list 10.0.10.3  &#x2F;&#x2F;网关是中继上的vlanif 10</p>
+<p>[S1-ip-pool-vlan10] network 10.0.10.0 mask 255.255.255.0 &#x2F;&#x2F;设置分配ip范围是10.0.10.1-10.0.10.255</p>
 <p>[S1-ip-pool-vlan10] dns-list 10.0.10.3</p>
 <p>[S1-ip-pool-vlan10] quit</p>
-<h3 id="创建地址池VLAN20，用于给S4的VLANIF20分配地址">创建地址池VLAN20，用于给S4的VLANIF20分配地址</h3>
-<p>[S1]ip pool vlan20</p>
+<h3 id="创建地址池VLAN20，用于给S4的VLANIF20分配地址"><a href="#创建地址池VLAN20，用于给S4的VLANIF20分配地址" class="headerlink" title="创建地址池VLAN20，用于给S4的VLANIF20分配地址"></a>创建地址池VLAN20，用于给S4的VLANIF20分配地址</h3><p>[S1]ip pool vlan20</p>
 <p>[S1-ip-pool-vlan20] gateway-list 10.0.20.3</p>
 <p>[S1-ip-pool-vlan20] network 10.0.20.0 mask 255.255.255.0</p>
 <p>[S1-ip-pool-vlan20] dns-list 10.0.20.3</p>
 <p>[S1-ip-pool-vlan20] quit</p>
-<h3 id="创建地址池VLAN30，用于给S4的VLANIF30分配地址">创建地址池VLAN30，用于给S4的VLANIF30分配地址</h3>
-<p>[S1]ip pool vlan30</p>
+<h3 id="创建地址池VLAN30，用于给S4的VLANIF30分配地址"><a href="#创建地址池VLAN30，用于给S4的VLANIF30分配地址" class="headerlink" title="创建地址池VLAN30，用于给S4的VLANIF30分配地址"></a>创建地址池VLAN30，用于给S4的VLANIF30分配地址</h3><p>[S1]ip pool vlan30</p>
 <p>[S1-ip-pool-vlan30] gateway-list 10.0.30.3</p>
 <p>[S1-ip-pool-vlan30] network 10.0.30.0 mask 255.255.255.0</p>
 <p>[S1-ip-pool-vlan30] dns-list 10.0.30.3</p>
 <p>[S1-ip-pool-vlan30] quit</p>
-<h3 id="查看s4的vlanif30的mac">查看s4的vlanif30的mac</h3>
-<p>为了实现给s4的vlanif30口静态绑定一个指定的ip地址，我们需要先查看一下mac<img src="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/macsiis30.png" alt="macsiis30"></p>
-<h3 id="在S1上为S4的VLANIF30配置静态地址分配">在S1上为S4的VLANIF30配置静态地址分配</h3>
-<p><img src="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/mac0234.png" alt="mac0234"></p>
+<h3 id="查看s4的vlanif30的mac"><a href="#查看s4的vlanif30的mac" class="headerlink" title="查看s4的vlanif30的mac"></a>查看s4的vlanif30的mac</h3><p>为了实现给s4的vlanif30口静态绑定一个指定的ip地址，我们需要先查看一下mac<img src="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/macsiis30.png" alt="macsiis30"></p>
+<h3 id="在S1上为S4的VLANIF30配置静态地址分配"><a href="#在S1上为S4的VLANIF30配置静态地址分配" class="headerlink" title="在S1上为S4的VLANIF30配置静态地址分配"></a>在S1上为S4的VLANIF30配置静态地址分配</h3><p><img src="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/mac0234.png" alt="mac0234"></p>
 <p>给s4的vlanif口静态分配ip：10.0.30.2</p>
-<h3 id="在VLANIF40接口下使能DHCP-Server">在VLANIF40接口下使能DHCP Server</h3>
-<p>[S1]interface Vlanif 40</p>
-<p>[S1-Vlanif40] dhcp select global //全局的使能</p>
-<h3 id="查看IP地址池配置情况">查看IP地址池配置情况</h3>
-<p>[S1]display ip pool name vlan30</p>
+<h3 id="在VLANIF40接口下使能DHCP-Server"><a href="#在VLANIF40接口下使能DHCP-Server" class="headerlink" title="在VLANIF40接口下使能DHCP Server"></a>在VLANIF40接口下使能DHCP Server</h3><p>[S1]interface Vlanif 40 </p>
+<p>[S1-Vlanif40] dhcp select global &#x2F;&#x2F;全局的使能</p>
+<h3 id="查看IP地址池配置情况"><a href="#查看IP地址池配置情况" class="headerlink" title="查看IP地址池配置情况"></a>查看IP地址池配置情况</h3><p>[S1]display ip pool name vlan30</p>
 <p><img src="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/3chakan0.png" alt="3chakan0"></p>
 <p>地址池vlan30已经存在一个“Used”地址，该地址为静态分配的地址。</p>
-<h3 id="配置前往用户网段的路由">配置前往用户网段的路由</h3>
-<p>[S1]ip route-static 10.0.10.0 24 10.0.40.3</p>
+<h3 id="配置前往用户网段的路由"><a href="#配置前往用户网段的路由" class="headerlink" title="配置前往用户网段的路由"></a>配置前往用户网段的路由</h3><p>[S1]ip route-static 10.0.10.0 24 10.0.40.3 </p>
 <p>[S1]ip route-static 10.0.20.0 24 10.0.40.3</p>
 <p>[S1]ip route-static 10.0.30.0 24 10.0.40.3</p>
 <p>（或者配置缺省路由）</p>
 <p>保证连通性</p>
 <p>在S3上完成DHCP Relay相关配置</p>
-<h3 id="开启DHCP服务-2">开启DHCP服务</h3>
-<p>[S3]dhcp enable</p>
-<h3 id="在接口上配置DHCP-Relay，指定DHCP-Server">在接口上配置DHCP Relay，指定DHCP Server</h3>
-<p>[S3]interface Vlanif10</p>
+<h3 id="开启DHCP服务-1"><a href="#开启DHCP服务-1" class="headerlink" title="开启DHCP服务"></a>开启DHCP服务</h3><p>[S3]dhcp enable</p>
+<h3 id="在接口上配置DHCP-Relay，指定DHCP-Server"><a href="#在接口上配置DHCP-Relay，指定DHCP-Server" class="headerlink" title="在接口上配置DHCP Relay，指定DHCP Server"></a>在接口上配置DHCP Relay，指定DHCP Server</h3><p>[S3]interface Vlanif10</p>
 <p>[S3-Vlanif10] dhcp select relay</p>
 <p>[S3-Vlanif10] dhcp relay server-ip 10.0.40.1</p>
 <p>[S3-Vlanif10] quit</p>
@@ -384,14 +366,10 @@
 <p>[S3-Vlanif30] dhcp select relay</p>
 <p>[S3-Vlanif30] dhcp relay server-ip 10.0.40.1</p>
 <p>[S3-Vlanif30] quit</p>
-<h3 id="查看relay配置">查看relay配置</h3>
-<p><img src="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/relayallss7.png" alt="relayallss7"></p>
-<h3 id="DHCP-Client配置">DHCP Client配置</h3>
-<p>在S4上配置VLANIF10、20、30接口通过DHCP获取IP地址</p>
-<h4 id="开启DHCP服务-3">开启DHCP服务</h4>
-<p>[S4]dhcp enable</p>
-<h4 id="开启接口通过DHCP获取地址">开启接口通过DHCP获取地址</h4>
-<p>[S4]interface Vlanif10</p>
+<h3 id="查看relay配置"><a href="#查看relay配置" class="headerlink" title="查看relay配置"></a>查看relay配置</h3><p><img src="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/relayallss7.png" alt="relayallss7"></p>
+<h3 id="DHCP-Client配置"><a href="#DHCP-Client配置" class="headerlink" title="DHCP Client配置"></a>DHCP Client配置</h3><p>在S4上配置VLANIF10、20、30接口通过DHCP获取IP地址</p>
+<h4 id="开启DHCP服务-2"><a href="#开启DHCP服务-2" class="headerlink" title="开启DHCP服务"></a>开启DHCP服务</h4><p>[S4]dhcp enable</p>
+<h4 id="开启接口通过DHCP获取地址"><a href="#开启接口通过DHCP获取地址" class="headerlink" title="开启接口通过DHCP获取地址"></a>开启接口通过DHCP获取地址</h4><p>[S4]interface Vlanif10</p>
 <p>[S4-Vlanif10] ip address dhcp-alloc</p>
 <p>[S4-Vlanif10] quit</p>
 <p>[S4]interface Vlanif20</p>
@@ -400,28 +378,27 @@
 <p>[S4]interface Vlanif30</p>
 <p>[S4-Vlanif30] ip address dhcp-alloc</p>
 <p>[S4-Vlanif30] quit</p>
-<h4 id="查看各个接口IP地址获取情况">查看各个接口IP地址获取情况</h4>
-<p><S4>display interface Vlanif 10</S4></p>
+<h4 id="查看各个接口IP地址获取情况"><a href="#查看各个接口IP地址获取情况" class="headerlink" title="查看各个接口IP地址获取情况"></a>查看各个接口IP地址获取情况</h4><p><S4>display interface Vlanif 10</S4></p>
 <p>Vlanif10 current state : UP</p>
 <p>Line protocol current state : UP</p>
 <p>Last line protocol up time : 2020-06-05 17:37:57 UTC-08:00</p>
 <p>Description:</p>
 <p>Route Port,The Maximum Transmit Unit is 1500</p>
-<p>Internet Address is allocated by DHCP, 10.0.10.254/24</p>
+<p>Internet Address is allocated by DHCP, 10.0.10.254&#x2F;24</p>
 <p>[S4]display interface Vlanif 20</p>
 <p>Vlanif20 current state : UP</p>
 <p>Line protocol current state : UP</p>
 <p>Last line protocol up time : 2020-06-05 17:41:23 UTC-08:00</p>
 <p>Description:</p>
 <p>Route Port,The Maximum Transmit Unit is 1500</p>
-<p>Internet Address is allocated by DHCP, 10.0.20.254/24</p>
+<p>Internet Address is allocated by DHCP, 10.0.20.254&#x2F;24</p>
 <p>[S4]display interface Vlanif 30</p>
 <p>Vlanif30 current state : UP</p>
 <p>Line protocol current state : UP</p>
 <p>Last line protocol up time : 2020-06-05 17:43:22 UTC-08:00</p>
 <p>Description:</p>
 <p>Route Port,The Maximum Transmit Unit is 1500</p>
-<p>Internet Address is allocated by DHCP, 10.0.30.2/24</p>
+<p>Internet Address is allocated by DHCP, 10.0.30.2&#x2F;24</p>
 <p>接口已经通过DHCP获取到IP地址，并且VLANIF30的地址为静态分配的地址：10.0.30.2。</p>
 
     </div>
