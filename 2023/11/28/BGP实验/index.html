@@ -23,23 +23,40 @@
 <link rel="stylesheet" href="/css/all.min.css" integrity="sha256-CTSx/A06dm1B063156EVh15m6Y67pAjZZaQc89LLSrU=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
 
-    <meta property="og:type" content="website">
-<meta property="og:title" content="沃德发">
-<meta property="og:url" content="http://example.com/index.html">
+    <meta name="description" content="BGP基础实验设备连接方式、IP地址规划、BGP AS号如图所示，所有设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号，所有设备都使用Loopback0接口IP地址作为BGP Router ID。R1、R5上存在Loopback1模拟用户网段。 R2、R3、R4之间运行OSPF，在R2、R3、R4的互联接口、Loopback0接口上激活OSPF。 实验">
+<meta property="og:type" content="article">
+<meta property="og:title" content="BGP实验">
+<meta property="og:url" content="http://example.com/2023/11/28/BGP%E5%AE%9E%E9%AA%8C/index.html">
 <meta property="og:site_name" content="沃德发">
+<meta property="og:description" content="BGP基础实验设备连接方式、IP地址规划、BGP AS号如图所示，所有设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号，所有设备都使用Loopback0接口IP地址作为BGP Router ID。R1、R5上存在Loopback1模拟用户网段。 R2、R3、R4之间运行OSPF，在R2、R3、R4的互联接口、Loopback0接口上激活OSPF。 实验">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2023/11/28/BGP%E5%AE%9E%E9%AA%8C/bgpadaw110633.png">
+<meta property="og:image" content="http://example.com/2023/11/28/BGP%E5%AE%9E%E9%AA%8C/luyoub122914.png">
+<meta property="og:image" content="http://example.com/2023/11/28/BGP%E5%AE%9E%E9%AA%8C/louybadwad128123318.png">
+<meta property="og:image" content="http://example.com/2023/11/28/BGP%E5%AE%9E%E9%AA%8C/r11128123426.png">
+<meta property="og:image" content="http://example.com/2023/11/28/BGP%E5%AE%9E%E9%AA%8C/luyouhuizongdaw143536.png">
+<meta property="og:image" content="http://example.com/2023/11/28/BGP%E5%AE%9E%E9%AA%8C/r11128123426.png">
+<meta property="og:image" content="http://example.com/2023/11/28/BGP%E5%AE%9E%E9%AA%8C/r2jyj28150027.png">
+<meta property="og:image" content="http://example.com/2023/11/28/BGP%E5%AE%9E%E9%AA%8C/QQr2aef31128150511.png">
+<meta property="og:image" content="http://example.com/2023/11/28/BGP%E5%AE%9E%E9%AA%8C/radwahh128150729.png">
+<meta property="og:image" content="http://example.com/2023/11/28/BGP%E5%AE%9E%E9%AA%8C/diushi222f1030.png">
+<meta property="og:image" content="http://example.com/2023/11/28/BGP%E5%AE%9E%E9%AA%8C/as645138151320.png">
+<meta property="article:published_time" content="2023-11-28T02:58:58.000Z">
+<meta property="article:modified_time" content="2023-11-28T07:43:11.107Z">
 <meta property="article:author" content="Yang">
+<meta property="article:tag" content="BGP">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2023/11/28/BGP%E5%AE%9E%E9%AA%8C/bgpadaw110633.png">
 
 
-<link rel="canonical" href="http://example.com/">
+<link rel="canonical" href="http://example.com/2023/11/28/BGP%E5%AE%9E%E9%AA%8C/">
 
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":true,"isPost":false,"lang":"zh-CN","comments":"","permalink":"","path":"index.html","title":""}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2023/11/28/BGP%E5%AE%9E%E9%AA%8C/","path":"2023/11/28/BGP实验/","title":"BGP实验"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>沃德发</title>
+<title>BGP实验 | 沃德发</title>
   
 
 
@@ -72,7 +89,7 @@
 
     <a href="/" class="brand" rel="start">
       <i class="logo-line"></i>
-      <h1 class="site-title">沃德发</h1>
+      <p class="site-title">沃德发</p>
       <i class="logo-line"></i>
     </a>
       <p class="site-subtitle" itemprop="description">相互吹捧，共同进步😍😍😍</p>
@@ -126,7 +143,7 @@
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-overview-active">
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           文章目录
@@ -139,6 +156,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#BGP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C"><span class="nav-number">1.</span> <span class="nav-text">BGP基础实验</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E9%AA%8C%E8%83%8C%E6%99%AF"><span class="nav-number">1.1.</span> <span class="nav-text">实验背景</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E9%85%8D%E7%BD%AEip"><span class="nav-number">2.</span> <span class="nav-text">1.配置ip</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E9%85%8D%E7%BD%AEIBGP%E5%AF%B9%E7%AD%89%E4%BD%93"><span class="nav-number">3.</span> <span class="nav-text">2.配置IBGP对等体</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E9%85%8D%E7%BD%AEEBGP%E5%AF%B9%E7%AD%89%E4%BD%93"><span class="nav-number">4.</span> <span class="nav-text">3.配置EBGP对等体</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-%E5%9C%A8BGP%E4%B8%AD%E5%8F%91%E5%B8%83%E8%B7%AF%E7%94%B1"><span class="nav-number">5.</span> <span class="nav-text">4.在BGP中发布路由</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#BGP%E8%B7%AF%E7%94%B1%E6%B1%87%E6%80%BB%E5%AE%9E%E9%AA%8C"><span class="nav-number">6.</span> <span class="nav-text">BGP路由汇总实验</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E9%85%8D%E7%BD%AEip-1"><span class="nav-number">7.</span> <span class="nav-text">1.配置ip</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E9%85%8D%E7%BD%AEEBGPd%E5%AF%B9%E7%AD%89%E4%BD%93"><span class="nav-number">8.</span> <span class="nav-text">2.配置EBGPd对等体</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-BGP%E8%B7%AF%E7%94%B1%E8%87%AA%E5%8A%A8%E6%B1%87%E6%80%BB"><span class="nav-number">9.</span> <span class="nav-text">3.BGP路由自动汇总</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-BGP%E8%B7%AF%E7%94%B1%E6%89%8B%E5%8A%A8%E6%B1%87%E6%80%BB"><span class="nav-number">10.</span> <span class="nav-text">4.BGP路由手动汇总</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8"><span class="nav-number">11.</span> <span class="nav-text">BGP路由反射器</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -180,16 +198,17 @@
 
     </div>
 
-    <div class="main-inner index posts-expand">
+    <div class="main-inner post posts-expand">
 
-    
+
+  
 
 
 <div class="post-block">
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://example.com/2023/11/28/BGP%E5%AE%9E%E9%AA%8C/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -203,13 +222,13 @@
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | 沃德发">
+      <meta itemprop="name" content="BGP实验 | 沃德发">
       <meta itemprop="description" content="">
     </span>
       <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2023/11/28/BGP%E5%AE%9E%E9%AA%8C/" class="post-title-link" itemprop="url">BGP实验</a>
-        </h2>
+        <h1 class="post-title" itemprop="name headline">
+          BGP实验
+        </h1>
 
         <div class="post-meta-container">
           <div class="post-meta">
@@ -233,6 +252,13 @@
     </span>
 
   
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
     <span class="post-meta-break"></span>
     <span class="post-meta-item" title="本文字数">
       <span class="post-meta-item-icon">
@@ -256,8 +282,7 @@
     
     
     
-    <div class="post-body" itemprop="articleBody">
-          <h1 id="BGP基础实验"><a href="#BGP基础实验" class="headerlink" title="BGP基础实验"></a>BGP基础实验</h1><p>设备连接方式、IP地址规划、BGP AS号如图所示，所有设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号，所有设备都使用Loopback0接口IP地址作为BGP Router ID。R1、R5上存在Loopback1模拟用户网段。</p>
+    <div class="post-body" itemprop="articleBody"><h1 id="BGP基础实验"><a href="#BGP基础实验" class="headerlink" title="BGP基础实验"></a>BGP基础实验</h1><p>设备连接方式、IP地址规划、BGP AS号如图所示，所有设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号，所有设备都使用Loopback0接口IP地址作为BGP Router ID。R1、R5上存在Loopback1模拟用户网段。</p>
 <p>R2、R3、R4之间运行OSPF，在R2、R3、R4的互联接口、Loopback0接口上激活OSPF。</p>
 <h2 id="实验背景"><a href="#实验背景" class="headerlink" title="实验背景"></a>实验背景</h2><p>你是公司的网络管理员。公司的网络采用了BGP协议作为路由协议。公司的网络由多个自治系统组成，不同的分支机构使用了不同的AS号，现在你需要完成公司网络的搭建工作。在公司总部使用了OSPF作为IGP，公司内部不同分支机构使用的是私有的BGP AS号。</p>
 <p><img src="/2023/11/28/BGP%E5%AE%9E%E9%AA%8C/bgpadaw110633.png" alt="bgpadaw110633"></p>
@@ -416,7 +441,6 @@
 <p>可以看到此时AS_Path属性值为64513，此时该条路由<strong>依旧向10.0.23.3（R3）</strong>通告。</p>
 <p>R3收到关于172.17.0.0&#x2F;22的通告之后，在AS_Path中将看到自身的AS号（64153），将会忽略该路由通告。此时R3的BGP路由表中无法看到汇总路由172.17.0.0&#x2F;22，因此通过在手动路由汇总的配置中使用as-set关键字顺利地规避了路由环路的产生。</p>
 <h1 id="BGP路由反射器"><a href="#BGP路由反射器" class="headerlink" title="BGP路由反射器"></a>BGP路由反射器</h1>
-      
     </div>
 
     
@@ -424,423 +448,25 @@
     
 
     <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
+          <div class="post-tags">
+              <a href="/tags/BGP/" rel="tag"># BGP</a>
+          </div>
 
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="Yang">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="沃德发">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | 沃德发">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/" class="post-title-link" itemprop="url">路由策略</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-      
-
-      <time title="创建时间：2023-11-26 20:36:59 / 修改时间：21:26:00" itemprop="dateCreated datePublished" datetime="2023-11-26T20:36:59+08:00">2023-11-26</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ip%E5%AE%9E%E9%AA%8C/" itemprop="url" rel="index"><span itemprop="name">ip实验</span></a>
-        </span>
-    </span>
-
-  
-    <span class="post-meta-break"></span>
-    <span class="post-meta-item" title="本文字数">
-      <span class="post-meta-item-icon">
-        <i class="far fa-file-word"></i>
-      </span>
-      <span class="post-meta-item-text">本文字数：</span>
-      <span>6.2k</span>
-    </span>
-    <span class="post-meta-item" title="阅读时长">
-      <span class="post-meta-item-icon">
-        <i class="far fa-clock"></i>
-      </span>
-      <span class="post-meta-item-text">阅读时长 &asymp;</span>
-      <span>6 分钟</span>
-    </span>
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p><img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/luyouceltuopu126203917.png" alt="luyouceltuopu126203917"></p>
-<p>设备互联方式、互联地址如图所示，所有设备均创建Loopback0，其IP地址为10.0.x.x&#x2F;32，其中x为设备编号，R1、R2、R3在互联接口、Loopback0接口上激活OSPF。</p>
-<p>R3、R4属于IS-IS Area 49.0001，两者都是Level-1路由器，R3、R4的系统ID采用0000.0000.000x格式，其中x为设备编号。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
         
-      
-    </div>
 
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2023/11/25/nat%E5%AE%9E%E9%AA%8C/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="Yang">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="沃德发">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | 沃德发">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/" class="post-title-link" itemprop="url">nat实验</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-      
-
-      <time title="创建时间：2023-11-25 20:41:12 / 修改时间：21:54:42" itemprop="dateCreated datePublished" datetime="2023-11-25T20:41:12+08:00">2023-11-25</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ip%E5%AE%9E%E9%AA%8C/" itemprop="url" rel="index"><span itemprop="name">ip实验</span></a>
-        </span>
-    </span>
-
-  
-    <span class="post-meta-break"></span>
-    <span class="post-meta-item" title="本文字数">
-      <span class="post-meta-item-icon">
-        <i class="far fa-file-word"></i>
-      </span>
-      <span class="post-meta-item-text">本文字数：</span>
-      <span>2.2k</span>
-    </span>
-    <span class="post-meta-item" title="阅读时长">
-      <span class="post-meta-item-icon">
-        <i class="far fa-clock"></i>
-      </span>
-      <span class="post-meta-item-text">阅读时长 &asymp;</span>
-      <span>2 分钟</span>
-    </span>
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h1 id="静态nat"><a href="#静态nat" class="headerlink" title="静态nat"></a>静态nat</h1><p>静态NAT实现了私有地址和公有地址的一对一映射。如果希望一台主机优先使用某个关联地址，或者想要外部网络使用一个指定的公网地址访问内部服务器时，可以使用静态NAT。但是在大型网络中，这种一对一的IP地址映射无法缓解公用地址短缺的问题。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/" rel="prev" title="路由策略">
+                  <i class="fa fa-angle-left"></i> 路由策略
+                </a>
             </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="Yang">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="沃德发">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | 沃德发">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/" class="post-title-link" itemprop="url">DHCP基础配置</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-      
-
-      <time title="创建时间：2023-11-25 14:34:51 / 修改时间：15:52:19" itemprop="dateCreated datePublished" datetime="2023-11-25T14:34:51+08:00">2023-11-25</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ip%E5%AE%9E%E9%AA%8C/" itemprop="url" rel="index"><span itemprop="name">ip实验</span></a>
-        </span>
-    </span>
-
-  
-    <span class="post-meta-break"></span>
-    <span class="post-meta-item" title="本文字数">
-      <span class="post-meta-item-icon">
-        <i class="far fa-file-word"></i>
-      </span>
-      <span class="post-meta-item-text">本文字数：</span>
-      <span>4.6k</span>
-    </span>
-    <span class="post-meta-item" title="阅读时长">
-      <span class="post-meta-item-icon">
-        <i class="far fa-clock"></i>
-      </span>
-      <span class="post-meta-item-text">阅读时长 &asymp;</span>
-      <span>4 分钟</span>
-    </span>
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p> DHCP是一种终端自动配置协议，客户端通过DHCP协议可获取一个合法的动态IP地址。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
+            <div class="post-nav-item">
             </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
+          </div>
     </footer>
   </article>
 </div>
 
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="Yang">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="沃德发">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | 沃德发">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/" class="post-title-link" itemprop="url">vlan间通信</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2023-11-24 15:17:21" itemprop="dateCreated datePublished" datetime="2023-11-24T15:17:21+08:00">2023-11-24</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2023-11-25 15:51:39" itemprop="dateModified" datetime="2023-11-25T15:51:39+08:00">2023-11-25</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ip%E5%AE%9E%E9%AA%8C/" itemprop="url" rel="index"><span itemprop="name">ip实验</span></a>
-        </span>
-    </span>
-
-  
-    <span class="post-meta-break"></span>
-    <span class="post-meta-item" title="本文字数">
-      <span class="post-meta-item-icon">
-        <i class="far fa-file-word"></i>
-      </span>
-      <span class="post-meta-item-text">本文字数：</span>
-      <span>5.7k</span>
-    </span>
-    <span class="post-meta-item" title="阅读时长">
-      <span class="post-meta-item-icon">
-        <i class="far fa-clock"></i>
-      </span>
-      <span class="post-meta-item-text">阅读时长 &asymp;</span>
-      <span>5 分钟</span>
-    </span>
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h1 id="VLAN间通信"><a href="#VLAN间通信" class="headerlink" title="VLAN间通信"></a>VLAN间通信</h1><h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>划分VLAN后，不同VLAN的用户间不能二层互访，这样能起到隔离广播的作用。但实际应用中，不同VLAN的用户又常有互访的需求，此时就需要实现不同VLAN的用户互访，简称VLAN间互访。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
 
 
 
