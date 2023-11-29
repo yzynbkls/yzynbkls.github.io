@@ -156,13 +156,13 @@
       detectApple()
     })(window)</script><meta name="generator" content="Hexo 7.0.0"></head><body><div id="web_bg"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/img/avatar.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">8</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">12</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">1</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><span id="blog-info"><a href="/" title="沃德发"><span class="site-name">沃德发</span></a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search" href="javascript:void(0);"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">VRRP基础实验</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2023-11-29T13:01:52.000Z" title="发表于 2023-11-29 21:01:52">2023-11-29</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2023-11-29T13:33:55.792Z" title="更新于 2023-11-29 21:33:55">2023-11-29</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="VRRP基础实验"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><p>设备连接方式如图所示，网络中存在VLAN10、20，每个VLAN中部署一组VRRP，使用与VLAN ID相同的数值作为VRID，将S1配置为VLAN10的VRRP Master，将S2配置为VLAN20的VRRP Master。</p>
 <p>同时在S1、S2、S3上部署MSTP，创建Instance 1、2，将VLAN10映射到MSTI 1、VLAN20映射到MSTI 2，将S1配置为MSTI 1的主根桥、MSTI 2的备份根桥，而将S2配置为MSTI 1的备份根桥、MSTI 2的主根桥。</p>
-<p>VLANIF接口地址使用10.0.x.y/24，其中x为VRID组号，y为设备编号，VRIP使用10.0.x.254/24。</p>
+<p>VLANIF接口地址使用10.0.x.y&#x2F;24，其中x为VRID组号，y为设备编号，VRIP使用10.0.x.254&#x2F;24。</p>
 <p><img src="/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/vrrptuopu29210315.png" alt="vrrptuopu29210315"></p>
 <p>#创建VLAN</p>
 <p>[S1]vlan batch 10 20</p>
-<p>[S2]vlan batch 10 20</p>
-<p>[S3]vlan batch 10 20</p>
-<p>[S4]vlan batch 10 20</p>
+<p>[S2]vlan batch 10 20 </p>
+<p>[S3]vlan batch 10 20 </p>
+<p>[S4]vlan batch 10 20 </p>
 <p>#将所有互联接口配置为Trunk接口，放通对应VLAN</p>
 <p>略</p>
 <p>#修改STP模式为MSTP</p>
@@ -173,7 +173,7 @@
 <p>[S1]stp region-configuration</p>
 <p>[S1-mst-region] region-name hcip</p>
 <p>[S1-mst-region] revision-level 1</p>
-<p>[S1-mst-region] instance 1 vlan 10</p>
+<p>[S1-mst-region] instance 1 vlan 10 </p>
 <p>[S1-mst-region] instance 2 vlan 20</p>
 <p>[S1-mst-region] active region-configuration</p>
 <p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
@@ -181,24 +181,24 @@
 <p>[S2]stp region-configuration</p>
 <p>[S2-mst-region] region-name hcip</p>
 <p>[S2-mst-region] revision-level 1</p>
-<p>[S2-mst-region] instance 1 vlan 10</p>
-<p>[S2-mst-region] instance 2 vlan 20</p>
+<p>[S2-mst-region] instance 1 vlan 10 </p>
+<p>[S2-mst-region] instance 2 vlan 20 </p>
 <p>[S2-mst-region] active region-configuration</p>
 <p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
 <p>[S2-mst-region] quit</p>
 <p>[S3]stp region-configuration</p>
 <p>[S3-mst-region] region-name hcip</p>
 <p>[S3-mst-region] revision-level 1</p>
-<p>[S3-mst-region] instance 1 vlan 10</p>
-<p>[S3-mst-region] instance 2 vlan 20</p>
+<p>[S3-mst-region] instance 1 vlan 10 </p>
+<p>[S3-mst-region] instance 2 vlan 20 </p>
 <p>[S3-mst-region] active region-configuration</p>
 <p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
 <p>[S3-mst-region] quit</p>
 <p>#配置SW1为MSTI1的根桥、MSTI2的备份根桥</p>
-<p>[S1]stp instance 1 root primary</p>
+<p>[S1]stp instance 1 root primary </p>
 <p>[S1]stp instance 2 root secondary</p>
 <p>#配置SW2为MSTI2的根桥、MSTI1的备份根桥</p>
-<p>[S2]stp instance 1 root secondary</p>
+<p>[S2]stp instance 1 root secondary </p>
 <p>[S2]stp instance 2 root primary</p>
 <p>#在S1上查看MSTI1的状态和统计信息摘要</p>
 <p><img src="/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/shili1129211309.png" alt="shili1129211309"></p>
@@ -206,8 +206,7 @@
 <p>#在S2上查看MSTI2的状态和统计信息摘要</p>
 <p><img src="/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/shili229211338.png" alt="shili229211338"></p>
 <p>S2上所有接口都是指定接口，S2为MSTI1的根桥。</p>
-<h2 id="VRRP基础配置">VRRP基础配置</h2>
-<p>在S1、S2均创建VLANIF 10、20，分别加入VRRP组10、20，手动配置VRRP优先级，使得S1的VLAN10成为VRRP Master、S2的VLAN20成为VRRP Master。</p>
+<h2 id="VRRP基础配置"><a href="#VRRP基础配置" class="headerlink" title="VRRP基础配置"></a>VRRP基础配置</h2><p>在S1、S2均创建VLANIF 10、20，分别加入VRRP组10、20，手动配置VRRP优先级，使得S1的VLAN10成为VRRP Master、S2的VLAN20成为VRRP Master。</p>
 <p>#创建VLANIF</p>
 <p>[S1]interface Vlanif10</p>
 <p>[S1-Vlanif10] ip address 10.0.10.1 255.255.255.0</p>
@@ -241,8 +240,7 @@
 <p>配置VLAN20的VRRP优先级为120，VLAN10保持默认的100。</p>
 <p>#查看VRRP组状态</p>
 <p><img src="/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/chakanvrrp1914.png" alt="chakanvrrp1914"></p>
-<h2 id="配置VRRP与BFD联动进行快速切换">配置VRRP与BFD联动进行快速切换</h2>
-<p>在S1、S2上配置BFD单跳检测，检测VLANIF接口之间的连通性，将VRRP与BFD联动，当BFD会话状态Down时，增加VRRP Backup设备的优先级。</p>
+<h2 id="配置VRRP与BFD联动进行快速切换"><a href="#配置VRRP与BFD联动进行快速切换" class="headerlink" title="配置VRRP与BFD联动进行快速切换"></a>配置VRRP与BFD联动进行快速切换</h2><p>在S1、S2上配置BFD单跳检测，检测VLANIF接口之间的连通性，将VRRP与BFD联动，当BFD会话状态Down时，增加VRRP Backup设备的优先级。</p>
 <p>#在S1上配置BFD会话</p>
 <p>[S1]bfd</p>
 <p>[S1-bfd] quit</p>
@@ -289,15 +287,15 @@
 <p>[S2-Vlanif10] quit</p>
 <p>注意，此处的bfd-session号为本地的BFD discriminator，只需要在Backup状态的接口上配置联动，BFD会话Down时增加本地的VRRP优先级。</p>
 <p>#关闭S1上所有接口，模拟链路故障</p>
-<p>[S1]interface GigabitEthernet0/0/10</p>
-<p>[S1-GigabitEthernet0/0/10] shutdown</p>
-<p>[S1-GigabitEthernet0/0/10] quit</p>
-<p>[S1]interface GigabitEthernet0/0/11</p>
-<p>[S1-GigabitEthernet0/0/11] shutdown</p>
-<p>[S1-GigabitEthernet0/0/11] quit</p>
-<p>[S1]interface GigabitEthernet0/0/12</p>
-<p>[S1-GigabitEthernet0/0/12] shutdown</p>
-<p>[S1-GigabitEthernet0/0/12] quit</p>
+<p>[S1]interface GigabitEthernet0&#x2F;0&#x2F;10</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10] shutdown</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10] quit</p>
+<p>[S1]interface GigabitEthernet0&#x2F;0&#x2F;11</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11] shutdown</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11] quit</p>
+<p>[S1]interface GigabitEthernet0&#x2F;0&#x2F;12</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12] shutdown</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12] quit</p>
 <p>#在S2上查看BFD会话状态</p>
 <p><img src="/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/yichang13038.png" alt="yichang13038"></p>
 <p>此时两个BFD会话状态立马变为Down。</p>
