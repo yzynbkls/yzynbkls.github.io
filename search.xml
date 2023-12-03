@@ -1,119 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>BGP路由优选</title>
-    <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/</url>
-    <content><![CDATA[<h1 id="BGP路由优选"><a href="#BGP路由优选" class="headerlink" title="BGP路由优选"></a>BGP路由优选</h1><h2 id="实验背景"><a href="#实验背景" class="headerlink" title="实验背景"></a>实验背景</h2><p>你是公司的网络管理员。公司的网络采用了BGP协议接入了两个服务运营商。公司自己采用了私有的AS号64512，ISP1的AS号为100，ISP2的AS号为200。通过AS100、AS200都可以到达相同的网络，你通过改变BGP的各种属性达到了调整路由走向的目的。</p>
-<span id="more"></span>
-
-<p>实验介绍：</p>
-<p>设备互联方式、互联接口地址如图所示，所有设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号，所有设备都使用Loopback0地址作为BGP Router ID。</p>
-<p>R1在AS100，R5在AS200，R2、R3、R4在AS64512。AS64512内运行OSPF，在互联接口（不包括连接外部AS的接口）、Loopback0接口上激活OSPF。</p>
-<p>EBGP对等体关系基于直连接口建立，IBGP对等体关系基于Loopback0接口建立。</p>
-<p>R1、R5上存在相同的网段172.16.1.0&#x2F;24、172.16.2.0&#x2F;24、172.16.3.0&#x2F;24、172.16.4.0&#x2F;24，在R1、R5上将其发布到BGP，以用于BGP路由优选。</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/tuopu22sd182306.png" alt="tuopu22sd182306"></p>
-<p>配置ip，配置bgp：略</p>
-<p>#在R1、R5上将Loopback1、Loopback2、Loopback3、Loopback4接口路由发布到BGP中</p>
-<p>[R1]bgp 100</p>
-<p>[R1-bgp] network 172.16.1.0 24</p>
-<p>[R1-bgp] network 172.16.2.0 24</p>
-<p>[R1-bgp] network 172.16.3.0 24</p>
-<p>[R1-bgp] network 172.16.4.0 24</p>
-<p>[R5]bgp 200</p>
-<p>[R5-bgp] network 172.16.1.0 24</p>
-<p>[R5-bgp] network 172.16.2.0 24</p>
-<p>[R5-bgp] network 172.16.3.0 24</p>
-<p>[R5-bgp] network 172.16.4.0 24</p>
-<p>#在R3上查看BGP路由表，检查BGP路由是否成功学习</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/r3chakandp128185306.png" alt="r3chakandp128185306"></p>
-<p>R3已经成功学习R1、R5发布的路由，此时所有路由都优选由R2通告的。</p>
-<h2 id="修改AS-Path属性"><a href="#修改AS-Path属性" class="headerlink" title="修改AS_Path属性"></a>修改AS_Path属性</h2><p>在R1上通过路由策略修改BGP路由172.16.1.0&#x2F;24的 AS_Path属性值，使得R3优选R5发布的BGP路由172.16.1.0&#x2F;24。</p>
-<p>#创建IP前缀列表1，匹配Loopback1接口路由</p>
-<p>[R1]ip ip-prefix 1 permit 172.16.1.0 24 greater-equal 24 less-equal 24</p>
-<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改AS_Path属性值</p>
-<p>[R1]route-policy hcip permit node 10</p>
-<p>[R1-route-policy] if-match ip-prefix 1</p>
-<p>[R1-route-policy] apply as-path 300 400 additive</p>
-<p>[R1-route-policy] quit</p>
-<p>[R1]route-policy hcip permit node 20</p>
-<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
-<p>#对向BGP对等体R2通告的BGP路由应用Route-Policy</p>
-<p>[R1]bgp 100</p>
-<p>[R1-bgp] peer 10.0.12.2 route-policy hcip export</p>
-<p>#在R1上触发出方向的软复位，刷新对外通告的BGP路由</p>
-<p><R1>refresh bgp all export</R1></p>
-<p>#在R3上查看BGP路由172.16.1.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/as5cs28190005.png" alt="as5cs28190005"></p>
-<p>此时R3优选R4通告的BGP路由172.16.1.0&#x2F;24，R2通告的未被优选的原因是AS_Path长度。</p>
-<h2 id="修改Local-Preference属性"><a href="#修改Local-Preference属性" class="headerlink" title="修改Local_Preference属性"></a>修改Local_Preference属性</h2><p>local_Preference：默认100，越大越优先，只能在ibgp对等体之间传递</p>
-<p>在R4上通过路由策略修改BGP路由172.16.2.0&#x2F;24的Local_Preference属性值，使得R3优选R4通告的BGP路由172.16.2.0&#x2F;24。</p>
-<p>#创建IP前缀列表1，匹配BGP路由172.16.2.0&#x2F;24</p>
-<p>[R4]ip ip-prefix 1 permit 172.16.2.0 24 greater-equal 24 less-equal 24</p>
-<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改Local_Preference属性值</p>
-<p>[R4]route-policy hcip permit node 10</p>
-<p>[R4-route-policy] if-match ip-prefix 1</p>
-<p>[R4-route-policy] apply local-preference 200</p>
-<p>[R4-route-policy] quit</p>
-<p>[R4]route-policy hcip permit node 20</p>
-<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
-<p>#对向BGP对等体R3通告的BGP路由应用Route-Policy</p>
-<p>[R4]bgp 64512</p>
-<p>[R4-bgp] peer 10.0.3.3 route-policy hcip export</p>
-<p>#在R4上触发出方向的软复位，刷新对外通告的BGP路由</p>
-<p><R4>refresh bgp all export</R4></p>
-<p>#在R3上查看BGP路由172.16.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/local55chakan192014.png" alt="local55chakan192014"></p>
-<p>此时R3优选R4通告的BGP路由172.16.2.0&#x2F;24，R2通告的BGP路由其Local_Preference值为100，小于R3通告的BGP路由Local_Preference值200，因此R2通告的BGP路由未被优选。</p>
-<h2 id="修改MED属性"><a href="#修改MED属性" class="headerlink" title="修改MED属性"></a>修改MED属性</h2><p>在R2上通过路由策略修改BGP路由172.16.3.0&#x2F;24的MED属性值，使得R3优选R5发布的BGP路由172.16.3.0&#x2F;24。</p>
-<p>#创建IP前缀列表1，匹配BGP路由172.16.3.0&#x2F;24</p>
-<p>[R2]ip ip-prefix 1 permit 172.16.3.0 24 greater-equal 24 less-equal 24</p>
-<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改MED属性值</p>
-<p>[R2]route-policy hcip permit node 10</p>
-<p>[R2-route-policy] if-match ip-prefix 1</p>
-<p>[R2-route-policy] apply cost 200</p>
-<p>[R2-route-policy] quit</p>
-<p>[R2]route-policy hcip permit node 20</p>
-<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
-<p>#对来自BGP对等体R1的BGP路由应用Route-Policy</p>
-<p>[R2]bgp 64512</p>
-<p>[R2-bgp] peer 10.0.12.1 route-policy hcip import</p>
-<p>#在R2上触发入方向的软复位，刷新接收到的BGP路由</p>
-<p><R2>refresh bgp all import</R2></p>
-<p>#在R3上配置允许比较来自不同AS的BGP路由的MED值</p>
-<p>[R3]bgp 64512</p>
-<p>[R3-bgp] compare-different-as-med  </p>
-<p>缺省情况下，不比较来自不同AS邻居的BGP的MED属性值。</p>
-<p>#在R3上查看BGP路由172.16.3.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/medchakanf2735.png" alt="medchakanf2735"></p>
-<p>R2通告的BGP路由172.16.3.0&#x2F;24其MED值为200，而R4通告BGP路由MED值为0，R3优选MED值较小的BGP路由，因此R2通告的BGP路由未被优选。</p>
-<h2 id="修改preferred-value属性"><a href="#修改preferred-value属性" class="headerlink" title="修改preferred-value属性"></a>修改preferred-value属性</h2><p>preferred-value：华为特有的属性值，仅在本地有效，当bgp存在到相同的路由时，将优选prefeerred-value大的路由。只能在路由器本地配置，只影响本设备的路由优选，不会传递给任何bgp对等体。</p>
-<p>在R3上通过路由策略修改BGP路由172.16.4.0&#x2F;24的preferred-value属性值，使得R3优选R4通告的BGP路由172.16.4.0&#x2F;24。</p>
-<p>#创建IP前缀列表1，匹配BGP路由172.16.4.0&#x2F;24</p>
-<p>[R3]ip ip-prefix 1 permit 172.16.4.0 24 greater-equal 24 less-equal 24</p>
-<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改preferred-value属性值</p>
-<p>[R3]route-policy hcip permit node 10</p>
-<p>[R3-route-policy] if-match ip-prefix 1</p>
-<p>[R3-route-policy] apply preferred-value 300</p>
-<p>[R3-route-policy] quit</p>
-<p>[R3]route-policy hcip permit node 20</p>
-<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
-<p>#对来自BGP对等体R4的BGP路由应用Route-Policy</p>
-<p>[R3]bgp 64512</p>
-<p>[R3-bgp] peer 10.0.4.4 route-policy hcip import</p>
-<p>#在R3上触发入方向的软复位，刷新收到的BGP路由</p>
-<p><R3>refresh bgp all import</R3></p>
-<p>#在R3上查看BGP路由172.16.4.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/prexiiuhai8193458.png" alt="prexiiuhai8193458"></p>
-<p>R4通告的BGP路由172.16.3.0&#x2F;24其preferred-value值为300，而R2通告的preferred-value值为0，R3优选preferred-value值较大的BGP路由，因此R3优选R4通告的BGP路由。</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>BGP路由优选</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>BGP实验</title>
     <url>/2023/11/28/BGP%E5%AE%9E%E9%AA%8C/</url>
     <content><![CDATA[<h1 id="BGP基础实验"><a href="#BGP基础实验" class="headerlink" title="BGP基础实验"></a>BGP基础实验</h1><p>设备连接方式、IP地址规划、BGP AS号如图所示，所有设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号，所有设备都使用Loopback0接口IP地址作为BGP Router ID。R1、R5上存在Loopback1模拟用户网段。</p>
@@ -285,6 +172,119 @@
       </tags>
   </entry>
   <entry>
+    <title>BGP路由优选</title>
+    <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/</url>
+    <content><![CDATA[<h1 id="BGP路由优选"><a href="#BGP路由优选" class="headerlink" title="BGP路由优选"></a>BGP路由优选</h1><h2 id="实验背景"><a href="#实验背景" class="headerlink" title="实验背景"></a>实验背景</h2><p>你是公司的网络管理员。公司的网络采用了BGP协议接入了两个服务运营商。公司自己采用了私有的AS号64512，ISP1的AS号为100，ISP2的AS号为200。通过AS100、AS200都可以到达相同的网络，你通过改变BGP的各种属性达到了调整路由走向的目的。</p>
+<span id="more"></span>
+
+<p>实验介绍：</p>
+<p>设备互联方式、互联接口地址如图所示，所有设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号，所有设备都使用Loopback0地址作为BGP Router ID。</p>
+<p>R1在AS100，R5在AS200，R2、R3、R4在AS64512。AS64512内运行OSPF，在互联接口（不包括连接外部AS的接口）、Loopback0接口上激活OSPF。</p>
+<p>EBGP对等体关系基于直连接口建立，IBGP对等体关系基于Loopback0接口建立。</p>
+<p>R1、R5上存在相同的网段172.16.1.0&#x2F;24、172.16.2.0&#x2F;24、172.16.3.0&#x2F;24、172.16.4.0&#x2F;24，在R1、R5上将其发布到BGP，以用于BGP路由优选。</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/tuopu22sd182306.png" alt="tuopu22sd182306"></p>
+<p>配置ip，配置bgp：略</p>
+<p>#在R1、R5上将Loopback1、Loopback2、Loopback3、Loopback4接口路由发布到BGP中</p>
+<p>[R1]bgp 100</p>
+<p>[R1-bgp] network 172.16.1.0 24</p>
+<p>[R1-bgp] network 172.16.2.0 24</p>
+<p>[R1-bgp] network 172.16.3.0 24</p>
+<p>[R1-bgp] network 172.16.4.0 24</p>
+<p>[R5]bgp 200</p>
+<p>[R5-bgp] network 172.16.1.0 24</p>
+<p>[R5-bgp] network 172.16.2.0 24</p>
+<p>[R5-bgp] network 172.16.3.0 24</p>
+<p>[R5-bgp] network 172.16.4.0 24</p>
+<p>#在R3上查看BGP路由表，检查BGP路由是否成功学习</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/r3chakandp128185306.png" alt="r3chakandp128185306"></p>
+<p>R3已经成功学习R1、R5发布的路由，此时所有路由都优选由R2通告的。</p>
+<h2 id="修改AS-Path属性"><a href="#修改AS-Path属性" class="headerlink" title="修改AS_Path属性"></a>修改AS_Path属性</h2><p>在R1上通过路由策略修改BGP路由172.16.1.0&#x2F;24的 AS_Path属性值，使得R3优选R5发布的BGP路由172.16.1.0&#x2F;24。</p>
+<p>#创建IP前缀列表1，匹配Loopback1接口路由</p>
+<p>[R1]ip ip-prefix 1 permit 172.16.1.0 24 greater-equal 24 less-equal 24</p>
+<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改AS_Path属性值</p>
+<p>[R1]route-policy hcip permit node 10</p>
+<p>[R1-route-policy] if-match ip-prefix 1</p>
+<p>[R1-route-policy] apply as-path 300 400 additive</p>
+<p>[R1-route-policy] quit</p>
+<p>[R1]route-policy hcip permit node 20</p>
+<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
+<p>#对向BGP对等体R2通告的BGP路由应用Route-Policy</p>
+<p>[R1]bgp 100</p>
+<p>[R1-bgp] peer 10.0.12.2 route-policy hcip export</p>
+<p>#在R1上触发出方向的软复位，刷新对外通告的BGP路由</p>
+<p><R1>refresh bgp all export</R1></p>
+<p>#在R3上查看BGP路由172.16.1.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/as5cs28190005.png" alt="as5cs28190005"></p>
+<p>此时R3优选R4通告的BGP路由172.16.1.0&#x2F;24，R2通告的未被优选的原因是AS_Path长度。</p>
+<h2 id="修改Local-Preference属性"><a href="#修改Local-Preference属性" class="headerlink" title="修改Local_Preference属性"></a>修改Local_Preference属性</h2><p>local_Preference：默认100，越大越优先，只能在ibgp对等体之间传递</p>
+<p>在R4上通过路由策略修改BGP路由172.16.2.0&#x2F;24的Local_Preference属性值，使得R3优选R4通告的BGP路由172.16.2.0&#x2F;24。</p>
+<p>#创建IP前缀列表1，匹配BGP路由172.16.2.0&#x2F;24</p>
+<p>[R4]ip ip-prefix 1 permit 172.16.2.0 24 greater-equal 24 less-equal 24</p>
+<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改Local_Preference属性值</p>
+<p>[R4]route-policy hcip permit node 10</p>
+<p>[R4-route-policy] if-match ip-prefix 1</p>
+<p>[R4-route-policy] apply local-preference 200</p>
+<p>[R4-route-policy] quit</p>
+<p>[R4]route-policy hcip permit node 20</p>
+<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
+<p>#对向BGP对等体R3通告的BGP路由应用Route-Policy</p>
+<p>[R4]bgp 64512</p>
+<p>[R4-bgp] peer 10.0.3.3 route-policy hcip export</p>
+<p>#在R4上触发出方向的软复位，刷新对外通告的BGP路由</p>
+<p><R4>refresh bgp all export</R4></p>
+<p>#在R3上查看BGP路由172.16.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/local55chakan192014.png" alt="local55chakan192014"></p>
+<p>此时R3优选R4通告的BGP路由172.16.2.0&#x2F;24，R2通告的BGP路由其Local_Preference值为100，小于R3通告的BGP路由Local_Preference值200，因此R2通告的BGP路由未被优选。</p>
+<h2 id="修改MED属性"><a href="#修改MED属性" class="headerlink" title="修改MED属性"></a>修改MED属性</h2><p>在R2上通过路由策略修改BGP路由172.16.3.0&#x2F;24的MED属性值，使得R3优选R5发布的BGP路由172.16.3.0&#x2F;24。</p>
+<p>#创建IP前缀列表1，匹配BGP路由172.16.3.0&#x2F;24</p>
+<p>[R2]ip ip-prefix 1 permit 172.16.3.0 24 greater-equal 24 less-equal 24</p>
+<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改MED属性值</p>
+<p>[R2]route-policy hcip permit node 10</p>
+<p>[R2-route-policy] if-match ip-prefix 1</p>
+<p>[R2-route-policy] apply cost 200</p>
+<p>[R2-route-policy] quit</p>
+<p>[R2]route-policy hcip permit node 20</p>
+<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
+<p>#对来自BGP对等体R1的BGP路由应用Route-Policy</p>
+<p>[R2]bgp 64512</p>
+<p>[R2-bgp] peer 10.0.12.1 route-policy hcip import</p>
+<p>#在R2上触发入方向的软复位，刷新接收到的BGP路由</p>
+<p><R2>refresh bgp all import</R2></p>
+<p>#在R3上配置允许比较来自不同AS的BGP路由的MED值</p>
+<p>[R3]bgp 64512</p>
+<p>[R3-bgp] compare-different-as-med  </p>
+<p>缺省情况下，不比较来自不同AS邻居的BGP的MED属性值。</p>
+<p>#在R3上查看BGP路由172.16.3.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/medchakanf2735.png" alt="medchakanf2735"></p>
+<p>R2通告的BGP路由172.16.3.0&#x2F;24其MED值为200，而R4通告BGP路由MED值为0，R3优选MED值较小的BGP路由，因此R2通告的BGP路由未被优选。</p>
+<h2 id="修改preferred-value属性"><a href="#修改preferred-value属性" class="headerlink" title="修改preferred-value属性"></a>修改preferred-value属性</h2><p>preferred-value：华为特有的属性值，仅在本地有效，当bgp存在到相同的路由时，将优选prefeerred-value大的路由。只能在路由器本地配置，只影响本设备的路由优选，不会传递给任何bgp对等体。</p>
+<p>在R3上通过路由策略修改BGP路由172.16.4.0&#x2F;24的preferred-value属性值，使得R3优选R4通告的BGP路由172.16.4.0&#x2F;24。</p>
+<p>#创建IP前缀列表1，匹配BGP路由172.16.4.0&#x2F;24</p>
+<p>[R3]ip ip-prefix 1 permit 172.16.4.0 24 greater-equal 24 less-equal 24</p>
+<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改preferred-value属性值</p>
+<p>[R3]route-policy hcip permit node 10</p>
+<p>[R3-route-policy] if-match ip-prefix 1</p>
+<p>[R3-route-policy] apply preferred-value 300</p>
+<p>[R3-route-policy] quit</p>
+<p>[R3]route-policy hcip permit node 20</p>
+<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
+<p>#对来自BGP对等体R4的BGP路由应用Route-Policy</p>
+<p>[R3]bgp 64512</p>
+<p>[R3-bgp] peer 10.0.4.4 route-policy hcip import</p>
+<p>#在R3上触发入方向的软复位，刷新收到的BGP路由</p>
+<p><R3>refresh bgp all import</R3></p>
+<p>#在R3上查看BGP路由172.16.4.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/prexiiuhai8193458.png" alt="prexiiuhai8193458"></p>
+<p>R4通告的BGP路由172.16.3.0&#x2F;24其preferred-value值为300，而R2通告的preferred-value值为0，R3优选preferred-value值较大的BGP路由，因此R3优选R4通告的BGP路由。</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>BGP路由优选</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>BGP路由反射器</title>
     <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/</url>
     <content><![CDATA[<h1 id="BGP路由反射器"><a href="#BGP路由反射器" class="headerlink" title="BGP路由反射器"></a>BGP路由反射器</h1><p>由于水平分割的原因，为了保证AS内所有的BGP路由器都能学习到完整的BGP路由，就必须在AS内实现IBGP全互联。</p>
@@ -379,10 +379,146 @@
     <content><![CDATA[<p> DHCP是一种终端自动配置协议，客户端通过DHCP协议可获取一个合法的动态IP地址。</p>
 <span id="more"></span>
 
-<h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><p>随着网络规模的扩大和网络复杂度的提高，网络配置越来越复杂，经常出现计算机位置变化（如便携机或无线网络）和计算机数量超过可分配的IP地址的情况。动态主机配置协议DHCP（Dynamic Host Configuration Protocol）就是为满足这些需求而发展起来的。DHCP协议以服务器&#x2F;客户端（Server&#x2F;Client）模式工作，DHCP客户端向DHCP服务器动态地请求配置信息，DHCP服务器可以很方便地为客户端动态发送配置信息。</p>
+<h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>随着网络规模的扩大和网络复杂度的提高，网络配置越来越复杂，经常出现计算机位置变化（如便携机或无线网络）和计算机数量超过可分配的IP地址的情况。动态主机配置协议DHCP（Dynamic Host Configuration Protocol）就是为满足这些需求而发展起来的。DHCP协议以服务器&#x2F;客户端（Server&#x2F;Client）模式工作，DHCP客户端向DHCP服务器动态地请求配置信息，DHCP服务器可以很方便地为客户端动态发送配置信息。</p>
 <h3 id="DHCP服务器"><a href="#DHCP服务器" class="headerlink" title="DHCP服务器"></a>DHCP服务器</h3><p>DHCP Server即DHCP服务器，负责客户端IP地址的分配。客户端向服务器发送配置申请报文（包括IP地址、子网掩码、缺省网关等参数），服务器根据策略返回携带相应配置信息的报文，请求报文和回应报文都采用UDP进行封装。</p>
 <h3 id="DHCP中继"><a href="#DHCP中继" class="headerlink" title="DHCP中继"></a>DHCP中继</h3><p>DHCP Relay即DHCP中继，它是为解决服务器和客户端不在同一个网段而提出来的，它提供了对DHCP广播报文的透明传输功能，能够把DHCP客户端的广播报文透明地传送到其它网段的DHCP服务器上，同样能够把DHCP服务器端的广播报文透明地传送到其它网段的DHCP客户端。</p>
-<h1 id="DHCP基础配置"><a href="#DHCP基础配置" class="headerlink" title="DHCP基础配置"></a>DHCP基础配置</h1><p><img src="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/dhcpzz111.png" alt="dhcpzz111">交换机4上有多个vlan，交换机1模拟dhcp服务器实现为多个vlan分配地址，交换机3作为dhcp终极连接服务器和客户端</p>
+<h2 id="基本命令"><a href="#基本命令" class="headerlink" title="基本命令"></a>基本命令</h2><p>基本命令<br><strong>pc：</strong></p>
+<p>ipconfig &#x2F;release—释放ip地址<br>ipconfig &#x2F;renew—重新获取ip</p>
+<p><strong>将DHCP转化为固定的地址：</strong></p>
+<p>ip pool 名字—进入地址池<br>staic-bind ip-address 要分配的固定ip mac-address 目标的mac地址—添加固定地址到pc端<br>lease day &lt;0-999&gt;—修改租期（不建议修改）</p>
+<p>将部分ip地址排除地址池，用于静态路由配置</p>
+<p>ip pool 名字—进入地址池<br>excluded-ip-address 192.168.1.1 192.168.1.50—把1.1到1.50的地址排除出地址池不使用</p>
+<p><strong>重置与查看地址池</strong></p>
+<p>reset ip pool name 名字—重置ip配置<br>dis ip pool name 名字—查看指定地址池<br>dis ip pool—查看地址池<br>dis ip pool 名字 used—查看使用情况</p>
+<p><strong>配置global全局模式</strong></p>
+<p>先配置物理接口</p>
+<p>interface 接口号—进入物理接口<br>ip address ip地址—配置物理接口IP</p>
+<p>DHCP enable—开启DHCP功能<br>ip pool 名字—创建一个ip地址池（有几个网段就建几个池）<br>network 192.168.1.0 mask 24—给ip地址池添加一个网段<br>gateway-list 192.168.1.1—设置192.168.1.1这个ip地址为网关<br>dns-list 8.8.8.8 192.168.1.1—配置DNS为8.8.8.8（前面的优先）<br>interface ip地址—进入物理接口<br>dhcp select global—给接口配置全局模式</p>
+<p>将pc更改为DHCP获取IP方式，就可以自动分配ip地址了</p>
+<p><strong>interface配置方式</strong><br>基于接口的DHCP的配置方式：<br>配置物理接口的ip网关：</p>
+<p>interface 接口号—进入接口<br>ip address IP网关—配置网关</p>
+<p>dhcp enable—开启服务<br>dhcp select interface—选择interface这个配置方式<br>dhcp server dns-list 8.8.8.8-–配置DNS服务</p>
+<p>注意：这种配置方式分配的ip地址网段，是该接口所在的网段的ip地址，网关就是这个接口的ip地址</p>
+<p><strong>relay（中继）配置方式</strong></p>
+<p>用于在服务器上做配置，路由器进行转发，减少负载量，可以对整个网络体系进行配置<br>首先要实现服务器与个网段互通<br>在服务器的配置：</p>
+<p>服务器物理接口配置ip<br>ip route-static 0.0.0.0 0 下一跳的ip—服务器配置缺省路由保证互通<br>dhcp enable—在服务器开启dhcp功能<br>ip pool 名字—创建ip地址池（需要几个网段就创建几个地址池）<br>network 192.168.1.0 mask 24—创建网段<br>gateway-list 192.168.1.1—创建网关<br>dns-list 8.8.8.8—创建dns<br>interface 物理接口—进入物理接口<br>dhcp select global—选择全局配置模式</p>
+<p><strong>在路由器&#x2F;核心交换机上的配置</strong></p>
+<p>dhcp enable—开启dhcp功能<br>interface 接口号—进入接口 （需要几个网段就分别进入配置）<br>dhcp select relay—开启中继模式<br>dhcp relay server-ip 服务器物理ip—选择中继分配的接口</p>
+<h1 id="基本实验"><a href="#基本实验" class="headerlink" title="基本实验"></a>基本实验</h1><p><img src="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/newtu222.png" alt="newtu222"></p>
+<ol>
+<li>R1和R3模拟客户端，作为DHCP Client。</li>
+<li>R2作为DHCP Server为R1和R3分配IP地址。</li>
+</ol>
+<p>动态主机配置协议DHCP（Dynamic Host Configuration Protocol）是一种用于集中对用户IP地址进行动态管理和配置的技术。即使规模较小的网络，通过DHCP也可以使后续增加网络设备变得简单快捷。</p>
+<p>DHCP协议由RFC 2131定义，采用客户端&#x2F;服务器通信模式，由客户端（DHCP Client）向服务器（DHCP Server）提出配置申请，服务器返回为客户端分配的配置信息。</p>
+<p>DHCP可以提供两种地址分配机制，网络管理员可以根据网络需求为不同的主机选择不同的分配策略。</p>
+<p>• 动态分配机制：通过DHCP为主机分配一个有使用期限（这个使用期限通常叫做租期）的IP地址。这种分配机制适用于主机需要临时接入网络或者空闲地址数小于网络主机总数且主机不需要永久连接网络的场景。</p>
+<p>• 静态分配机制：网络管理员通过DHCP为指定的主机分配固定的IP地址。相比手工静态配置IP地址，通过DHCP方式静态分配机制避免人工配置发生错误，方便管理员统一维护管理。</p>
+<p>配置R2 ip：略</p>
+<h2 id="开启DHCP功能"><a href="#开启DHCP功能" class="headerlink" title="开启DHCP功能"></a>开启DHCP功能</h2><p>[R1]dhcp enable </p>
+<p>Info: The operation may take a few seconds. Please wait for a moment.done.</p>
+<p><strong>dhcp enable</strong>命令是DHCP相关功能的总开关，DHCP Client和DHCP Server等功能都要在执行dhcp enable命令使能DHCP功能后才会生效。</p>
+<p>[R2]dhcp enable </p>
+<p>Info: The operation may take a few seconds. Please wait for a moment.done.</p>
+<p>[R3]dhcp enable </p>
+<p>Info: The operation may take a few seconds. Please wait for a moment.done.</p>
+<h2 id="配置地址池"><a href="#配置地址池" class="headerlink" title="配置地址池"></a>配置地址池</h2><p># 配置R2的GigabitEthernet 0&#x2F;0&#x2F;0的接口地址池，为R1分配IP地址 </p>
+<p>[R2]interface GigabitEthernet 0&#x2F;0&#x2F;0</p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;0]dhcp select interface </p>
+<p><strong>dhcp select interface</strong>命令用来开启接口采用接口地址池的DHCP Server功能。若不执行此命令，则无法配置接口地址池的相关参数。</p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;0]dhcp server dns-list 10.0.12.2 </p>
+<p><strong>dhcp server dns-list</strong>命令用来指定接口地址池下的DNS服务器地址。最多可以配置8个DNS Server的IP地址，用空格分隔。</p>
+<p># 配置全局地址池 </p>
+<p>[R2]ip pool GlobalPool</p>
+<p>Info: It’s successful to create an IP address pool.</p>
+<p><em>创建名<strong>为</strong>G**lobalPool的地址池</em></p>
+<p>[R2-ip-pool-GlobalPool]network 10.0.23.0 mask 24 </p>
+<p><strong>network</strong>命令用来配置全局地址池下可分配的网段地址。</p>
+<p>[R2-ip-pool-GlobalPool]dns-list 10.0.23.2 </p>
+<p>[R2-ip-pool-GlobalPool]gateway-list 10.0.23.2 </p>
+<p><strong>gateway-list</strong>命令用来为DHCP Client配置出口网关地址。R3在获取地址之后，会生成一条默认路由，下一跳地址为10.0.23.2。</p>
+<p>[R2-ip-pool-GlobalPool]lease day 2 hour 2 </p>
+<p><strong>lease</strong>命令用来配置地址池下的地址租期。当租约被设置为<strong>unlimited</strong>时，代表租期无限制。缺省情况下，IP地址租期是1天。</p>
+<p>[R2-ip-pool-GlobalPool]static-bind ip-address 10.0.23.3 mac-address 00e0-fc6f-6d1f</p>
+<p><strong>static-bind</strong>命令用来将DHCP Server全局地址池下的IP地址与MAC地址进行绑定。00e0-fc6f-6d1f为当前实验环境下R3的GigabitEthernet0&#x2F;0&#x2F;0接口的MAC地址，可以在R3上通过命令“display interface GigabitEthernet0&#x2F;0&#x2F;0”来查看接口的MAC地址。配置完这条命令之后，R3会获得固定的IP–10.0.23.3。</p>
+<p>[R2-ip-pool-GlobalPool]quit</p>
+<p>#开启R2 GigabitEthernet 0&#x2F;0&#x2F;1接口的DHCP Server功能，为R3分配IP地址  </p>
+<p>[R2]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;1]dhcp select global</p>
+<p><strong>dhcp select global</strong>命令用来开启接口采用全局地址池的DHCP Server功能。当接口收到DHCP Client请求之后，会到所有全局地址池中查找对应的地址池，然后分配可用的地址给DHCP Client。</p>
+<h2 id="配置DHCP-Client"><a href="#配置DHCP-Client" class="headerlink" title="配置DHCP Client"></a>配置DHCP Client</h2><p>[R1]interface GigabitEthernet 0&#x2F;0&#x2F;0</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;0] ip address dhcp-alloc</p>
+<p>[R3]interface GigabitEthernet 0&#x2F;0&#x2F;0</p>
+<p>[R3-GigabitEthernet0&#x2F;0&#x2F;0] ip address dhcp-alloc</p>
+<h2 id="结果验证"><a href="#结果验证" class="headerlink" title="结果验证"></a>结果验证</h2><h5 id="查看R1和R3的地址及路由等信息"><a href="#查看R1和R3的地址及路由等信息" class="headerlink" title="查看R1和R3的地址及路由等信息"></a>查看R1和R3的地址及路由等信息</h5><p>[R1]display ip interface brief </p>
+<p>Interface             	IP Address&#x2F;Mask    Physical  	Protocol  </p>
+<p>GigabitEthernet0&#x2F;0&#x2F;0       	<strong>10.0.12.254&#x2F;24</strong>    	up     up     </p>
+<p> <em>仅保留<strong>关键信息，可</strong>以<strong>看到</strong>R1已经<strong>获取到了</strong>IP地址**。</em></p>
+<p>[R1]display dns server </p>
+<p>Type:</p>
+<p>D:Dynamic   S:Static</p>
+<p>No.  Type   IP Address</p>
+<p>1   D   	10.0.12.2 </p>
+<p><em>仅保留<strong>关键信息，可</strong>以<strong>看到</strong>R1已经<strong>获取到了DNS</strong>地址**。</em></p>
+<p>[R1]display ip routing-table </p>
+<p>Destination&#x2F;Mask   Proto  	Pre  Cost  	Flags 	NextHop     Interface</p>
+<p>   0.0.0.0&#x2F;0  		<strong>Unr</strong>   60  0    D  		10.0.12.2    GigabitEthernet0&#x2F;0&#x2F;0</p>
+<p><em>仅保留<strong>关键信息，可</strong>以<strong>看到</strong>R1已经<strong>获取到了</strong>默认路由**。</em></p>
+<p>[R3]display ip interface brief </p>
+<p>Interface            	IP Address&#x2F;Mask    Physical 	Protocol  </p>
+<p>GigabitEthernet0&#x2F;0&#x2F;0       	<strong>10.0.23.3&#x2F;24</strong>     	up    up     </p>
+<p><em>仅保留<strong>关键信息，可</strong>以<strong>看到</strong>R3已经<strong>获取到了</strong>固定<strong>的</strong>IP地址**。</em></p>
+<p>[R3]display dns server </p>
+<p>Type:</p>
+<p>D:Dynamic   S:Static</p>
+<p>No.  Type   IP Address</p>
+<p>1   D    2.23.0.10</p>
+<p><em>仅保留<strong>关键信息，可</strong>以<strong>看到</strong>R<strong>3</strong>已经<strong>获取到了DNS</strong>地址**。</em></p>
+<p>[R3]display ip routing-table </p>
+<p>Route Flags: R - relay, D - download to fib</p>
+<p>-—————————————————————————–</p>
+<p>Routing Tables: Public</p>
+<p>​     Destinations : 8     Routes : 8     </p>
+<p>Destination&#x2F;Mask   Proto  	Pre  Cost  Flags 	NextHop   	Interface</p>
+<p>   0.0.0.0&#x2F;0    Unr   	60  0   D  		10.0.23.2  	GigabitEthernet0&#x2F;0&#x2F;0</p>
+<p><em>仅保留<strong>关键信息，可</strong>以<strong>看到</strong>R3已经<strong>获取到了</strong>默认路由**。</em></p>
+<h5 id="2、查看R2上的地址分配情况"><a href="#2、查看R2上的地址分配情况" class="headerlink" title="2、查看R2上的地址分配情况"></a>2、查看R2上的地址分配情况</h5><p>[R2]display ip pool name GlobalPool </p>
+<p> Pool-name    : GlobalPool</p>
+<p> Pool-No     : 1</p>
+<p> Lease      : <strong>2 Days 2 Hours 0 Minutes</strong></p>
+<p> Domain-name   : -</p>
+<p> DNS-server0   	: 10.0.23.2    </p>
+<p> NBNS-server0  	: -        </p>
+<p> Netbios-type  		: -        </p>
+<p> Position    		: Local      Status      : Unlocked</p>
+<p> Gateway-0    : <strong>10.0.23.2</strong>    </p>
+<p> Mask      	: <strong>255.255.255.0</strong></p>
+<p> VPN instance  		: –</p>
+<p> -—————————————————————————-</p>
+<p>​     Start      End   Total  Used  Idle(Expired)  Conflict  Disable</p>
+<p> -—————————————————————————-</p>
+<p>​    10.0.23.1   10.0.23.254  253   <strong>1</strong>     252(0)     0     0</p>
+<p> -—————————————————————————-</p>
+<p><strong>display ip pool</strong>命令用来查看已配置的IP地址池信息。包括地址池的名称、租期、锁定状态、地址池中IP地址的状态等。</p>
+<p>[R2]display ip pool interface GigabitEthernet0&#x2F;0&#x2F;1 </p>
+<p> Pool-name    : <strong>GigabitEthernet****0&#x2F;0&#x2F;1</strong></p>
+<p> Pool-No     : 0</p>
+<p> Lease      : <strong>1 Days 0 Hours 0 Minutes</strong></p>
+<p> Domain-name   : -</p>
+<p> DNS-server0   	: <strong>10.0.12.2</strong>    </p>
+<p> NBNS-server0  	: -        </p>
+<p> Netbios-type  		: -        </p>
+<p> Position    	: Interface    Status      : Unlocked</p>
+<p> Gateway-0    : <strong>10.0.12.2</strong>    </p>
+<p> Mask      	: 255.255.255.0</p>
+<p> VPN instance  		: –</p>
+<p> -—————————————————————————-</p>
+<p>​     Start  		End   		Total  Used  	Idle(Expired)  Conflict  Disable</p>
+<p> -—————————————————————————-</p>
+<p>​    10.0.12.1   	10.0.12.254  	253   <strong>1</strong>     252(0)     0     0</p>
+<p> -—————————————————————————-</p>
+<p>当配置接口地址池时，地址池的名称为接口的名称。分配的网关地址为该接口的IP地址，且无法修改。</p>
+<h1 id="中继实验"><a href="#中继实验" class="headerlink" title="中继实验"></a>中继实验</h1><p><img src="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/dhcpzz111.png" alt="dhcpzz111">交换机4上有多个vlan，交换机1模拟dhcp服务器实现为多个vlan分配地址，交换机3作为dhcp终极连接服务器和客户端</p>
 <h2 id="实验步骤"><a href="#实验步骤" class="headerlink" title="实验步骤"></a>实验步骤</h2><h3 id="创建VLAN"><a href="#创建VLAN" class="headerlink" title="创建VLAN"></a>创建VLAN</h3><p>[S1]vlan 40</p>
 <p>[S3]vlan batch 10 20 30 40</p>
 <p>[S4]vlan batch 10 20 30</p>
@@ -674,71 +810,6 @@
       </tags>
   </entry>
   <entry>
-    <title>nat实验</title>
-    <url>/2023/11/25/nat%E5%AE%9E%E9%AA%8C/</url>
-    <content><![CDATA[<h1 id="静态nat"><a href="#静态nat" class="headerlink" title="静态nat"></a>静态nat</h1><p>静态NAT实现了私有地址和公有地址的一对一映射。如果希望一台主机优先使用某个关联地址，或者想要外部网络使用一个指定的公网地址访问内部服务器时，可以使用静态NAT。但是在大型网络中，这种一对一的IP地址映射无法缓解公用地址短缺的问题。</p>
-<span id="more"></span>
-
-<p>静态NAT实现了私有地址和共有地址一对一的映射（一个私有地址对应一个共有地址），并没有做到缓解地址短缺的问题，只是做到了地址转换。</p>
-<p>一个公网地址只会分配给唯一且固定的内网地址</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingttuopu4509.png" alt="jingttuopu4509"></p>
-<p>如图配置ip地址和网关</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingta15204327.png" alt="jingta15204327"></p>
-<p>r1上配置静态nat（注意是在公网的接口上，出接口）</p>
-<p>注意配置一条静态路由，不然没有路由的下一跳会被丢弃</p>
-<p>在r1上查看nat映射关系：dis nat static</p>
-<p>验证一下：<img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingtainatjg25204222.png" alt="jingtainatjg25204222"></p>
-<p>发现去往2.2.2.2的源地址变为2.2.2.3，说明nat完成转换。</p>
-<p>静态nat两种配置方式：</p>
-<p>1.接口下（上述实验采用这种方式）：进入到连接外网路由器的出接口下，然后在接口视图下配置nat映射关系</p>
-<p>2.全局：在全局视图下，配置好nat映射关系，再进入到出接口，执行：nat static enable</p>
-<h1 id="动态nat"><a href="#动态nat" class="headerlink" title="动态nat"></a>动态nat</h1><p>动态NAT通过使用地址池来实现。</p>
-<p>如上图，当内部主机A和主机B需要与公网中的目的主机通信时，网关RTA会从配置的公网地址池中选择一个未使用的公网地址与之做映射。每台主机都会分配到地址池中的一个唯一地址。当不需要此连接时，对应的地址映射将会被删除，公网地址也会被恢复到地址池中待用。当网关收到回复报文后，会根据之前的映射再次进行转换之后转发给对应主机。</p>
-<p>注意：</p>
-<p>动态NAT实际上实现的还是私有地址和公有地址一对一的关系，但是共有地址不再绑定给特定的内网地址。实现了一定程度的缓解地址短缺问题。<br>动态NAT地址池中的地址用尽以后，只能等待被占用的公用IP被释放后，其他主机才能使用它来访问公网。<img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dongtaitu00800.png" alt="dongtaitu00800"></p>
-<h2 id="动态NAT转换流程："><a href="#动态NAT转换流程：" class="headerlink" title="动态NAT转换流程："></a>动态NAT转换流程：</h2><p>1）路由器上配置一个内部地址池（公司内部所有主机用到的私有IP）动态映射一个外部地址池（所购买的公有IP）。<br>2）当有一个内网主机访问外网时，路由器首先查看NAT地址转换表；<br>3）若无，则再查看是否配置了动态NAT映射，若配置，则将IP包头中的源IP与内部地址池进行匹配，若有匹配项，则将该内网IP从内部地址池中取出，同时取出外部地址池中的一个IP地址，动态形成NAT地址转换表。注意，外部地址池的公网IP地址取出后，外部地址池中将没有该公网IP了。<br>4）默认当该主机24小时没有联系外网时，该动态NAT条目会自动消失，所被取出的公私有地址重新回到地址池中。</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/tuopudawda12714.png" alt="tuopudawda12714"></p>
-<p>ip如图，pc的网关192.168.1.254</p>
-<p>r1上配置默认路由，ip route-static 0.0.0.0 0 172.16.1.2</p>
-<p>r1上配置动态地址池：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/acldongtai2005212357.png" alt="acldongtai2005212357"></p>
-<p>地址池验证：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dizhichi1201.png" alt="dizhichi1201"></p>
-<p>配置acl策略：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/acl55da612432.png" alt="acl55da612432"></p>
-<p>在r1的外网出接口上调用：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/natout25212448.png" alt="natout25212448"></p>
-<p>验证：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dongtaijiegy12547.png" alt="dongtaijiegy12547"></p>
-<p>其中源IP为3、4、5不定，说明是在动态分配外网地址。动态NAT配置完成。</p>
-<p>在动态NAT实验中，最后利用PC1测试连通性时，间歇性会丢包</p>
-<p>可能的原因：ping的时候默认按地址池中可用地址顺序从1~254进行地址转换，放大nat地址池可解决。</p>
-<h1 id="NAPT"><a href="#NAPT" class="headerlink" title="NAPT"></a>NAPT</h1><p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/NApttu39.png" alt="NApttu39"></p>
-<p>如上图，RTA收到一个私网主机发送的报文，源IP地址是192.168.1.1，源端口号是1025，目的IP地址是100.1.1.1，目的端口是80。RTA会从配置的公网地址池中选择一个空闲的公网IP地址和端口号，并建立相应的NAPT表项。这些NAPT表项指定了报文的私网IP地址和端口号与公网IP地址和端口号的映射关系。之后，RTA将报文的源IP地址和端口号转换成公网地址200.10.10.1和端口号2843，并转发报文到公网。当网关RTA收到回复报文后，会根据之前的映射表再次进行转换之后转发给主机A。主机B同理。</p>
-<p>注意：</p>
-<p>NAPT技术允许多个内部地址映射到同一个公有地址的不同端口。<br>NAPT实现了私有地址对共有地址多对一</p>
-<p>相当于一种特殊的动态nat</p>
-<p>1、端口NAT和动态NAT的配置过程基本一致，只是在应用到接口时，配置命令少no-pat<br>2、端口NAT一个地址可以给多个源地址转换，不是单对单的转换，所以节省了nat地址！<br>3、端口NAT实际应用较多，静态NAT和动态NAT因为地址不能节约，所以实际应用少</p>
-<h1 id="Easy-IP"><a href="#Easy-IP" class="headerlink" title="Easy IP"></a>Easy IP</h1><p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/easydahwka5.png" alt="easydahwka5"></p>
-<p>Easy IP本质上是NAPT（所以原理与NAPT大致相似）<br>由于网关设备出接口IP地址为公网地址，所以可以利用该<strong>出接口地址</strong>来作为地址转换的公有地址。<br>Easy IP适用于小规模局域网中的主机访问Internet的场景。小规模局域网通常部署在小型的网吧或者办公室中，这些地方内部主机不多，出接口可以通过拨号方式获取一个临时公网IP地址。Easy IP可以实现内部主机使用这个临时公网IP地址访问Internet。</p>
-<p>Easy IP适用于小规模局域网中的主机访问Internet的场景。小规模局域网通常部署在小型的网吧或者办公室中，这些地方内部主机不多，出接口可以通过拨号方式获取一个临时公网IP地址。Easy IP可以实现内部主机使用这个临时公网IP地址访问Internet。</p>
-<h2 id="Easy-IP的配置："><a href="#Easy-IP的配置：" class="headerlink" title="Easy IP的配置："></a>Easy IP的配置：</h2><p>1.创建ACL：acl 2000</p>
-<p>2.允许1.0的数据进行转换：rule 5 permit source 192.168.1.0 0 .0.0.255</p>
-<p>3.进入公网出接口</p>
-<p>4.应用acl：nat outbound 2000</p>
-<p>（相较于napt少了地址池）</p>
-<p>验证：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/easadwaawh215116.png" alt="easadwaawh215116"></p>
-<p>源地址为出接口地址172.16.1.1，只是端口不同</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>nat</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>VRRP基础实验</title>
     <url>/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/</url>
     <content><![CDATA[<p>设备连接方式如图所示，网络中存在VLAN10、20，每个VLAN中部署一组VRRP，使用与VLAN ID相同的数值作为VRID，将S1配置为VLAN10的VRRP Master，将S2配置为VLAN20的VRRP Master。</p>
@@ -898,6 +969,87 @@
       </tags>
   </entry>
   <entry>
+    <title>nat实验</title>
+    <url>/2023/11/25/nat%E5%AE%9E%E9%AA%8C/</url>
+    <content><![CDATA[<h1 id="静态nat"><a href="#静态nat" class="headerlink" title="静态nat"></a>静态nat</h1><p>静态NAT实现了私有地址和公有地址的一对一映射。如果希望一台主机优先使用某个关联地址，或者想要外部网络使用一个指定的公网地址访问内部服务器时，可以使用静态NAT。但是在大型网络中，这种一对一的IP地址映射无法缓解公用地址短缺的问题。</p>
+<span id="more"></span>
+
+<p>静态NAT实现了私有地址和共有地址一对一的映射（一个私有地址对应一个共有地址），并没有做到缓解地址短缺的问题，只是做到了地址转换。</p>
+<p>一个公网地址只会分配给唯一且固定的内网地址</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingttuopu4509.png" alt="jingttuopu4509"></p>
+<p>如图配置ip地址和网关</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingta15204327.png" alt="jingta15204327"></p>
+<p>r1上配置静态nat（注意是在公网的接口上，出接口）</p>
+<p>注意配置一条静态路由，不然没有路由的下一跳会被丢弃</p>
+<p>在r1上查看nat映射关系：dis nat static</p>
+<p>验证一下：<img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingtainatjg25204222.png" alt="jingtainatjg25204222"></p>
+<p>发现去往2.2.2.2的源地址变为2.2.2.3，说明nat完成转换。</p>
+<p>静态nat两种配置方式：</p>
+<p>1.接口下（上述实验采用这种方式）：进入到连接外网路由器的出接口下，然后在接口视图下配置nat映射关系</p>
+<p>2.全局：在全局视图下，配置好nat映射关系，再进入到出接口，执行：nat static enable</p>
+<h1 id="动态nat"><a href="#动态nat" class="headerlink" title="动态nat"></a>动态nat</h1><p>动态NAT通过使用地址池来实现。</p>
+<p>如上图，当内部主机A和主机B需要与公网中的目的主机通信时，网关RTA会从配置的公网地址池中选择一个未使用的公网地址与之做映射。每台主机都会分配到地址池中的一个唯一地址。当不需要此连接时，对应的地址映射将会被删除，公网地址也会被恢复到地址池中待用。当网关收到回复报文后，会根据之前的映射再次进行转换之后转发给对应主机。</p>
+<p>注意：</p>
+<p>动态NAT实际上实现的还是私有地址和公有地址一对一的关系，但是共有地址不再绑定给特定的内网地址。实现了一定程度的缓解地址短缺问题。<br>动态NAT地址池中的地址用尽以后，只能等待被占用的公用IP被释放后，其他主机才能使用它来访问公网。<img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dongtaitu00800.png" alt="dongtaitu00800"></p>
+<h2 id="动态NAT转换流程："><a href="#动态NAT转换流程：" class="headerlink" title="动态NAT转换流程："></a>动态NAT转换流程：</h2><p>1）路由器上配置一个内部地址池（公司内部所有主机用到的私有IP）动态映射一个外部地址池（所购买的公有IP）。<br>2）当有一个内网主机访问外网时，路由器首先查看NAT地址转换表；<br>3）若无，则再查看是否配置了动态NAT映射，若配置，则将IP包头中的源IP与内部地址池进行匹配，若有匹配项，则将该内网IP从内部地址池中取出，同时取出外部地址池中的一个IP地址，动态形成NAT地址转换表。注意，外部地址池的公网IP地址取出后，外部地址池中将没有该公网IP了。<br>4）默认当该主机24小时没有联系外网时，该动态NAT条目会自动消失，所被取出的公私有地址重新回到地址池中。</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/tuopudawda12714.png" alt="tuopudawda12714"></p>
+<p>ip如图，pc的网关192.168.1.254</p>
+<p>r1上配置默认路由，ip route-static 0.0.0.0 0 172.16.1.2</p>
+<p>r1上配置动态地址池：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/acldongtai2005212357.png" alt="acldongtai2005212357"></p>
+<p>地址池验证：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dizhichi1201.png" alt="dizhichi1201"></p>
+<p>配置acl策略：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/acl55da612432.png" alt="acl55da612432"></p>
+<p>在r1的外网出接口上调用：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/natout25212448.png" alt="natout25212448"></p>
+<p>验证：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dongtaijiegy12547.png" alt="dongtaijiegy12547"></p>
+<p>其中源IP为3、4、5不定，说明是在动态分配外网地址。动态NAT配置完成。</p>
+<p>在动态NAT实验中，最后利用PC1测试连通性时，间歇性会丢包</p>
+<p>可能的原因：ping的时候默认按地址池中可用地址顺序从1~254进行地址转换，放大nat地址池可解决。</p>
+<h1 id="NAPT"><a href="#NAPT" class="headerlink" title="NAPT"></a>NAPT</h1><p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/NApttu39.png" alt="NApttu39"></p>
+<p>如上图，RTA收到一个私网主机发送的报文，源IP地址是192.168.1.1，源端口号是1025，目的IP地址是100.1.1.1，目的端口是80。RTA会从配置的公网地址池中选择一个空闲的公网IP地址和端口号，并建立相应的NAPT表项。这些NAPT表项指定了报文的私网IP地址和端口号与公网IP地址和端口号的映射关系。之后，RTA将报文的源IP地址和端口号转换成公网地址200.10.10.1和端口号2843，并转发报文到公网。当网关RTA收到回复报文后，会根据之前的映射表再次进行转换之后转发给主机A。主机B同理。</p>
+<p>注意：</p>
+<p>NAPT技术允许多个内部地址映射到同一个公有地址的不同端口。<br>NAPT实现了私有地址对共有地址多对一</p>
+<p>相当于一种特殊的动态nat</p>
+<p>1、端口NAT和动态NAT的配置过程基本一致，只是在应用到接口时，配置命令少no-pat<br>2、端口NAT一个地址可以给多个源地址转换，不是单对单的转换，所以节省了nat地址！<br>3、端口NAT实际应用较多，静态NAT和动态NAT因为地址不能节约，所以实际应用少</p>
+<h1 id="Easy-IP"><a href="#Easy-IP" class="headerlink" title="Easy IP"></a>Easy IP</h1><p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/easydahwka5.png" alt="easydahwka5"></p>
+<p>Easy IP本质上是NAPT（所以原理与NAPT大致相似）<br>由于网关设备出接口IP地址为公网地址，所以可以利用该<strong>出接口地址</strong>来作为地址转换的公有地址。<br>Easy IP适用于小规模局域网中的主机访问Internet的场景。小规模局域网通常部署在小型的网吧或者办公室中，这些地方内部主机不多，出接口可以通过拨号方式获取一个临时公网IP地址。Easy IP可以实现内部主机使用这个临时公网IP地址访问Internet。</p>
+<p>Easy IP适用于小规模局域网中的主机访问Internet的场景。小规模局域网通常部署在小型的网吧或者办公室中，这些地方内部主机不多，出接口可以通过拨号方式获取一个临时公网IP地址。Easy IP可以实现内部主机使用这个临时公网IP地址访问Internet。</p>
+<h2 id="Easy-IP的配置："><a href="#Easy-IP的配置：" class="headerlink" title="Easy IP的配置："></a>Easy IP的配置：</h2><p>1.创建ACL：acl 2000</p>
+<p>2.允许1.0的数据进行转换：rule 5 permit source 192.168.1.0 0 .0.0.255</p>
+<p>3.进入公网出接口</p>
+<p>4.应用acl：nat outbound 2000</p>
+<p>（相较于napt少了地址池）</p>
+<p>验证：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/easadwaawh215116.png" alt="easadwaawh215116"></p>
+<p>源地址为出接口地址172.16.1.1，只是端口不同</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>nat</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>telnet</title>
+    <url>/2023/12/02/telnet/</url>
+    <content><![CDATA[<h1 id="两种配置方法"><a href="#两种配置方法" class="headerlink" title="两种配置方法"></a>两种配置方法</h1><h2 id="1-仅密码登录验证"><a href="#1-仅密码登录验证" class="headerlink" title="1.仅密码登录验证"></a>1.仅密码登录验证</h2><p>代码如下（示例）：<br><Quidway>system-view —–进入配置模式<br>[Quidway]interface vlan 1 —–进入管理vlan<br>[Quidway-Vlanif1]ip address 192.168.28.49 255.255.255.0 —–配置管理ip地址<br>[Quidway-Vlanif1]quit —–退出<br>[Quidway]telnet server enable —–打开telnet服务 （一般默认开启）<br>[Quidway]user-interface vty 0 4 —–用户指定虚拟用户终端接口<br>[Quidway-ui-vty0-4]authentication-mode password —–配置用户终端接口认证方式 密码验证<br>[Quidway-ui-vty0-4]set authentication password cipher huawei123 —–设置接口验证密码,密码为huawei123<br>[Quidway-ui-vty0-4]user privilege level 15 —–设置用户优先级 （可选）<br>[Quidway-ui-vty0-4]idle-timeout 1 —–设置登陆超时为一分钟 （可选）<br>[Quidway-ui-vty0-4]return —–返回用户视图<br><Quidway>save —–保存</Quidway></Quidway></p>
+<h2 id="2-配置AAA登录"><a href="#2-配置AAA登录" class="headerlink" title="2.配置AAA登录"></a>2.配置AAA登录</h2><p>代码如下（示例）：<br><Quidway>system-view —–进入配置模式<br>[Quidway]interface vlan 1 —–进入管理vlan<br>[Quidway-Vlanif1]ip address 192.168.28.49 255.255.255.0 —–配置管理ip地址<br>[Quidway-Vlanif1]quit —–退出<br>[Quidway]telnet server enable —–打开telnet服务 （一般默认开启）<br>[Quidway]user-interface vty 0 4 —–用户指定虚拟用户终端接口<br>[Quidway-ui-vty0-4]authentication-mode aaa —–配置用户终端接口认证方式 aaa验证<br>[Quidway-ui-vty0-4]user privilege level 15 —–设置用户优先级<br>[Quidway-ui-vty0-4]idle-timeout 1 —–设置登陆超时为一分钟<br>[Quidway-ui-vty0-4]quit —–退出<br>[Quidway]aaa —–进入aaa<br>[Quidway-aaa]local-user huawei password cipher huawei123 —–创建用户名huawei 密码huawei123<br>[Quidway-aaa]local-user huawei privilege level 15 —–设置用户优先级<br>[Quidway-aaa]local-user huawei service-type telnet —–授权用户使用telnet<br>[Quidway-ui-vty0-4]return —–返回用户视图<br><Quidway>save —–保存</Quidway></Quidway></p>
+<h2 id="user-interface-vty-0-4-详解"><a href="#user-interface-vty-0-4-详解" class="headerlink" title="user-interface vty 0 4 详解"></a>user-interface vty 0 4 详解</h2><p>Quidway]user-interface vty 0 4                    ；进入虚拟终端<br>[S3026-ui-vty0-4]authentication-mode password           ；设置口令模式<br>[S3026-ui-vty0-4]set authentication-mode password simple 222 ；设置口令<br>[S3026-ui-vty0-4]user privilege level 3 </p>
+<p>一、第一句的意思是：进入到vty 终端，在华为的交换机里，vty就是人家用telnet远程进入到你交换机的界面，最多有五个，所以说你可以vty 0  vty 1 vty… vty 4交换机最多可以允许五个人同时在线进到交换机里去配置命令的。vty0 4 就是说把这五个界面一起配置了，这五个界面进去的话，都是使用以下的配置。<br>二、用的认证模式是密码认证，可以使用scheme模式来，也可以用password来，用password的话，是要密码的，就是说你telnet的话，要输入密码才能登陆到包交换机里去的。<br>二、设置密码为明文密码，密码是123 ，如果是密文的话，就是cipher<br>四、用户等级为3，也就是最高的，华为的命令级别很多，分为四级，0 1 2 3 ，0是参观级，只能看，1比0要高，可以使用一些命令，2 是可以配置了，3可以备份与删除IOS啦，呵呵，这个命令就是说用这个123密码，进来就是最高级别的，不用换级别。</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>telnet</tag>
+        <tag>aaa</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>vlan间通信</title>
     <url>/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/</url>
     <content><![CDATA[<h1 id="VLAN间通信"><a href="#VLAN间通信" class="headerlink" title="VLAN间通信"></a>VLAN间通信</h1><h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>划分VLAN后，不同VLAN的用户间不能二层互访，这样能起到隔离广播的作用。但实际应用中，不同VLAN的用户又常有互访的需求，此时就需要实现不同VLAN的用户互访，简称VLAN间互访。</p>
@@ -1035,22 +1187,6 @@
         <tag>vlan间通信</tag>
         <tag>dot1q</tag>
         <tag>vlanif</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>telnet</title>
-    <url>/2023/12/02/telnet/</url>
-    <content><![CDATA[<h1 id="两种配置方法"><a href="#两种配置方法" class="headerlink" title="两种配置方法"></a>两种配置方法</h1><h2 id="1-仅密码登录验证"><a href="#1-仅密码登录验证" class="headerlink" title="1.仅密码登录验证"></a>1.仅密码登录验证</h2><p>代码如下（示例）：<br><Quidway>system-view —–进入配置模式<br>[Quidway]interface vlan 1 —–进入管理vlan<br>[Quidway-Vlanif1]ip address 192.168.28.49 255.255.255.0 —–配置管理ip地址<br>[Quidway-Vlanif1]quit —–退出<br>[Quidway]telnet server enable —–打开telnet服务 （一般默认开启）<br>[Quidway]user-interface vty 0 4 —–用户指定虚拟用户终端接口<br>[Quidway-ui-vty0-4]authentication-mode password —–配置用户终端接口认证方式 密码验证<br>[Quidway-ui-vty0-4]set authentication password cipher huawei123 —–设置接口验证密码,密码为huawei123<br>[Quidway-ui-vty0-4]user privilege level 15 —–设置用户优先级 （可选）<br>[Quidway-ui-vty0-4]idle-timeout 1 —–设置登陆超时为一分钟 （可选）<br>[Quidway-ui-vty0-4]return —–返回用户视图<br><Quidway>save —–保存</Quidway></Quidway></p>
-<h2 id="2-配置AAA登录"><a href="#2-配置AAA登录" class="headerlink" title="2.配置AAA登录"></a>2.配置AAA登录</h2><p>代码如下（示例）：<br><Quidway>system-view —–进入配置模式<br>[Quidway]interface vlan 1 —–进入管理vlan<br>[Quidway-Vlanif1]ip address 192.168.28.49 255.255.255.0 —–配置管理ip地址<br>[Quidway-Vlanif1]quit —–退出<br>[Quidway]telnet server enable —–打开telnet服务 （一般默认开启）<br>[Quidway]user-interface vty 0 4 —–用户指定虚拟用户终端接口<br>[Quidway-ui-vty0-4]authentication-mode aaa —–配置用户终端接口认证方式 aaa验证<br>[Quidway-ui-vty0-4]user privilege level 15 —–设置用户优先级<br>[Quidway-ui-vty0-4]idle-timeout 1 —–设置登陆超时为一分钟<br>[Quidway-ui-vty0-4]quit —–退出<br>[Quidway]aaa —–进入aaa<br>[Quidway-aaa]local-user huawei password cipher huawei123 —–创建用户名huawei 密码huawei123<br>[Quidway-aaa]local-user huawei privilege level 15 —–设置用户优先级<br>[Quidway-aaa]local-user huawei service-type telnet —–授权用户使用telnet<br>[Quidway-ui-vty0-4]return —–返回用户视图<br><Quidway>save —–保存</Quidway></Quidway></p>
-<h2 id="user-interface-vty-0-4-详解"><a href="#user-interface-vty-0-4-详解" class="headerlink" title="user-interface vty 0 4 详解"></a>user-interface vty 0 4 详解</h2><p>Quidway]user-interface vty 0 4                    ；进入虚拟终端<br>[S3026-ui-vty0-4]authentication-mode password           ；设置口令模式<br>[S3026-ui-vty0-4]set authentication-mode password simple 222 ；设置口令<br>[S3026-ui-vty0-4]user privilege level 3 </p>
-<p>一、第一句的意思是：进入到vty 终端，在华为的交换机里，vty就是人家用telnet远程进入到你交换机的界面，最多有五个，所以说你可以vty 0  vty 1 vty… vty 4交换机最多可以允许五个人同时在线进到交换机里去配置命令的。vty0 4 就是说把这五个界面一起配置了，这五个界面进去的话，都是使用以下的配置。<br>二、用的认证模式是密码认证，可以使用scheme模式来，也可以用password来，用password的话，是要密码的，就是说你telnet的话，要输入密码才能登陆到包交换机里去的。<br>二、设置密码为明文密码，密码是123 ，如果是密文的话，就是cipher<br>四、用户等级为3，也就是最高的，华为的命令级别很多，分为四级，0 1 2 3 ，0是参观级，只能看，1比0要高，可以使用一些命令，2 是可以配置了，3可以备份与删除IOS啦，呵呵，这个命令就是说用这个123密码，进来就是最高级别的，不用换级别。</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>telnet</tag>
-        <tag>aaa</tag>
       </tags>
   </entry>
   <entry>
