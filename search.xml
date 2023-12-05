@@ -285,6 +285,167 @@
       </tags>
   </entry>
   <entry>
+    <title>FTP实验</title>
+    <url>/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/</url>
+    <content><![CDATA[<h1 id="File-Transfer-Protocol-文件传输协议"><a href="#File-Transfer-Protocol-文件传输协议" class="headerlink" title="File Transfer Protocol 文件传输协议"></a>File Transfer Protocol 文件传输协议</h1><p>FTP服务器开启21号端口进行控制连接，20号端口与客户端建立数据连接</p>
+<p>ASCII ((American Standard Code for Information Interchange): 美国信息交换标准代码）是基于拉丁字母的一套电脑编码系统，主要用于显示现代英语和其他西欧语言，它是最通用的信息交换标准。</p>
+<p>FTP是用来传送文件的协议。使用FTP实现远程文件传输的同时，还可以保证数据传输的可靠性和高效性。</p>
+<p>FTP 是基于客户———服务器（C&#x2F;S）模型而设计的，在客户端与 FTP 服务器之间建立两个连接</p>
+<h2 id="传输方式"><a href="#传输方式" class="headerlink" title="传输方式"></a>传输方式</h2><p>FTP支持两种方式的传输：文本（ASCII）方式和二进制（Binary）方式。通常文本文件的传输采用ASCII方式，而图象、声音文件、加密和压缩文件等非文本文件采用二进制方式传输，如果为了从一个系统上传输文件而使用了与本地系统不同的计算机字节位数，那么就必须使用Tenex模式。FTP以ASCII方式作为缺省的文件传输方式。</p>
+<h2 id="传输过程"><a href="#传输过程" class="headerlink" title="传输过程"></a>传输过程</h2><p> 使用FTP进行文件传输时，会使用两个TCP连接。第一个连接是FTP客户端和FTP服务器间的控制连接。FTP服务器开启21号端口，等待FTP客户端发送连接请求。FTP客户端随机开启端口，向服务器发送建立连接的请求。控制连接用于在服务器和客户端之间传输控制命令。<br>        第二个连接是FTP客户端和FTP服务器间的数据连接。服务器使用TCP的20号端口与客户端建立数据连接。通常情况下，服务器主动建立或中断数据连接。</p>
+<h2 id="FTP服务器配置"><a href="#FTP服务器配置" class="headerlink" title="FTP服务器配置"></a>FTP服务器配置</h2><p>路由器和X7系列交换机均可提供FTP功能。<br>执行ftp server enable命令使能FTP功能。<br>执行set default ftp-directory命令设置FTP用户的默认工作目录。</p>
+<p>在配置FTP服务器时，可以使用AAA为每个用户分别配置登录账号和访问权限。 aaa命令用来进入AAA视图。</p>
+<p>  local-user user-name { access-limit max-number | ftp-directory directory | idle-timeout         minutes [ seconds ] | password cipher password [ opt ]         | privilege level level | state {active | block } } *命令用来创建本地用户，并配置本地用户的各项参数。</p>
+<pre><code>  user-name指定用户名。
+    local-user huawei service-type ftp命令用来配置本地用户的接入类型为ftp。
+    ftp-directory指定FTP用户可访问的目录。如果不配置FTP用户可访问的目录，则FTP用户无法登录设备。
+    access-limit指定用户名可建立的最大连接数目。
+    idle-timeout指定用户的闲置超时时间。
+    privilege level指定用户的优先级。
+</code></pre>
+<h2 id="命令详解"><a href="#命令详解" class="headerlink" title="命令详解"></a>命令详解</h2><h3 id="idle-timeout"><a href="#idle-timeout" class="headerlink" title="idle-timeout"></a>idle-timeout</h3><p><strong>idle-timeout</strong>命令用来设置用户连接的超时时间。</p>
+<p><strong>undo idle-timeout</strong>命令用来恢复超时时间的缺省值。</p>
+<p>缺省情况下，用户连接的超时时间是5分钟。</p>
+<p>命令格式</p>
+<p><strong>idle-timeout</strong> <em>minutes</em> [ <em>seconds</em> ]</p>
+<p><strong>undo idle-timeout</strong></p>
+<table>
+<thead>
+<tr>
+<th align="left"><em>minutes</em></th>
+<th>指定用户界面断连的超时时间的分钟数。</th>
+<th>整数形式，取值范围是0～35791，单位是分钟。</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><em>seconds</em></td>
+<td>指定用户界面断连的超时时间的秒数。</td>
+<td>整数形式，取值范围是0～59，单位是秒</td>
+</tr>
+</tbody></table>
+<p>缺省级别</p>
+<p>3：管理级</p>
+<ul>
+<li>设置执行命令<strong>idle-timeout</strong> <strong>0 0</strong>即关闭用户界面的超时断连功能。</li>
+<li>如果用户界面没有设置闲置断连功能，则会导致已登录的用户始终处于连接状态，给设备带来安全风险，同时还有可能导致其他用户无法获得连接。</li>
+<li>通常情况下，推荐设置用户界面断连的超时时间在10～15分钟之间。</li>
+</ul>
+<p># 设置超时为1分钟30秒。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">idle-timeout 1 30</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="local-user-privilege-level"><a href="#local-user-privilege-level" class="headerlink" title="local-user privilege level"></a>local-user privilege level</h3><p>必须配置在3以上，否则ftp连接无法成功</p>
+<p><strong>local-user privilege level</strong>命令用来配置本地用户的优先级。</p>
+<p><strong>undo</strong> <strong>local-user privilege level</strong>命令用来将本地用户的优先级恢复为缺省配置。</p>
+<p>缺省情况下，本地用户（如Telnet用户、SSH用户）的优先级由管理模块来决定。</p>
+<p>命令格式</p>
+<p><strong>local-user</strong> <em>user-name</em> <strong>privilege level</strong> <em>level</em></p>
+<p><strong>undo local-user</strong> <em>user-name</em> <strong>privilege level</strong></p>
+<table>
+<thead>
+<tr>
+<th><em>user-name</em></th>
+<th>用户名。</th>
+<th>字符串形式，不支持空格，不区分大小写，长度范围是1~64。</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><em>level</em></td>
+<td>用户的优先级。</td>
+<td>整数形式，取值范围是0~15，取值越大，用户的优先级越高。缺省级别是0级。不同级别的用户登录后，只能使用等于或低于自己级别的命令</td>
+</tr>
+</tbody></table>
+<p>缺省情况下，命令级别分为0~3级：</p>
+<ul>
+<li>级别0即参观级，网络诊断工具命令（ping、tracert）、从本设备出发访问外部设备的命令（包括：Telnet 客户端、SSH）等。该级别命令不允许进行配置文件保存的操作。</li>
+<li>级别1即监控级，用于系统维护，包括display命令。该级别命令不允许进行配置文件保存的操作。</li>
+<li>级别2即配置级，可以使用业务配置命令，包括路由、各个网络层次的命令，向用户提供直接网络服务。</li>
+<li>级别3即管理级，用于系统基本运行的命令，对业务提供支撑作用，包括文件系统、FTP、TFTP、配置文件切换命令、备板控制命令、用户管理命令、命令级别设置命令、系统内部参数设置命令；用于业务故障诊断的debugging命令。</li>
+</ul>
+<h3 id="access-limit"><a href="#access-limit" class="headerlink" title="access-limit"></a>access-limit</h3><p><strong>access-limit</strong>命令用来配置当前域允许接入的用户数。</p>
+<p><strong>undo access-limit</strong>命令用来恢复缺省配置。</p>
+<p>缺省情况下，不限制接入的用户数目。</p>
+<p>命令格式</p>
+<p><strong>access-limit</strong> <em>max-number</em></p>
+<p><strong>undo access-limit</strong></p>
+<table>
+<thead>
+<tr>
+<th><em>max-number</em></th>
+<th>指定允许接入的用户数。</th>
+<th>整数形式，取值范围是0～283648。</th>
+</tr>
+</thead>
+<tbody><tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>为了更方便地管理用户访问设备，可以限制域下用户的在线数量。</p>
+<p><strong>注意事项</strong></p>
+<p>执行这条配置命令后，当接入用户数大于允许的用户数时，系统不再允许用户接入系统，提示用户认证失败。</p>
+<p><strong>access-limit</strong>命令对一个域下所能接入的用户总数进行限制，不区分接入用户的类型。</p>
+<p># 设置当前域最多允许接入100个用户。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">access-limit 100</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="local-user-ftp-directory"><a href="#local-user-ftp-directory" class="headerlink" title="local-user ftp-directory"></a>local-user ftp-directory</h3><p><strong>local-user ftp-directory</strong>命令用来配置本地用户的FTP目录。</p>
+<p><strong>undo local-user ftp-directory</strong>命令用来将本地用户的FTP目录恢复为缺省配置。</p>
+<p>缺省情况下，本地用户的FTP目录为空。</p>
+<p>当需要将设备配置为FTP服务器，从而便于本地用户以FTP方式登录设备，对设备上的文件进行增加、删除、修改等操作时，可以通过本命令配置本地用户以FTP方式登录设备后所处的目录。</p>
+<p>不指定该目录时，本地用户无法以FTP方式登录设备。</p>
+<p>配置本地用户的FTP目录时，该用户必须已由local-user password命令建立。</p>
+<h3 id="local-user-password"><a href="#local-user-password" class="headerlink" title="local-user password"></a>local-user password</h3><p><strong>local-user password</strong>命令用来创建一个本地用户并配置该用户的登录密码，或者修改已创建用户的登录密码。</p>
+<p><strong>undo local-user</strong>命令用来删除一个本地用户。</p>
+<p>缺省情况下，系统没有本地用户。</p>
+<p><strong>local-user</strong> <em>user-name</em> <strong>password</strong> [ <strong>cipher</strong> <em>password</em> | <strong>irreversible-cipher</strong> <em>irreversible-cipher-password</em> ]</p>
+<p><strong>undo local-user</strong> <em>user-name</em></p>
+<p><strong>cipher</strong> <em>password</em></p>
+<p>指定密文密钥。密钥以明文或密文形式输入，但配置文件中保存为密文形式。</p>
+<p><strong>irreversible-cipher</strong> <em>irreversible-cipher-password</em></p>
+<p>指定不可逆密文密钥。密钥以明文或不可逆密文形式输入，但配置文件中保存为密文形式。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>1.FTP服务器需要开启TCP的21号端口来建立控制连接，20号端口来建立数据连接。</p>
+<p>2.如果用户无权访问任何工作目录，则需要定义一个默认的FTP目录。执行set default ftp-directory <directory location>命令建立默认目录。</directory></p>
+<h2 id="FTP实验"><a href="#FTP实验" class="headerlink" title="FTP实验"></a>FTP实验</h2><p>R1 做为FTP Server 进行配置<br>R2 做为Client 测试</p>
+<p>R1：<br>undo ter mo<br>sys<br>sysname R1<br>int g0&#x2F;0&#x2F;0<br>ip add 192.168.1.1 24</p>
+<p>R2：<br>undo ter mo<br>sys<br>sysname R2<br>int g0&#x2F;0&#x2F;0<br>ip add 192.168.1.2 24</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/ftp1130183749.png" alt="ftp1130183749"></p>
+<p>R1:<br>ftp server enable<br>set default ftp-directory flash:&#x2F;</p>
+<p>（设置默认目录为flash:&#x2F;）</p>
+<p><strong>ftp server enable</strong>命令用来开启设备的FTP服务器功能，允许FTP用户登录。缺省情况下，FTP服务器功能处于关闭状态。</p>
+<p>其他可选的配置参数还包括：指定FTP服务器端口号、指定FTP服务器的源地址和配置FTP连接空闲时间等。</p>
+<p>R1：</p>
+<p>通过在AAA中设置用户名和密码（均为huawei）<br>aaa<br>local-user huawei password cipher huawei<br>local-user huawei service-type ftp<br>local-user huawei ftp-directory flash:&#x2F;<br>local-user huawei access-limit 200<br>local-user huawei idle-timeout 0 0<br>local-user huawei privilege level 3</p>
+<p>查看ftp server配置信息</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/diskvk30184121.png" alt="diskvk30184121"></p>
+<p>R2登录FTP服务器</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/ftpdenglu1130184259.png" alt="ftpdenglu1130184259"></p>
+<p>在R1和R2上分别保存文件text1.cfg和text2.cfg，用于后续测试</p>
+<p>R1：save text1.cfg</p>
+<p>R2：save text2.cfg</p>
+<p>R2上通过dir命令查看服务器上的文件</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/dirr2184558.png" alt="dirr2184558"></p>
+<p>R2从服务器上下载text1.cfg文件，并改名为newtext1.cfg</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/xiazaigaiming0184834.png" alt="xiazaigaiming0184834"></p>
+<p>R2本地查看dir</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/r2bendichakan30184952.png" alt="r2bendichakan30184952"></p>
+<p>put把本地文件text2.cfg上传到服务器，并改名为newtext2.cfg</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/putnew85130.png" alt="putnew85130"></p>
+<p>查看是否上传成功</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/yanzg5227.png" alt="yanzg5227"></p>
+<p>关闭ftp连接：bye</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>FTP</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>BGP路由反射器</title>
     <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/</url>
     <content><![CDATA[<h1 id="BGP路由反射器"><a href="#BGP路由反射器" class="headerlink" title="BGP路由反射器"></a>BGP路由反射器</h1><p>由于水平分割的原因，为了保证AS内所有的BGP路由器都能学习到完整的BGP路由，就必须在AS内实现IBGP全互联。</p>
@@ -649,167 +810,6 @@
       </tags>
   </entry>
   <entry>
-    <title>FTP实验</title>
-    <url>/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/</url>
-    <content><![CDATA[<h1 id="File-Transfer-Protocol-文件传输协议"><a href="#File-Transfer-Protocol-文件传输协议" class="headerlink" title="File Transfer Protocol 文件传输协议"></a>File Transfer Protocol 文件传输协议</h1><p>FTP服务器开启21号端口进行控制连接，20号端口与客户端建立数据连接</p>
-<p>ASCII ((American Standard Code for Information Interchange): 美国信息交换标准代码）是基于拉丁字母的一套电脑编码系统，主要用于显示现代英语和其他西欧语言，它是最通用的信息交换标准。</p>
-<p>FTP是用来传送文件的协议。使用FTP实现远程文件传输的同时，还可以保证数据传输的可靠性和高效性。</p>
-<p>FTP 是基于客户———服务器（C&#x2F;S）模型而设计的，在客户端与 FTP 服务器之间建立两个连接</p>
-<h2 id="传输方式"><a href="#传输方式" class="headerlink" title="传输方式"></a>传输方式</h2><p>FTP支持两种方式的传输：文本（ASCII）方式和二进制（Binary）方式。通常文本文件的传输采用ASCII方式，而图象、声音文件、加密和压缩文件等非文本文件采用二进制方式传输，如果为了从一个系统上传输文件而使用了与本地系统不同的计算机字节位数，那么就必须使用Tenex模式。FTP以ASCII方式作为缺省的文件传输方式。</p>
-<h2 id="传输过程"><a href="#传输过程" class="headerlink" title="传输过程"></a>传输过程</h2><p> 使用FTP进行文件传输时，会使用两个TCP连接。第一个连接是FTP客户端和FTP服务器间的控制连接。FTP服务器开启21号端口，等待FTP客户端发送连接请求。FTP客户端随机开启端口，向服务器发送建立连接的请求。控制连接用于在服务器和客户端之间传输控制命令。<br>        第二个连接是FTP客户端和FTP服务器间的数据连接。服务器使用TCP的20号端口与客户端建立数据连接。通常情况下，服务器主动建立或中断数据连接。</p>
-<h2 id="FTP服务器配置"><a href="#FTP服务器配置" class="headerlink" title="FTP服务器配置"></a>FTP服务器配置</h2><p>路由器和X7系列交换机均可提供FTP功能。<br>执行ftp server enable命令使能FTP功能。<br>执行set default ftp-directory命令设置FTP用户的默认工作目录。</p>
-<p>在配置FTP服务器时，可以使用AAA为每个用户分别配置登录账号和访问权限。 aaa命令用来进入AAA视图。</p>
-<p>  local-user user-name { access-limit max-number | ftp-directory directory | idle-timeout         minutes [ seconds ] | password cipher password [ opt ]         | privilege level level | state {active | block } } *命令用来创建本地用户，并配置本地用户的各项参数。</p>
-<pre><code>  user-name指定用户名。
-    local-user huawei service-type ftp命令用来配置本地用户的接入类型为ftp。
-    ftp-directory指定FTP用户可访问的目录。如果不配置FTP用户可访问的目录，则FTP用户无法登录设备。
-    access-limit指定用户名可建立的最大连接数目。
-    idle-timeout指定用户的闲置超时时间。
-    privilege level指定用户的优先级。
-</code></pre>
-<h2 id="命令详解"><a href="#命令详解" class="headerlink" title="命令详解"></a>命令详解</h2><h3 id="idle-timeout"><a href="#idle-timeout" class="headerlink" title="idle-timeout"></a>idle-timeout</h3><p><strong>idle-timeout</strong>命令用来设置用户连接的超时时间。</p>
-<p><strong>undo idle-timeout</strong>命令用来恢复超时时间的缺省值。</p>
-<p>缺省情况下，用户连接的超时时间是5分钟。</p>
-<p>命令格式</p>
-<p><strong>idle-timeout</strong> <em>minutes</em> [ <em>seconds</em> ]</p>
-<p><strong>undo idle-timeout</strong></p>
-<table>
-<thead>
-<tr>
-<th align="left"><em>minutes</em></th>
-<th>指定用户界面断连的超时时间的分钟数。</th>
-<th>整数形式，取值范围是0～35791，单位是分钟。</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left"><em>seconds</em></td>
-<td>指定用户界面断连的超时时间的秒数。</td>
-<td>整数形式，取值范围是0～59，单位是秒</td>
-</tr>
-</tbody></table>
-<p>缺省级别</p>
-<p>3：管理级</p>
-<ul>
-<li>设置执行命令<strong>idle-timeout</strong> <strong>0 0</strong>即关闭用户界面的超时断连功能。</li>
-<li>如果用户界面没有设置闲置断连功能，则会导致已登录的用户始终处于连接状态，给设备带来安全风险，同时还有可能导致其他用户无法获得连接。</li>
-<li>通常情况下，推荐设置用户界面断连的超时时间在10～15分钟之间。</li>
-</ul>
-<p># 设置超时为1分钟30秒。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">idle-timeout 1 30</span><br></pre></td></tr></table></figure>
-
-
-
-<h3 id="local-user-privilege-level"><a href="#local-user-privilege-level" class="headerlink" title="local-user privilege level"></a>local-user privilege level</h3><p>必须配置在3以上，否则ftp连接无法成功</p>
-<p><strong>local-user privilege level</strong>命令用来配置本地用户的优先级。</p>
-<p><strong>undo</strong> <strong>local-user privilege level</strong>命令用来将本地用户的优先级恢复为缺省配置。</p>
-<p>缺省情况下，本地用户（如Telnet用户、SSH用户）的优先级由管理模块来决定。</p>
-<p>命令格式</p>
-<p><strong>local-user</strong> <em>user-name</em> <strong>privilege level</strong> <em>level</em></p>
-<p><strong>undo local-user</strong> <em>user-name</em> <strong>privilege level</strong></p>
-<table>
-<thead>
-<tr>
-<th><em>user-name</em></th>
-<th>用户名。</th>
-<th>字符串形式，不支持空格，不区分大小写，长度范围是1~64。</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><em>level</em></td>
-<td>用户的优先级。</td>
-<td>整数形式，取值范围是0~15，取值越大，用户的优先级越高。缺省级别是0级。不同级别的用户登录后，只能使用等于或低于自己级别的命令</td>
-</tr>
-</tbody></table>
-<p>缺省情况下，命令级别分为0~3级：</p>
-<ul>
-<li>级别0即参观级，网络诊断工具命令（ping、tracert）、从本设备出发访问外部设备的命令（包括：Telnet 客户端、SSH）等。该级别命令不允许进行配置文件保存的操作。</li>
-<li>级别1即监控级，用于系统维护，包括display命令。该级别命令不允许进行配置文件保存的操作。</li>
-<li>级别2即配置级，可以使用业务配置命令，包括路由、各个网络层次的命令，向用户提供直接网络服务。</li>
-<li>级别3即管理级，用于系统基本运行的命令，对业务提供支撑作用，包括文件系统、FTP、TFTP、配置文件切换命令、备板控制命令、用户管理命令、命令级别设置命令、系统内部参数设置命令；用于业务故障诊断的debugging命令。</li>
-</ul>
-<h3 id="access-limit"><a href="#access-limit" class="headerlink" title="access-limit"></a>access-limit</h3><p><strong>access-limit</strong>命令用来配置当前域允许接入的用户数。</p>
-<p><strong>undo access-limit</strong>命令用来恢复缺省配置。</p>
-<p>缺省情况下，不限制接入的用户数目。</p>
-<p>命令格式</p>
-<p><strong>access-limit</strong> <em>max-number</em></p>
-<p><strong>undo access-limit</strong></p>
-<table>
-<thead>
-<tr>
-<th><em>max-number</em></th>
-<th>指定允许接入的用户数。</th>
-<th>整数形式，取值范围是0～283648。</th>
-</tr>
-</thead>
-<tbody><tr>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-</tbody></table>
-<p>为了更方便地管理用户访问设备，可以限制域下用户的在线数量。</p>
-<p><strong>注意事项</strong></p>
-<p>执行这条配置命令后，当接入用户数大于允许的用户数时，系统不再允许用户接入系统，提示用户认证失败。</p>
-<p><strong>access-limit</strong>命令对一个域下所能接入的用户总数进行限制，不区分接入用户的类型。</p>
-<p># 设置当前域最多允许接入100个用户。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">access-limit 100</span><br></pre></td></tr></table></figure>
-
-
-
-<h3 id="local-user-ftp-directory"><a href="#local-user-ftp-directory" class="headerlink" title="local-user ftp-directory"></a>local-user ftp-directory</h3><p><strong>local-user ftp-directory</strong>命令用来配置本地用户的FTP目录。</p>
-<p><strong>undo local-user ftp-directory</strong>命令用来将本地用户的FTP目录恢复为缺省配置。</p>
-<p>缺省情况下，本地用户的FTP目录为空。</p>
-<p>当需要将设备配置为FTP服务器，从而便于本地用户以FTP方式登录设备，对设备上的文件进行增加、删除、修改等操作时，可以通过本命令配置本地用户以FTP方式登录设备后所处的目录。</p>
-<p>不指定该目录时，本地用户无法以FTP方式登录设备。</p>
-<p>配置本地用户的FTP目录时，该用户必须已由local-user password命令建立。</p>
-<h3 id="local-user-password"><a href="#local-user-password" class="headerlink" title="local-user password"></a>local-user password</h3><p><strong>local-user password</strong>命令用来创建一个本地用户并配置该用户的登录密码，或者修改已创建用户的登录密码。</p>
-<p><strong>undo local-user</strong>命令用来删除一个本地用户。</p>
-<p>缺省情况下，系统没有本地用户。</p>
-<p><strong>local-user</strong> <em>user-name</em> <strong>password</strong> [ <strong>cipher</strong> <em>password</em> | <strong>irreversible-cipher</strong> <em>irreversible-cipher-password</em> ]</p>
-<p><strong>undo local-user</strong> <em>user-name</em></p>
-<p><strong>cipher</strong> <em>password</em></p>
-<p>指定密文密钥。密钥以明文或密文形式输入，但配置文件中保存为密文形式。</p>
-<p><strong>irreversible-cipher</strong> <em>irreversible-cipher-password</em></p>
-<p>指定不可逆密文密钥。密钥以明文或不可逆密文形式输入，但配置文件中保存为密文形式。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>1.FTP服务器需要开启TCP的21号端口来建立控制连接，20号端口来建立数据连接。</p>
-<p>2.如果用户无权访问任何工作目录，则需要定义一个默认的FTP目录。执行set default ftp-directory <directory location>命令建立默认目录。</directory></p>
-<h2 id="FTP实验"><a href="#FTP实验" class="headerlink" title="FTP实验"></a>FTP实验</h2><p>R1 做为FTP Server 进行配置<br>R2 做为Client 测试</p>
-<p>R1：<br>undo ter mo<br>sys<br>sysname R1<br>int g0&#x2F;0&#x2F;0<br>ip add 192.168.1.1 24</p>
-<p>R2：<br>undo ter mo<br>sys<br>sysname R2<br>int g0&#x2F;0&#x2F;0<br>ip add 192.168.1.2 24</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/ftp1130183749.png" alt="ftp1130183749"></p>
-<p>R1:<br>ftp server enable<br>set default ftp-directory flash:&#x2F;</p>
-<p>（设置默认目录为flash:&#x2F;）</p>
-<p><strong>ftp server enable</strong>命令用来开启设备的FTP服务器功能，允许FTP用户登录。缺省情况下，FTP服务器功能处于关闭状态。</p>
-<p>其他可选的配置参数还包括：指定FTP服务器端口号、指定FTP服务器的源地址和配置FTP连接空闲时间等。</p>
-<p>R1：</p>
-<p>通过在AAA中设置用户名和密码（均为huawei）<br>aaa<br>local-user huawei password cipher huawei<br>local-user huawei service-type ftp<br>local-user huawei ftp-directory flash:&#x2F;<br>local-user huawei access-limit 200<br>local-user huawei idle-timeout 0 0<br>local-user huawei privilege level 3</p>
-<p>查看ftp server配置信息</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/diskvk30184121.png" alt="diskvk30184121"></p>
-<p>R2登录FTP服务器</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/ftpdenglu1130184259.png" alt="ftpdenglu1130184259"></p>
-<p>在R1和R2上分别保存文件text1.cfg和text2.cfg，用于后续测试</p>
-<p>R1：save text1.cfg</p>
-<p>R2：save text2.cfg</p>
-<p>R2上通过dir命令查看服务器上的文件</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/dirr2184558.png" alt="dirr2184558"></p>
-<p>R2从服务器上下载text1.cfg文件，并改名为newtext1.cfg</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/xiazaigaiming0184834.png" alt="xiazaigaiming0184834"></p>
-<p>R2本地查看dir</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/r2bendichakan30184952.png" alt="r2bendichakan30184952"></p>
-<p>put把本地文件text2.cfg上传到服务器，并改名为newtext2.cfg</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/putnew85130.png" alt="putnew85130"></p>
-<p>查看是否上传成功</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/yanzg5227.png" alt="yanzg5227"></p>
-<p>关闭ftp连接：bye</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>FTP</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Hybrid接口</title>
     <url>/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/</url>
     <content><![CDATA[<h1 id="接口属性"><a href="#接口属性" class="headerlink" title="接口属性"></a>接口属性</h1><p>​	交换机接口的类型，可以是Access、Trunk和Hybrid。Access类型的接口仅属于一个VLAN,,,,只能接收、转发相应VLAN的帧；而Trunk类型接口则默认属于所有VLAN任何Tagged帧都能经过Trunk接收和转发； Hybrid类型接口则介于二者之间，可自主定义端口上能接收和转发那些VLAN Tag帧，并可决定VLAN Tag是否继续携带或者剥离。。Access和Trunk类型接口是Hybrid类型接口的两个特例，，，一个仅支持一个VLAN传递，，一个默认支持所有VLAN的传递，而Access类型和Trunk类型的接口能做到的，Hybrid接口都能做到。</p>
@@ -1000,6 +1000,242 @@
       </tags>
   </entry>
   <entry>
+    <title>mpls实验</title>
+    <url>/2023/12/05/mpls%E5%AE%9E%E9%AA%8C/</url>
+    <content><![CDATA[<h1 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h1><p>MPLS（Multiprotocol Label Switching）多协议标签转发复习总结<br>首先我们要先知道MPLS是为何出现的？<br>MPLS是基于传统IP网络（RIP，OSPF等）的缺陷由IETF确定的</p>
+<p><strong>顺便先复习一下路由器查路由表 转发的过程：</strong></p>
+<p>传统的IP转发中，物理层从交换机的一个端口收到一个报文，上送到数据链路层。数据链路层去掉链路层封装，根据报文的协议域上送给相应的网络层。网络层首先看报文是否是送给本机的，若是，去掉网络层封装，上送给它的上层协议。若不是，则根据报文的目的地址查找路由表，若找到路由，将报文送给相应端口的数据链路层，数据链路层封装后，发送报文。若找不到路由，将报文丢弃。传统的IP转发采用的是逐跳转发，数据报文经过每一台交换机，都要执行上述过程（如图中SWA收到目的地址为10.2.0.1的数据包，SWA会依次查找路由表，根据匹配的路由表项的进行转发，SWB、SWC、SWD都会进行类似的处理），所以速度缓慢。并且所有的交换机需要知道全网的路由或者默认路由。另外，由于传统IP转发是面向无连接的，所以无法提供好的Qos保证。</p>
+<p>传统IP网络基于IGP Metric计算最优路径，这是远远不够的，往往在现实网络中还需考虑带宽、链路属性等其他因素；基于IP的流量工程是基于IGP面向目的地址的转发，是hop-by-hop（逐跳）的转发，无法实现根据来源来控制流量转发；另外基于IP的流量工程是面向无连接的，不能实现显式路径（Explicit Routing）。<br>上图中，SWB和SWD之间存在两条路径。传统的IP转发中IGP根据Metric选择最优的路由SWB-SWC-SWD转发所有从Network A和Network B到Network C的IP报文，而SWB-SWG-SWH-SWD链路则闲置，当网络中流量过大，有可能导致最优路径拥塞，但次优路径却空载没有被充分利用。</p>
+<p>MPLS的出现<br>从A到走到B有三种方法：<br><strong>1.广播</strong>（如以太网）：直接把数据发给每一个地方<br><strong>2.逐跳寻径</strong>：走到一个地方，问一下路接下来该怎么走（也就是上面说的根据路由协议，查路由表）<br><strong>3.源路由</strong>：提前规划好路线，到哪里怎么走，不常用。</p>
+<p>而<strong>MPLS</strong>是第四种走法：<br>跟在“向导”后面走，向导在走过的路上做好标记，你只要沿着标记的指示走就可以了。这也就是“标签交换”</p>
+<p>MPLS结合了三层路由技术与二层交换技术，所以可以把它看成“<strong>2.5层</strong>”的<br>其中的MP多协议指的是支持多种网络协议，如ipv4，ipv6，CLNP，IPX等</p>
+<p>MPLS是一种标签转发技术，它采用无连接的控制平面和面向连接的数据平面（具体的MPLS架构下面还有介绍），无连接的控制平面实现路由信息的传递和标签的分发，面向连接的数据平面实现报文在建立的标签转发路径上传送。MPLS域内，交换机不需要查看每个报文的目的IP地址，只需要根据封装在IP头外面的标签进行转发即可，这样可以大大提高效率</p>
+<p>MPLS转发与IP逐跳转发的关系<br>MPLS是IP的承载层：MPLS转发与IP转发不冲突，它们的关系是如果能够使用MPLS转发，那么IP包会先封装成MPLS数据帧来转发。如果不能MPLS转发，就还是原来的ip逐跳转发。<br><strong>（也就是尽量优先MPLS，因为它会更快）</strong></p>
+<p><img src="/2023/12/05/mpls%E5%AE%9E%E9%AA%8C/mnvc7761.png" alt="mnvc7761"></p>
+<p>看上面的图，我们需要理解：整个MPLS域（可以进行MPLS转发的区域）是嵌在IP域上的，也就是MPLS域外部是IP域，它本身也运行IP域。</p>
+<p><strong>MPLS中一些基本概念，名词</strong><br>标签（Label）：是一个定长的，比较短的，只具有本地意义的标识。<br><strong>FEC（转发等价类）</strong>：一组或一类数据，这组数据分配的标签相同<br><strong>LSP（标签交换通道）</strong>：一个FEC的数据流，在不同的节点被赋予确定的标签,数据转发按照<br>这些标签进行。数据流所走的路径就是LSP。<br><strong>LSR（Label Switching Router</strong>）： LSR是MPLS的网络的核心交换机，它提供标签交<br>换和标签分发功能。<br><strong>LER（Label Switching Edge Router）</strong>：在MPLS的网络边缘，进入到MPLS网络的流量由LER分为不同的FEC，并为这些FEC请求相应的标签。它提供流量分类和标签的映射、标签的移除功能。</p>
+<p>从IP域进入MPLS域的时候，LER（标记边缘路由器）要做一个压入（push），出MPLS域的时候做一个弹出（pop），而LSR（标记交换路由器）负责转发。所以LER实际工作量比LSR大很多。LSP（标记交换路径）就是从进入到离开 走的路径。这条路径是在转发报文之前就已经通过各种协议确定并建立的，报文会在特定的LSP上传递。（也可以把LSP看成一个隧道）</p>
+<p>标签报文格式：</p>
+<p>MPLS Header长度为<strong>32bits</strong>，包括长度为<strong>20bits的标签（Label）</strong>，该标签用于报文转发；长度为3bits的EXP通常用来承载IP报文中的优先级；长度为<strong>1bit的栈底标志S</strong>用来表明是否是最后一个标签（MPLS标签可以多层嵌套）；长度为<strong>8bits的TTL</strong>，作用类似IP头部的TTL，用来防止报文环路等。</p>
+<p>事实上MPLS封装有两种方式，上面说的是帧模式，Ethernet和PPP都是帧模式封装；还有一个信元封装模式（ATM采用）。<br>MPLS的 LSP 与标签转发表</p>
+<p><strong>MPLS转发过程</strong></p>
+<p><img src="/2023/12/05/mpls%E5%AE%9E%E9%AA%8C/mplszfgc813341.png" alt="mplszfgc813341"></p>
+<p>1.Push：首先从IP数据包从ip域进入MPLS域，入口LER做 push 操作，分析转发等价类，为数据包“打上标签”，绑定LSP通道；图中A的标签转发表内容大概如下：</p>
+<p><img src="/2023/12/05/mpls%E5%AE%9E%E9%AA%8C/a008298.png" alt="a008298"></p>
+<p>2.Swap：B，C两个LSR根据标签转发表，用下一跳分配的标签，替换MPLS报文的标签并转发</p>
+<p><img src="/2023/12/05/mpls%E5%AE%9E%E9%AA%8C/bc66327448.png" alt="bc66327448"></p>
+<p>3.Pop：转发到出口LER D时，进行pop弹出操作，去掉标签</p>
+<p>MPLS转发的过程到这里结束。</p>
+<p><img src="/2023/12/05/mpls%E5%AE%9E%E9%AA%8C/d4kg2110.png" alt="d4kg2110"></p>
+<p><strong>PHP</strong>（倒数第二跳弹出。Penultimate Hop Popping ，和web开发的php可没关系）：上面的过程我们可以发现，C在发给D时，其实带标签的数据已经没有意义，因为下一跳就要弹出标签了，所以完全可以在C就把标签弹出，然后以ip报文形式转发给D。<br>这样可以大大降低最后的出口LER的工作量，是现在MPLS普遍采用的方法。<br>默认情况下，设备支持PHP特性，支持PHP的Egress节点即出口LER 分配给倒数第二跳节点的标签值为3。</p>
+<p><strong>MPLS标签转发表与LDP</strong></p>
+<p>我们知道，<br>交换机中的MAC地址表是通过逆向学习法产生的；<br>路由器中的路由表是通过路由协议学习或自己配置静态路由产生的。<br>那么MPLS中标签转发表是怎么产生的呢？</p>
+<p>答案是也会有一个类似的路由器学习的协议，这个协议叫做LDP（Label Distribution Protocol 标签分发协议），这个也是MPLS技术的核心协议之一。LDP来完成标签的分配控制和保持</p>
+<p>从整个MPLS架构看这个协议的位置：</p>
+<p><img src="/2023/12/05/mpls%E5%AE%9E%E9%AA%8C/jiegoutu666299.png" alt="jiegoutu666299"></p>
+<p>以上是MPLS架构图<br>MPLS包括两个平面：控制平面和数据平面。<br>控制平面负责产生和维护路由信息以及标签信息。数据平面负责普通IP报文的转发以及带MPLS标签报文的转发。<br>控制平面中路由协议模块（Routing Protocol）用来传递路由信息，生成路由信息表；标签分发协议模块（Label Distribution Protocol）用来完成标签信息的交换，建立标签转发路径。<br>数据平面包括IP转发表和标签转发表，当收到普通IP报文时（Incoming IP Packets），如果是普通IP转发，则查找IP路由表转发，如果需要标签转发，则按照标签转发表转发；当收到带有标签的报文时（Incoming Labeled Packets）时，如果需要按照标签转发，根据标签转发表转发，如果需要转发到IP网络，则去掉标签后根据IP转发表转发。</p>
+<p>LDP的标签管理与保留方式主要内容有下面三部分</p>
+<ol>
+<li><strong>标签分配模式</strong></li>
+</ol>
+<p>DoD：下游按需标记分发<br>DU：下游自主标记分发<br>2. <strong>标签控制模式</strong></p>
+<p>有序方式<br>独立方式</p>
+<ol start="3">
+<li><strong>标签保持模式</strong></li>
+</ol>
+<p>保守模式<br>自由模式<br>最常用的组合是 <strong>下游自主（DU） + 有序 + 自由</strong></p>
+<p>下面来具体介绍什么意思</p>
+<p><img src="/2023/12/05/mpls%E5%AE%9E%E9%AA%8C/shangxiayou6291.png" alt="shangxiayou6291"></p>
+<p>这里先要理解上游，下游的概念，MPLS入口出为最上游；出口处为最下游。标签的产生可以理解为是下游为上游产生的，下游产生的IN标签作为上游的OUT标签（比如图中R3左边要接收的IN标签为100，那么R2向右的OUT标签就要是100，因为R3只要为100的标签）</p>
+<p>然后具体介绍上面的三个部分：<br><strong>Ⅰ.标签的控制模式</strong>（即标签是怎么产生的）：<br>有序（常用）：只有最下游路由器才能产生标签，最下游的上游收到最下游的标签映射消息后，然后才能再往自己的上游发送标签映射关系。<br>独立：中间的路由器也可以直接产生标签</p>
+<p><strong>Ⅱ.标签的分发模式：</strong><br>下游按需 ：需要的时候上游再向下游询问标签信息；<br>下游自主：不管有没有问，下游路由器都自主的向上游发送标签映射信息（主动向上汇报）<br><strong>Ⅲ.标签的保留模式</strong>：如果有两条路径，也就会有两个标签，那么路由器保留哪个。<br>保守：只保留路由表中的”最佳路径“，跳数比较少的；<br>自由：保留所有的标签，虽然占用了更多的标签空间，但是收敛会快</p>
+<h1 id="基础实验"><a href="#基础实验" class="headerlink" title="基础实验"></a>基础实验</h1><p><img src="/2023/12/05/mpls%E5%AE%9E%E9%AA%8C/tuoputump181224.png" alt="tuoputump181224"></p>
+<p><strong>配置步骤：</strong></p>
+<p>完成ip和ospf配置：</p>
+<p>R1的配置如下： </p>
+<p>[R1] interface GigabitEthernet0&#x2F;0&#x2F;0 </p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;0] ip address 12.1.1.1 24 </p>
+<p>[R1] interface loopback0</p>
+<p>[R1-Loopback0] ip address 1.1.1.1 32 </p>
+<p>[R1] ospf 1 router-id 1.1.1.1 </p>
+<p>[R1-ospf-1] area 0 </p>
+<p>[R1-ospf-1-0.0.0.0] network 12.1.1.0 0.0.0.255 </p>
+<p>[R1-ospf-1-0.0.0.0] network 1.1.1.1 0.0.0.0 </p>
+<p>R2的配置如下： </p>
+<p>[R2] interface GigabitEthernet0&#x2F;0&#x2F;0 </p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;0] ip address 12.1.1.2 24 </p>
+<p>[R2] interface GigabitEthernet0&#x2F;0&#x2F;1 </p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;1] ip address 23.1.1.2 24 </p>
+<p>[R2] interface loopback0 </p>
+<p>[R2-Loopback0] ip address 2.2.2.2 32 </p>
+<p>[R2] ospf 1 router-id 2.2.2.2 </p>
+<p>[R2-ospf-1] area 0 </p>
+<p>[R2-ospf-1-0.0.0.0] network 12.1.1.0 0.0.0.255 </p>
+<p>[R2-ospf-1-0.0.0.0] network 23.1.1.0 0.0.0.255 </p>
+<p>[R2-ospf-1-0.0.0.0] network 2.2.2.2 0.0.0.0 </p>
+<p>R3的配置如下： </p>
+<p>[R3] interface GigabitEthernet0&#x2F;0&#x2F;0 </p>
+<p>[R3-GigabitEthernet0&#x2F;0&#x2F;0] ip address 23.1.1.3 24 </p>
+<p>[R3] interface GigabitEthernet0&#x2F;0&#x2F;1 </p>
+<p>[R3-GigabitEthernet0&#x2F;0&#x2F;1] ip address 34.1.1.3 24 </p>
+<p>[R3] interface loopback0 </p>
+<p>[R3-Loopback0] ip address 3.3.3.3 32 </p>
+<p>[R3] ospf 1 router-id 3.3.3.3 </p>
+<p>[R3-ospf-1] area 0 </p>
+<p>[R3-ospf-1-0.0.0.0] network 23.1.1.0 0.0.0.255 </p>
+<p>[R3-ospf-1-0.0.0.0] network 34.1.1.0 0.0.0.255 </p>
+<p>[R3-ospf-1-0.0.0.0] network 1.1.1.1 0.0.0.0 </p>
+<p>R4的配置如下： </p>
+<p>[R4] interface GigabitEthernet0&#x2F;0&#x2F;0</p>
+<p>[R4-GigabitEthernet0&#x2F;0&#x2F;0] ip address 34.1.1.4 24 </p>
+<p>[R4] interface loopback0 </p>
+<p>[R4-Loopback0] ip address 4.4.4.4 32 </p>
+<p>[R4] ospf 1 router-id 4.4.4.4 </p>
+<p>[R4-ospf-1] area 0 </p>
+<p>[R4-ospf-1-0.0.0.0] network 34.1.1.0 0.0.0.255 </p>
+<p>[R4-ospf-1-0.0.0.0] network 4.4.4.4 0.0.0.0 </p>
+<p><strong>激活mpls并激活ldp</strong></p>
+<p>（全局和接口下都需要激活）</p>
+<p>R1的配置如下： </p>
+<p>[R1] mpls lsr-id 1.1.1.1 </p>
+<p>#配置MPLS LSR ID </p>
+<p>[R1] mpls </p>
+<p>#全局激活MPLS </p>
+<p>[R1-mpls] quit </p>
+<p>[R1] mpls ldp </p>
+<p>#全局激活LDP </p>
+<p>[R1-mpls-ldp] quit </p>
+<p>[R1] Interface GigabitEthernet 0&#x2F;0&#x2F;0 </p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;0] mpls </p>
+<p>#在接口上激活MPLS </p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;0] mpls ldp </p>
+<p>#在接口上激活LDP </p>
+<p>R2的配置如下： </p>
+<p>[R2] mpls lsr-id 2.2.2.2 </p>
+<p>[R2] mpls </p>
+<p>[R2-mpls] quit </p>
+<p>[R2] mpls ldp </p>
+<p>[R2-mpls-ldp] quit </p>
+<p>[R2] Interface GigabitEthernet 0&#x2F;0&#x2F;0 </p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;0] mpls</p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;0] mpls ldp </p>
+<p>[R2] Interface GigabitEthernet 0&#x2F;0&#x2F;1 </p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;1] mpls </p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;1] mpls ldp </p>
+<p>R3的配置如下： </p>
+<p>[R3] mpls lsr-id 3.3.3.3 </p>
+<p>[R3] mpls </p>
+<p>[R3-mpls] quit </p>
+<p>[R3] mpls ldp </p>
+<p>[R3-mpls-ldp] quit </p>
+<p>[R3] Interface GigabitEthernet 0&#x2F;0&#x2F;0 </p>
+<p>[R3-GigabitEthernet0&#x2F;0&#x2F;0] mpls </p>
+<p>[R3-GigabitEthernet0&#x2F;0&#x2F;0] mpls ldp </p>
+<p>[R3] Interface GigabitEthernet 0&#x2F;0&#x2F;1 </p>
+<p>[R3-GigabitEthernet0&#x2F;0&#x2F;1] mpls </p>
+<p>[R3-GigabitEthernet0&#x2F;0&#x2F;1] mpls ldp </p>
+<p>R4的配置如下： </p>
+<p>[R4] mpls lsr-id 4.4.4.4 </p>
+<p>[R4] mpls </p>
+<p>[R4-mpls] quit </p>
+<p>[R4] mpls ldp </p>
+<p>[R4-mpls-ldp] quit </p>
+<p>[R4] Interface GigabitEthernet 0&#x2F;0&#x2F;0 </p>
+<p>[R4-GigabitEthernet0&#x2F;0&#x2F;0] mpls </p>
+<p>[R4-GigabitEthernet0&#x2F;0&#x2F;0] mpls ldp</p>
+<p><strong>验证</strong>： </p>
+<p><R1>display mpls ldp peer</R1></p>
+<p> LDP Peer Information in Public network</p>
+<p> A ‘*’ before a peer means the peer is being deleted.</p>
+<p> -—————————————————————————–</p>
+<p> PeerID         TransportAddress  DiscoverySource</p>
+<p> -—————————————————————————–</p>
+<p> 2.2.2.2:0        2.2.2.2       GigabitEthernet0&#x2F;0&#x2F;0</p>
+<p> -—————————————————————————–</p>
+<p> TOTAL: 1 Peer(s) Found.</p>
+<p>以上输出的是R1的LDP邻居表，从表中可以看出R1已经发现了一个LDP邻居，那就是R2。</p>
+<p><R1>disp mpls ldp session  verbose </R1></p>
+<p> LDP Session(s) in Public Network</p>
+<p> -—————————————————————————–</p>
+<p> Peer LDP ID   : 2.2.2.2:0      Local LDP ID  : 1.1.1.1:0</p>
+<p> TCP Connection  : 1.1.1.1 &lt;- 2.2.2.2</p>
+<p> Session State  : Operational    Session Role  : Passive</p>
+<p> Session FT Flag : Off         MD5 Flag    : Off</p>
+<p> Reconnect Timer : —         Recovery Timer : —</p>
+<p> Keychain Name  : —</p>
+<p> Negotiated Keepalive Hold Timer  : 45 Sec</p>
+<p> Configured Keepalive Send Timer  : —</p>
+<p> Keepalive Message Sent&#x2F;Rcvd    : 153&#x2F;153 (Message Count)</p>
+<p> Label Advertisement Mode      : Downstream Unsolicited</p>
+<p> Label Resource Status(Peer&#x2F;Local) : Available&#x2F;Available</p>
+<p> Session Age            : 0000:00:38 (DDDD:HH:MM)</p>
+<p> Session Deletion Status      : No</p>
+<p> Capability:</p>
+<p>  Capability-Announcement     : Off</p>
+<p>  P2MP Capability         : Off</p>
+<p> Outbound&amp;Inbound Policies applied : NULL</p>
+<p> Addresses received from peer: (Count: 3)</p>
+<p> 2.2.2.2       12.1.1.2       23.1.1.2      </p>
+<p> -—————————————————————————–</p>
+<p>以上输出的是LDP会话的详细信息，邻居的状态必须为<strong>Operational</strong>才是最终的稳态，另外从TCP连接1.1.1.1 &lt; 2.2.2.2可以验证一点，LDP的会话建立是由传输地址大的一方发起的。</p>
+<p><R1>display mpls ldp lsp </R1></p>
+<p> LDP LSP Information</p>
+<p> -——————————————————————————</p>
+<p> DestAddress&#x2F;Mask  In&#x2F;OutLabel   UpstreamPeer   NextHop     OutInterface</p>
+<p> -——————————————————————————</p>
+<p> 1.1.1.1&#x2F;32     3&#x2F;NULL     2.2.2.2     127.0.0.1    InLoop0</p>
+<p>*1.1.1.1&#x2F;32     Liberal&#x2F;1026          DS&#x2F;2.2.2.2</p>
+<p> 2.2.2.2&#x2F;32     NULL&#x2F;3     -        12.1.1.2     GE0&#x2F;0&#x2F;0</p>
+<p> 2.2.2.2&#x2F;32     1026&#x2F;3     2.2.2.2     12.1.1.2     GE0&#x2F;0&#x2F;0</p>
+<p> 3.3.3.3&#x2F;32     NULL&#x2F;1024    -        12.1.1.2     GE0&#x2F;0&#x2F;0</p>
+<p> 3.3.3.3&#x2F;32     1024&#x2F;1024    2.2.2.2     12.1.1.2     GE0&#x2F;0&#x2F;0</p>
+<p> 4.4.4.4&#x2F;32     NULL&#x2F;1025    -        12.1.1.2     GE0&#x2F;0&#x2F;0</p>
+<p> 4.4.4.4&#x2F;32     1025&#x2F;1025    2.2.2.2     12.1.1.2     GE0&#x2F;0&#x2F;0</p>
+<p> -——————————————————————————</p>
+<p> TOTAL: 7 Normal LSP(s) Found.</p>
+<p> TOTAL: 1 Liberal LSP(s) Found.</p>
+<p> TOTAL: 0 Frr LSP(s) Found.</p>
+<p> A ‘*’ before an LSP means the LSP is not established</p>
+<p> A ‘*’ before a Label means the USCB or DSCB is stale</p>
+<p> A ‘*’ before a UpstreamPeer means the session is stale</p>
+<p> A ‘*’ before a DS means the session is stale</p>
+<p> A ‘*’ before a NextHop means the LSP is FRR LSP</p>
+<p>以上输出的是R1的LFIB（标签转发信息库），可以看到已经建立好的LSP。 </p>
+<p>实际上，当我们再R1、R2、R3、R4上运行OSPF后，全网的路由已经被打通，也就是每台路由器都拥有全网的路由，其中包括互联网段的路由，以及各设备的Loopback路由。随后我们激活各设备的MPLS和LDP，每台设备会基于自己的路由表中的路由前缀进行标签捆绑，并且将为路由前缀（FEC）所捆绑的标签分发给自己的LDP邻居。默认情况下在我司的设备上，仅为&#x2F;32的主机路由分发标签，并且默认水平分割规则并未打开。</p>
+<p>现在，来测试一下，从R1去tracert 4.4.4.4： </p>
+<p><R1>tracert lsp ip 4.4.4.4 32</R1></p>
+<p> LSP Trace Route FEC: IPV4 PREFIX 4.4.4.4&#x2F;32 , press CTRL_C to break.</p>
+<p> TTL  Replier       Time   Type    Downstream </p>
+<p> 0                 Ingress  12.1.1.2&#x2F;[1025 ]</p>
+<p> 1   12.1.1.2      20 ms  Transit  23.1.1.3&#x2F;[1024 ]</p>
+<p> 2   23.1.1.3      20 ms  Transit  34.1.1.4&#x2F;[3 ]</p>
+<p> 3   4.4.4.4       20 ms  Egress </p>
+<p>从tracert的结果我们可以看到数据包行走的路径，以及被压入的标签。</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>mpls</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>telnet</title>
+    <url>/2023/12/02/telnet/</url>
+    <content><![CDATA[<h1 id="两种配置方法"><a href="#两种配置方法" class="headerlink" title="两种配置方法"></a>两种配置方法</h1><h2 id="1-仅密码登录验证"><a href="#1-仅密码登录验证" class="headerlink" title="1.仅密码登录验证"></a>1.仅密码登录验证</h2><p>代码如下（示例）：<br><Quidway>system-view —–进入配置模式<br>[Quidway]interface vlan 1 —–进入管理vlan<br>[Quidway-Vlanif1]ip address 192.168.28.49 255.255.255.0 —–配置管理ip地址<br>[Quidway-Vlanif1]quit —–退出<br>[Quidway]telnet server enable —–打开telnet服务 （一般默认开启）<br>[Quidway]user-interface vty 0 4 —–用户指定虚拟用户终端接口<br>[Quidway-ui-vty0-4]authentication-mode password —–配置用户终端接口认证方式 密码验证<br>[Quidway-ui-vty0-4]set authentication password cipher huawei123 —–设置接口验证密码,密码为huawei123<br>[Quidway-ui-vty0-4]user privilege level 15 —–设置用户优先级 （可选）<br>[Quidway-ui-vty0-4]idle-timeout 1 —–设置登陆超时为一分钟 （可选）<br>[Quidway-ui-vty0-4]return —–返回用户视图<br><Quidway>save —–保存</Quidway></Quidway></p>
+<h2 id="2-配置AAA登录"><a href="#2-配置AAA登录" class="headerlink" title="2.配置AAA登录"></a>2.配置AAA登录</h2><p>代码如下（示例）：<br><Quidway>system-view —–进入配置模式<br>[Quidway]interface vlan 1 —–进入管理vlan<br>[Quidway-Vlanif1]ip address 192.168.28.49 255.255.255.0 —–配置管理ip地址<br>[Quidway-Vlanif1]quit —–退出<br>[Quidway]telnet server enable —–打开telnet服务 （一般默认开启）<br>[Quidway]user-interface vty 0 4 —–用户指定虚拟用户终端接口<br>[Quidway-ui-vty0-4]authentication-mode aaa —–配置用户终端接口认证方式 aaa验证<br>[Quidway-ui-vty0-4]user privilege level 15 —–设置用户优先级<br>[Quidway-ui-vty0-4]idle-timeout 1 —–设置登陆超时为一分钟<br>[Quidway-ui-vty0-4]quit —–退出<br>[Quidway]aaa —–进入aaa<br>[Quidway-aaa]local-user huawei password cipher huawei123 —–创建用户名huawei 密码huawei123<br>[Quidway-aaa]local-user huawei privilege level 15 —–设置用户优先级<br>[Quidway-aaa]local-user huawei service-type telnet —–授权用户使用telnet<br>[Quidway-ui-vty0-4]return —–返回用户视图<br><Quidway>save —–保存</Quidway></Quidway></p>
+<h2 id="user-interface-vty-0-4-详解"><a href="#user-interface-vty-0-4-详解" class="headerlink" title="user-interface vty 0 4 详解"></a>user-interface vty 0 4 详解</h2><p>Quidway]user-interface vty 0 4                    ；进入虚拟终端<br>[S3026-ui-vty0-4]authentication-mode password           ；设置口令模式<br>[S3026-ui-vty0-4]set authentication-mode password simple 222 ；设置口令<br>[S3026-ui-vty0-4]user privilege level 3 </p>
+<p>一、第一句的意思是：进入到vty 终端，在华为的交换机里，vty就是人家用telnet远程进入到你交换机的界面，最多有五个，所以说你可以vty 0  vty 1 vty… vty 4交换机最多可以允许五个人同时在线进到交换机里去配置命令的。vty0 4 就是说把这五个界面一起配置了，这五个界面进去的话，都是使用以下的配置。<br>二、用的认证模式是密码认证，可以使用scheme模式来，也可以用password来，用password的话，是要密码的，就是说你telnet的话，要输入密码才能登陆到包交换机里去的。<br>二、设置密码为明文密码，密码是123 ，如果是密文的话，就是cipher<br>四、用户等级为3，也就是最高的，华为的命令级别很多，分为四级，0 1 2 3 ，0是参观级，只能看，1比0要高，可以使用一些命令，2 是可以配置了，3可以备份与删除IOS啦，呵呵，这个命令就是说用这个123密码，进来就是最高级别的，不用换级别。</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>telnet</tag>
+        <tag>aaa</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>nat实验</title>
     <url>/2023/11/25/nat%E5%AE%9E%E9%AA%8C/</url>
     <content><![CDATA[<h1 id="静态nat"><a href="#静态nat" class="headerlink" title="静态nat"></a>静态nat</h1><p>静态NAT实现了私有地址和公有地址的一对一映射。如果希望一台主机优先使用某个关联地址，或者想要外部网络使用一个指定的公网地址访问内部服务器时，可以使用静态NAT。但是在大型网络中，这种一对一的IP地址映射无法缓解公用地址短缺的问题。</p>
@@ -1062,162 +1298,6 @@
       </categories>
       <tags>
         <tag>nat</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>telnet</title>
-    <url>/2023/12/02/telnet/</url>
-    <content><![CDATA[<h1 id="两种配置方法"><a href="#两种配置方法" class="headerlink" title="两种配置方法"></a>两种配置方法</h1><h2 id="1-仅密码登录验证"><a href="#1-仅密码登录验证" class="headerlink" title="1.仅密码登录验证"></a>1.仅密码登录验证</h2><p>代码如下（示例）：<br><Quidway>system-view —–进入配置模式<br>[Quidway]interface vlan 1 —–进入管理vlan<br>[Quidway-Vlanif1]ip address 192.168.28.49 255.255.255.0 —–配置管理ip地址<br>[Quidway-Vlanif1]quit —–退出<br>[Quidway]telnet server enable —–打开telnet服务 （一般默认开启）<br>[Quidway]user-interface vty 0 4 —–用户指定虚拟用户终端接口<br>[Quidway-ui-vty0-4]authentication-mode password —–配置用户终端接口认证方式 密码验证<br>[Quidway-ui-vty0-4]set authentication password cipher huawei123 —–设置接口验证密码,密码为huawei123<br>[Quidway-ui-vty0-4]user privilege level 15 —–设置用户优先级 （可选）<br>[Quidway-ui-vty0-4]idle-timeout 1 —–设置登陆超时为一分钟 （可选）<br>[Quidway-ui-vty0-4]return —–返回用户视图<br><Quidway>save —–保存</Quidway></Quidway></p>
-<h2 id="2-配置AAA登录"><a href="#2-配置AAA登录" class="headerlink" title="2.配置AAA登录"></a>2.配置AAA登录</h2><p>代码如下（示例）：<br><Quidway>system-view —–进入配置模式<br>[Quidway]interface vlan 1 —–进入管理vlan<br>[Quidway-Vlanif1]ip address 192.168.28.49 255.255.255.0 —–配置管理ip地址<br>[Quidway-Vlanif1]quit —–退出<br>[Quidway]telnet server enable —–打开telnet服务 （一般默认开启）<br>[Quidway]user-interface vty 0 4 —–用户指定虚拟用户终端接口<br>[Quidway-ui-vty0-4]authentication-mode aaa —–配置用户终端接口认证方式 aaa验证<br>[Quidway-ui-vty0-4]user privilege level 15 —–设置用户优先级<br>[Quidway-ui-vty0-4]idle-timeout 1 —–设置登陆超时为一分钟<br>[Quidway-ui-vty0-4]quit —–退出<br>[Quidway]aaa —–进入aaa<br>[Quidway-aaa]local-user huawei password cipher huawei123 —–创建用户名huawei 密码huawei123<br>[Quidway-aaa]local-user huawei privilege level 15 —–设置用户优先级<br>[Quidway-aaa]local-user huawei service-type telnet —–授权用户使用telnet<br>[Quidway-ui-vty0-4]return —–返回用户视图<br><Quidway>save —–保存</Quidway></Quidway></p>
-<h2 id="user-interface-vty-0-4-详解"><a href="#user-interface-vty-0-4-详解" class="headerlink" title="user-interface vty 0 4 详解"></a>user-interface vty 0 4 详解</h2><p>Quidway]user-interface vty 0 4                    ；进入虚拟终端<br>[S3026-ui-vty0-4]authentication-mode password           ；设置口令模式<br>[S3026-ui-vty0-4]set authentication-mode password simple 222 ；设置口令<br>[S3026-ui-vty0-4]user privilege level 3 </p>
-<p>一、第一句的意思是：进入到vty 终端，在华为的交换机里，vty就是人家用telnet远程进入到你交换机的界面，最多有五个，所以说你可以vty 0  vty 1 vty… vty 4交换机最多可以允许五个人同时在线进到交换机里去配置命令的。vty0 4 就是说把这五个界面一起配置了，这五个界面进去的话，都是使用以下的配置。<br>二、用的认证模式是密码认证，可以使用scheme模式来，也可以用password来，用password的话，是要密码的，就是说你telnet的话，要输入密码才能登陆到包交换机里去的。<br>二、设置密码为明文密码，密码是123 ，如果是密文的话，就是cipher<br>四、用户等级为3，也就是最高的，华为的命令级别很多，分为四级，0 1 2 3 ，0是参观级，只能看，1比0要高，可以使用一些命令，2 是可以配置了，3可以备份与删除IOS啦，呵呵，这个命令就是说用这个123密码，进来就是最高级别的，不用换级别。</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>telnet</tag>
-        <tag>aaa</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>vlan间通信</title>
-    <url>/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/</url>
-    <content><![CDATA[<h1 id="VLAN间通信"><a href="#VLAN间通信" class="headerlink" title="VLAN间通信"></a>VLAN间通信</h1><h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>划分VLAN后，不同VLAN的用户间不能二层互访，这样能起到隔离广播的作用。但实际应用中，不同VLAN的用户又常有互访的需求，此时就需要实现不同VLAN的用户互访，简称VLAN间互访。</p>
-<span id="more"></span>
-
-<h2 id="实验拓扑"><a href="#实验拓扑" class="headerlink" title="实验拓扑"></a>实验拓扑</h2><p><img src="/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/vlantx001.png" alt="vlantx001"></p>
-<p>详解：R2划入vlan2，R3划入vlan3，与交换机之间采用access口，由于交换机g0&#x2F;0&#x2F;1需要通过多个vlan，所以配成trunk口。R2和R3相当于主机，发送和接受的数据都不带标签，交换机g0&#x2F;0&#x2F;2收到R2发送的数据，打上标签vlan2，然后发出去；交换机g0&#x2F;0&#x2F;1收到数据后，发现vlan的标签允许通过，则数据带着vlan2的标签通过；然后交换机g0&#x2F;0&#x2F;3口转发数据时，发现自己的pvid是vlan3，和vlan2不一样，所以不接受，则vlan2和vlan3不能通信。</p>
-<p>在某些场景下，需要特定vlan之间通信</p>
-<p>方法一：dot1q接口</p>
-<p>在r1上配置两个dot1q接口，g0&#x2F;0&#x2F;1.1和g0&#x2F;0&#x2F;1.2，分别对应vlan2和vlan3，作用就是可以终结vlan标签（剥离），vlan2的标签到r1后，被剥离掉vlan2的标签，然后转发时又被g0&#x2F;0&#x2F;1.2打上vlan3的标签，交换机g0&#x2F;0&#x2F;1通过，到g0&#x2F;0&#x2F;3，access口发现和自己的pvid一样，然后剥离掉标签，转发数据帧给r3.</p>
-<p>方法二：vlanif接口：交换机上配置vlanif2和vlanif3，ip地址配成192.168.2.254和192.168.3.254</p>
-<p>其实就是相当于两个不同网段的网关，然后实现三层的转发</p>
-<h2 id="Access接口"><a href="#Access接口" class="headerlink" title="Access接口"></a>Access接口</h2><p>交换机上常用来连接用户PC、服务器等终端设备的接口。Access接口所连接的这些设备的网卡往往只收发无标记帧。Access接口只能加入一个VLAN。只能允许一个VLAN通过。</p>
-<p><strong>转发原则</strong></p>
-<p>接收原则：</p>
-<p>①收到不带标签的数据帧，打上标签，vlan id&#x3D;端口的PVID</p>
-<p>②收到带标签的数据帧，检查数据帧vlan id是否和端口的PVID相同，相同直接接收；不同拒绝接收</p>
-<p>发送原则：</p>
-<p>①数据帧vlan id和端口PVID 相同，剥离标签发送；</p>
-<p>②数据帧vlan id和端口PVID 不同，禁止发送。</p>
-<h2 id="Trunk接口"><a href="#Trunk接口" class="headerlink" title="Trunk接口"></a>Trunk接口</h2><p>Trunk接口允许多个VLAN的数据帧通过，这些数据帧通过802.1Q Tag实现区分。Trunk接口常用于交换机之间的互联，也用于连接路由器、防火墙等设备的</p>
-<p>子接口</p>
-<p><strong>转发原则</strong></p>
-<p>接收原则：</p>
-<p>①收到不带标签的数据帧，打上标签，vlan id&#x3D;端口的PVID，然后查看该vlanid是否在允许列表中，是–接收，不是–拒绝</p>
-<p>②收到带标签的数据帧，查看该vlan id是否在允许列表中，是–接收，不是–拒绝</p>
-<p>发送原则：</p>
-<p>查看vlan id是否在允许列表中，I:不是–拒绝发送；II：是，查看接口的PVID和vlan id是否相同，相同–剥标签发送；不同–直接发送。</p>
-<h2 id="Hybrid接口"><a href="#Hybrid接口" class="headerlink" title="Hybrid接口"></a>Hybrid接口</h2><p>Hybrid接口与Trunk接口类似，也允许多个VLAN的数据帧通过，这些数据帧通过802.1Q Tag实现区分。用户可以灵活指定Hybrid接口在发送某个（或某些）VLAN的数据帧时是否携带Tag</p>
-<p><strong>转发原则</strong></p>
-<p>接收原则：</p>
-<p>①收到不带标签的数据帧，打上标签，vlan id&#x3D;端口的PVID，然后查看该vlanid是否在允许列表中，是–接收，不是–拒绝</p>
-<p>②收到带标签的数据帧，查看该vlan id是否在允许列表中，是–接收，不是–拒绝发送原则：查看vlan id是否在允许列表中，I:不是–拒绝发送；II：是，是否带标签发送取决于接口的配置。</p>
-<h2 id="PVID"><a href="#PVID" class="headerlink" title="PVID"></a>PVID</h2><p>可以手工修改，默认是1，access口的就是本身的vlan号，trunk可以有一个主vlan和多个副vlan，收到的数据和主vlan相同就剥离转发，收到和主vlan不一样的标签，查表，看看是不是在允许通过的列表，如果有，就带着原来的转发，要是没有，就不让过去啦。</p>
-<h2 id="实验配置过程"><a href="#实验配置过程" class="headerlink" title="实验配置过程"></a>实验配置过程</h2><p># R2和R3的IP地址及网关配置</p>
-<p><R2> system-view</R2></p>
-<p>Enter system view, return user view with Ctrl+Z.</p>
-<p>[R2]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
-<p>[R2-GigabitEthernet0&#x2F;0&#x2F;1]ip address 192.168.2.1 24</p>
-<p>[R2-GigabitEthernet0&#x2F;0&#x2F;1]quit	</p>
-<p>[R2]ip route-static 0.0.0.0 0 192.168.2.254</p>
-<p>配置默认路由，相当于给设备配置了网关。</p>
-<p><R3>system-view </R3></p>
-<p>Enter system view, return user view with Ctrl+Z.</p>
-<p>[R3]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
-<p>[R3-GigabitEthernet0&#x2F;0&#x2F;1]ip address 192.168.3.1 24</p>
-<p>[R3-GigabitEthernet0&#x2F;0&#x2F;1]quit</p>
-<p>[R3]ip route-static 0.0.0.0 0 192.168.3.254</p>
-<p># 在S1上对R2和R3进行VLAN划分</p>
-<p>[S1]vlan batch 2 3</p>
-<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
-<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;2</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;2]port link-type access </p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;2]port default vlan 2</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;2]quit</p>
-<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;3</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;3]port link-type access </p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;3]port default vlan 3</p>
-<p>步骤 1 通过Dot1q终结子接口实现VLAN间互访 </p>
-<p># 配置S1上的Trunk接口</p>
-<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;1]port trunk allow-pass vlan 2 3</p>
-<p><em>因为VLAN间<strong>互访数据要</strong>由R1来终结VLAN<strong>，</strong>所以S1和R1之间<strong>的链路要允许</strong>VLAN2和VLAN3通过**。</em></p>
-<p># 在R1上创建并配置Dot1q终结子接口</p>
-<p>[R1]interface GigabitEthernet 0&#x2F;0&#x2F;1.2 </p>
-<p>创建并进入子接口视图。2代表子接口的编号，一般建议子接口编号与VLAN ID相同，方便记忆。</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.2]dot1q termination vid 2 </p>
-<p><strong>dot1q termination vid</strong> <em>vlan-id</em>命令用来配置子接口Dot1q终结的VLAN ID。</p>
-<p>以此配置为例：当GigabitEthernet0&#x2F;0&#x2F;1接口收到带有VLAN 2标签的数据之后，会交由2号子接口进行VLAN终结操作并做后续处理。从2号子接口发出的数据也会带上VLAN 2的标签。</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.2]arp broadcast enable </p>
-<p>终结子接口不能转发广播报文，在收到广播报文后它们直接把该报文丢弃。为了允许终结子接口能转发广播报文，可以通过在子接口上执行命令<strong>arp broadcast enable</strong>使能终结子接口的ARP广播功能。部分设备默认使能该功能，此命令的配置根据设备而定。</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.2]ip address 192.168.2.254 24 </p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.2]quit</p>
-<p>[R1]interface GigabitEthernet 0&#x2F;0&#x2F;1.3</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.3]dot1q termination vid 3</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.3]arp broadcast enable</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.3]ip address 192.168.3.254 24</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.3]quit</p>
-<p># 检测VLAN间互访联通性 </p>
-<p><R2>ping 192.168.3.1</R2></p>
-<p> PING 192.168.3.1: 56  data bytes, press CTRL_C to break</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;1 ttl&#x3D;254 time&#x3D;60 ms</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;2 ttl&#x3D;254 time&#x3D;40 ms</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;3 ttl&#x3D;254 time&#x3D;110 ms</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;4 ttl&#x3D;254 time&#x3D;70 ms</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;5 ttl&#x3D;254 time&#x3D;100 ms</p>
-<p> — 192.168.3.1 ping statistics —</p>
-<p>  5 packet(s) transmitted</p>
-<p>  5 packet(s) received</p>
-<p>  0.00% packet loss</p>
-<p>  round-trip min&#x2F;avg&#x2F;max &#x3D; 40&#x2F;76&#x2F;110 ms</p>
-<p><R2>tracert 192.168.3.1 </R2></p>
-<p> traceroute to  192.168.3.1(192.168.3.1), max hops: 30 ,packet length: 40,press CTRL_C to break </p>
-<p> 1 192.168.2.254 30 ms  50 ms  50 ms </p>
-<p> 2 192.168.3.1 70 ms  60 ms  60 ms </p>
-<p>此时VLAN2和VLAN3之间已经可以正常的互访。</p>
-<p>步骤 2 通过VLANIF接口实现VLAN间互访</p>
-<p># 清除上一步配置</p>
-<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;1]undo port trunk allow-pass vlan 2 3</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;1]undo port link-type</p>
-<p>[R1]undo interface GigabitEthernet 0&#x2F;0&#x2F;1.2 </p>
-<p>[R1]undo interface GigabitEthernet 0&#x2F;0&#x2F;1.3</p>
-<p># 在S1上创建相应的VLANIF接口 </p>
-<p>[S1]interface Vlanif 2</p>
-<p><strong>interface vlanif</strong> <em>vlan-id</em>命令用来创建VLANIF接口并进入VLANIF接口视图。只有先通过命令创建VLAN后，才能执行interface vlanif命令创建VLANIF接口。</p>
-<p>[S1-Vlanif2]ip address 192.168.2.254 24</p>
-<p>[S1-Vlanif2]quit</p>
-<p>[S1]interface Vlanif 3</p>
-<p>[S1-Vlanif3]ip address 192.168.3.254 24 </p>
-<p>[S1-Vlanif3]quit</p>
-<p># 检测VLAN间互访联通性</p>
-<p><R2>ping 192.168.3.1 </R2></p>
-<p> PING 192.168.3.1: 56  data bytes, press CTRL_C to break</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;1 ttl&#x3D;254 time&#x3D;100 ms</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;2 ttl&#x3D;254 time&#x3D;50 ms</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;3 ttl&#x3D;254 time&#x3D;50 ms</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;4 ttl&#x3D;254 time&#x3D;60 ms</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;5 ttl&#x3D;254 time&#x3D;70 ms</p>
-<p> — 192.168.3.1 ping statistics —</p>
-<p>  5 packet(s) transmitted</p>
-<p>  5 packet(s) received</p>
-<p>  0.00% packet loss</p>
-<p>  round-trip min&#x2F;avg&#x2F;max &#x3D; 50&#x2F;66&#x2F;100 ms</p>
-<p><R2>tracert 192.168.3.1 </R2></p>
-<p> traceroute to  192.168.3.1(192.168.3.1), max hops: 30 ,packet length: 40,press CTRL_C to break </p>
-<p> 1 192.168.2.254 40 ms  30 ms  20 ms </p>
-<p> 2 192.168.3.1 40 ms  30 ms  40 ms</p>
-<p>此时VLAN2和VLAN3之间已经可以正常的互访。</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>vlan间通信</tag>
-        <tag>dot1q</tag>
-        <tag>vlanif</tag>
       </tags>
   </entry>
   <entry>
@@ -1423,6 +1503,146 @@
       </categories>
       <tags>
         <tag>路由策略</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>vlan间通信</title>
+    <url>/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/</url>
+    <content><![CDATA[<h1 id="VLAN间通信"><a href="#VLAN间通信" class="headerlink" title="VLAN间通信"></a>VLAN间通信</h1><h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>划分VLAN后，不同VLAN的用户间不能二层互访，这样能起到隔离广播的作用。但实际应用中，不同VLAN的用户又常有互访的需求，此时就需要实现不同VLAN的用户互访，简称VLAN间互访。</p>
+<span id="more"></span>
+
+<h2 id="实验拓扑"><a href="#实验拓扑" class="headerlink" title="实验拓扑"></a>实验拓扑</h2><p><img src="/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/vlantx001.png" alt="vlantx001"></p>
+<p>详解：R2划入vlan2，R3划入vlan3，与交换机之间采用access口，由于交换机g0&#x2F;0&#x2F;1需要通过多个vlan，所以配成trunk口。R2和R3相当于主机，发送和接受的数据都不带标签，交换机g0&#x2F;0&#x2F;2收到R2发送的数据，打上标签vlan2，然后发出去；交换机g0&#x2F;0&#x2F;1收到数据后，发现vlan的标签允许通过，则数据带着vlan2的标签通过；然后交换机g0&#x2F;0&#x2F;3口转发数据时，发现自己的pvid是vlan3，和vlan2不一样，所以不接受，则vlan2和vlan3不能通信。</p>
+<p>在某些场景下，需要特定vlan之间通信</p>
+<p>方法一：dot1q接口</p>
+<p>在r1上配置两个dot1q接口，g0&#x2F;0&#x2F;1.1和g0&#x2F;0&#x2F;1.2，分别对应vlan2和vlan3，作用就是可以终结vlan标签（剥离），vlan2的标签到r1后，被剥离掉vlan2的标签，然后转发时又被g0&#x2F;0&#x2F;1.2打上vlan3的标签，交换机g0&#x2F;0&#x2F;1通过，到g0&#x2F;0&#x2F;3，access口发现和自己的pvid一样，然后剥离掉标签，转发数据帧给r3.</p>
+<p>方法二：vlanif接口：交换机上配置vlanif2和vlanif3，ip地址配成192.168.2.254和192.168.3.254</p>
+<p>其实就是相当于两个不同网段的网关，然后实现三层的转发</p>
+<h2 id="Access接口"><a href="#Access接口" class="headerlink" title="Access接口"></a>Access接口</h2><p>交换机上常用来连接用户PC、服务器等终端设备的接口。Access接口所连接的这些设备的网卡往往只收发无标记帧。Access接口只能加入一个VLAN。只能允许一个VLAN通过。</p>
+<p><strong>转发原则</strong></p>
+<p>接收原则：</p>
+<p>①收到不带标签的数据帧，打上标签，vlan id&#x3D;端口的PVID</p>
+<p>②收到带标签的数据帧，检查数据帧vlan id是否和端口的PVID相同，相同直接接收；不同拒绝接收</p>
+<p>发送原则：</p>
+<p>①数据帧vlan id和端口PVID 相同，剥离标签发送；</p>
+<p>②数据帧vlan id和端口PVID 不同，禁止发送。</p>
+<h2 id="Trunk接口"><a href="#Trunk接口" class="headerlink" title="Trunk接口"></a>Trunk接口</h2><p>Trunk接口允许多个VLAN的数据帧通过，这些数据帧通过802.1Q Tag实现区分。Trunk接口常用于交换机之间的互联，也用于连接路由器、防火墙等设备的</p>
+<p>子接口</p>
+<p><strong>转发原则</strong></p>
+<p>接收原则：</p>
+<p>①收到不带标签的数据帧，打上标签，vlan id&#x3D;端口的PVID，然后查看该vlanid是否在允许列表中，是–接收，不是–拒绝</p>
+<p>②收到带标签的数据帧，查看该vlan id是否在允许列表中，是–接收，不是–拒绝</p>
+<p>发送原则：</p>
+<p>查看vlan id是否在允许列表中，I:不是–拒绝发送；II：是，查看接口的PVID和vlan id是否相同，相同–剥标签发送；不同–直接发送。</p>
+<h2 id="Hybrid接口"><a href="#Hybrid接口" class="headerlink" title="Hybrid接口"></a>Hybrid接口</h2><p>Hybrid接口与Trunk接口类似，也允许多个VLAN的数据帧通过，这些数据帧通过802.1Q Tag实现区分。用户可以灵活指定Hybrid接口在发送某个（或某些）VLAN的数据帧时是否携带Tag</p>
+<p><strong>转发原则</strong></p>
+<p>接收原则：</p>
+<p>①收到不带标签的数据帧，打上标签，vlan id&#x3D;端口的PVID，然后查看该vlanid是否在允许列表中，是–接收，不是–拒绝</p>
+<p>②收到带标签的数据帧，查看该vlan id是否在允许列表中，是–接收，不是–拒绝发送原则：查看vlan id是否在允许列表中，I:不是–拒绝发送；II：是，是否带标签发送取决于接口的配置。</p>
+<h2 id="PVID"><a href="#PVID" class="headerlink" title="PVID"></a>PVID</h2><p>可以手工修改，默认是1，access口的就是本身的vlan号，trunk可以有一个主vlan和多个副vlan，收到的数据和主vlan相同就剥离转发，收到和主vlan不一样的标签，查表，看看是不是在允许通过的列表，如果有，就带着原来的转发，要是没有，就不让过去啦。</p>
+<h2 id="实验配置过程"><a href="#实验配置过程" class="headerlink" title="实验配置过程"></a>实验配置过程</h2><p># R2和R3的IP地址及网关配置</p>
+<p><R2> system-view</R2></p>
+<p>Enter system view, return user view with Ctrl+Z.</p>
+<p>[R2]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;1]ip address 192.168.2.1 24</p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;1]quit	</p>
+<p>[R2]ip route-static 0.0.0.0 0 192.168.2.254</p>
+<p>配置默认路由，相当于给设备配置了网关。</p>
+<p><R3>system-view </R3></p>
+<p>Enter system view, return user view with Ctrl+Z.</p>
+<p>[R3]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
+<p>[R3-GigabitEthernet0&#x2F;0&#x2F;1]ip address 192.168.3.1 24</p>
+<p>[R3-GigabitEthernet0&#x2F;0&#x2F;1]quit</p>
+<p>[R3]ip route-static 0.0.0.0 0 192.168.3.254</p>
+<p># 在S1上对R2和R3进行VLAN划分</p>
+<p>[S1]vlan batch 2 3</p>
+<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;2</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;2]port link-type access </p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;2]port default vlan 2</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;2]quit</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;3</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;3]port link-type access </p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;3]port default vlan 3</p>
+<p>步骤 1 通过Dot1q终结子接口实现VLAN间互访 </p>
+<p># 配置S1上的Trunk接口</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;1]port trunk allow-pass vlan 2 3</p>
+<p><em>因为VLAN间<strong>互访数据要</strong>由R1来终结VLAN<strong>，</strong>所以S1和R1之间<strong>的链路要允许</strong>VLAN2和VLAN3通过**。</em></p>
+<p># 在R1上创建并配置Dot1q终结子接口</p>
+<p>[R1]interface GigabitEthernet 0&#x2F;0&#x2F;1.2 </p>
+<p>创建并进入子接口视图。2代表子接口的编号，一般建议子接口编号与VLAN ID相同，方便记忆。</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.2]dot1q termination vid 2 </p>
+<p><strong>dot1q termination vid</strong> <em>vlan-id</em>命令用来配置子接口Dot1q终结的VLAN ID。</p>
+<p>以此配置为例：当GigabitEthernet0&#x2F;0&#x2F;1接口收到带有VLAN 2标签的数据之后，会交由2号子接口进行VLAN终结操作并做后续处理。从2号子接口发出的数据也会带上VLAN 2的标签。</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.2]arp broadcast enable </p>
+<p>终结子接口不能转发广播报文，在收到广播报文后它们直接把该报文丢弃。为了允许终结子接口能转发广播报文，可以通过在子接口上执行命令<strong>arp broadcast enable</strong>使能终结子接口的ARP广播功能。部分设备默认使能该功能，此命令的配置根据设备而定。</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.2]ip address 192.168.2.254 24 </p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.2]quit</p>
+<p>[R1]interface GigabitEthernet 0&#x2F;0&#x2F;1.3</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.3]dot1q termination vid 3</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.3]arp broadcast enable</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.3]ip address 192.168.3.254 24</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.3]quit</p>
+<p># 检测VLAN间互访联通性 </p>
+<p><R2>ping 192.168.3.1</R2></p>
+<p> PING 192.168.3.1: 56  data bytes, press CTRL_C to break</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;1 ttl&#x3D;254 time&#x3D;60 ms</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;2 ttl&#x3D;254 time&#x3D;40 ms</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;3 ttl&#x3D;254 time&#x3D;110 ms</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;4 ttl&#x3D;254 time&#x3D;70 ms</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;5 ttl&#x3D;254 time&#x3D;100 ms</p>
+<p> — 192.168.3.1 ping statistics —</p>
+<p>  5 packet(s) transmitted</p>
+<p>  5 packet(s) received</p>
+<p>  0.00% packet loss</p>
+<p>  round-trip min&#x2F;avg&#x2F;max &#x3D; 40&#x2F;76&#x2F;110 ms</p>
+<p><R2>tracert 192.168.3.1 </R2></p>
+<p> traceroute to  192.168.3.1(192.168.3.1), max hops: 30 ,packet length: 40,press CTRL_C to break </p>
+<p> 1 192.168.2.254 30 ms  50 ms  50 ms </p>
+<p> 2 192.168.3.1 70 ms  60 ms  60 ms </p>
+<p>此时VLAN2和VLAN3之间已经可以正常的互访。</p>
+<p>步骤 2 通过VLANIF接口实现VLAN间互访</p>
+<p># 清除上一步配置</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;1]undo port trunk allow-pass vlan 2 3</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;1]undo port link-type</p>
+<p>[R1]undo interface GigabitEthernet 0&#x2F;0&#x2F;1.2 </p>
+<p>[R1]undo interface GigabitEthernet 0&#x2F;0&#x2F;1.3</p>
+<p># 在S1上创建相应的VLANIF接口 </p>
+<p>[S1]interface Vlanif 2</p>
+<p><strong>interface vlanif</strong> <em>vlan-id</em>命令用来创建VLANIF接口并进入VLANIF接口视图。只有先通过命令创建VLAN后，才能执行interface vlanif命令创建VLANIF接口。</p>
+<p>[S1-Vlanif2]ip address 192.168.2.254 24</p>
+<p>[S1-Vlanif2]quit</p>
+<p>[S1]interface Vlanif 3</p>
+<p>[S1-Vlanif3]ip address 192.168.3.254 24 </p>
+<p>[S1-Vlanif3]quit</p>
+<p># 检测VLAN间互访联通性</p>
+<p><R2>ping 192.168.3.1 </R2></p>
+<p> PING 192.168.3.1: 56  data bytes, press CTRL_C to break</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;1 ttl&#x3D;254 time&#x3D;100 ms</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;2 ttl&#x3D;254 time&#x3D;50 ms</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;3 ttl&#x3D;254 time&#x3D;50 ms</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;4 ttl&#x3D;254 time&#x3D;60 ms</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;5 ttl&#x3D;254 time&#x3D;70 ms</p>
+<p> — 192.168.3.1 ping statistics —</p>
+<p>  5 packet(s) transmitted</p>
+<p>  5 packet(s) received</p>
+<p>  0.00% packet loss</p>
+<p>  round-trip min&#x2F;avg&#x2F;max &#x3D; 50&#x2F;66&#x2F;100 ms</p>
+<p><R2>tracert 192.168.3.1 </R2></p>
+<p> traceroute to  192.168.3.1(192.168.3.1), max hops: 30 ,packet length: 40,press CTRL_C to break </p>
+<p> 1 192.168.2.254 40 ms  30 ms  20 ms </p>
+<p> 2 192.168.3.1 40 ms  30 ms  40 ms</p>
+<p>此时VLAN2和VLAN3之间已经可以正常的互访。</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>vlan间通信</tag>
+        <tag>dot1q</tag>
+        <tag>vlanif</tag>
       </tags>
   </entry>
 </search>
