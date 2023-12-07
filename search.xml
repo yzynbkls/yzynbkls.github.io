@@ -374,167 +374,6 @@
       </tags>
   </entry>
   <entry>
-    <title>FTP实验</title>
-    <url>/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/</url>
-    <content><![CDATA[<h1 id="File-Transfer-Protocol-文件传输协议"><a href="#File-Transfer-Protocol-文件传输协议" class="headerlink" title="File Transfer Protocol 文件传输协议"></a>File Transfer Protocol 文件传输协议</h1><p>FTP服务器开启21号端口进行控制连接，20号端口与客户端建立数据连接</p>
-<p>ASCII ((American Standard Code for Information Interchange): 美国信息交换标准代码）是基于拉丁字母的一套电脑编码系统，主要用于显示现代英语和其他西欧语言，它是最通用的信息交换标准。</p>
-<p>FTP是用来传送文件的协议。使用FTP实现远程文件传输的同时，还可以保证数据传输的可靠性和高效性。</p>
-<p>FTP 是基于客户———服务器（C&#x2F;S）模型而设计的，在客户端与 FTP 服务器之间建立两个连接</p>
-<h2 id="传输方式"><a href="#传输方式" class="headerlink" title="传输方式"></a>传输方式</h2><p>FTP支持两种方式的传输：文本（ASCII）方式和二进制（Binary）方式。通常文本文件的传输采用ASCII方式，而图象、声音文件、加密和压缩文件等非文本文件采用二进制方式传输，如果为了从一个系统上传输文件而使用了与本地系统不同的计算机字节位数，那么就必须使用Tenex模式。FTP以ASCII方式作为缺省的文件传输方式。</p>
-<h2 id="传输过程"><a href="#传输过程" class="headerlink" title="传输过程"></a>传输过程</h2><p> 使用FTP进行文件传输时，会使用两个TCP连接。第一个连接是FTP客户端和FTP服务器间的控制连接。FTP服务器开启21号端口，等待FTP客户端发送连接请求。FTP客户端随机开启端口，向服务器发送建立连接的请求。控制连接用于在服务器和客户端之间传输控制命令。<br>        第二个连接是FTP客户端和FTP服务器间的数据连接。服务器使用TCP的20号端口与客户端建立数据连接。通常情况下，服务器主动建立或中断数据连接。</p>
-<h2 id="FTP服务器配置"><a href="#FTP服务器配置" class="headerlink" title="FTP服务器配置"></a>FTP服务器配置</h2><p>路由器和X7系列交换机均可提供FTP功能。<br>执行ftp server enable命令使能FTP功能。<br>执行set default ftp-directory命令设置FTP用户的默认工作目录。</p>
-<p>在配置FTP服务器时，可以使用AAA为每个用户分别配置登录账号和访问权限。 aaa命令用来进入AAA视图。</p>
-<p>  local-user user-name { access-limit max-number | ftp-directory directory | idle-timeout         minutes [ seconds ] | password cipher password [ opt ]         | privilege level level | state {active | block } } *命令用来创建本地用户，并配置本地用户的各项参数。</p>
-<pre><code>  user-name指定用户名。
-    local-user huawei service-type ftp命令用来配置本地用户的接入类型为ftp。
-    ftp-directory指定FTP用户可访问的目录。如果不配置FTP用户可访问的目录，则FTP用户无法登录设备。
-    access-limit指定用户名可建立的最大连接数目。
-    idle-timeout指定用户的闲置超时时间。
-    privilege level指定用户的优先级。
-</code></pre>
-<h2 id="命令详解"><a href="#命令详解" class="headerlink" title="命令详解"></a>命令详解</h2><h3 id="idle-timeout"><a href="#idle-timeout" class="headerlink" title="idle-timeout"></a>idle-timeout</h3><p><strong>idle-timeout</strong>命令用来设置用户连接的超时时间。</p>
-<p><strong>undo idle-timeout</strong>命令用来恢复超时时间的缺省值。</p>
-<p>缺省情况下，用户连接的超时时间是5分钟。</p>
-<p>命令格式</p>
-<p><strong>idle-timeout</strong> <em>minutes</em> [ <em>seconds</em> ]</p>
-<p><strong>undo idle-timeout</strong></p>
-<table>
-<thead>
-<tr>
-<th align="left"><em>minutes</em></th>
-<th>指定用户界面断连的超时时间的分钟数。</th>
-<th>整数形式，取值范围是0～35791，单位是分钟。</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left"><em>seconds</em></td>
-<td>指定用户界面断连的超时时间的秒数。</td>
-<td>整数形式，取值范围是0～59，单位是秒</td>
-</tr>
-</tbody></table>
-<p>缺省级别</p>
-<p>3：管理级</p>
-<ul>
-<li>设置执行命令<strong>idle-timeout</strong> <strong>0 0</strong>即关闭用户界面的超时断连功能。</li>
-<li>如果用户界面没有设置闲置断连功能，则会导致已登录的用户始终处于连接状态，给设备带来安全风险，同时还有可能导致其他用户无法获得连接。</li>
-<li>通常情况下，推荐设置用户界面断连的超时时间在10～15分钟之间。</li>
-</ul>
-<p># 设置超时为1分钟30秒。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">idle-timeout 1 30</span><br></pre></td></tr></table></figure>
-
-
-
-<h3 id="local-user-privilege-level"><a href="#local-user-privilege-level" class="headerlink" title="local-user privilege level"></a>local-user privilege level</h3><p>必须配置在3以上，否则ftp连接无法成功</p>
-<p><strong>local-user privilege level</strong>命令用来配置本地用户的优先级。</p>
-<p><strong>undo</strong> <strong>local-user privilege level</strong>命令用来将本地用户的优先级恢复为缺省配置。</p>
-<p>缺省情况下，本地用户（如Telnet用户、SSH用户）的优先级由管理模块来决定。</p>
-<p>命令格式</p>
-<p><strong>local-user</strong> <em>user-name</em> <strong>privilege level</strong> <em>level</em></p>
-<p><strong>undo local-user</strong> <em>user-name</em> <strong>privilege level</strong></p>
-<table>
-<thead>
-<tr>
-<th><em>user-name</em></th>
-<th>用户名。</th>
-<th>字符串形式，不支持空格，不区分大小写，长度范围是1~64。</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><em>level</em></td>
-<td>用户的优先级。</td>
-<td>整数形式，取值范围是0~15，取值越大，用户的优先级越高。缺省级别是0级。不同级别的用户登录后，只能使用等于或低于自己级别的命令</td>
-</tr>
-</tbody></table>
-<p>缺省情况下，命令级别分为0~3级：</p>
-<ul>
-<li>级别0即参观级，网络诊断工具命令（ping、tracert）、从本设备出发访问外部设备的命令（包括：Telnet 客户端、SSH）等。该级别命令不允许进行配置文件保存的操作。</li>
-<li>级别1即监控级，用于系统维护，包括display命令。该级别命令不允许进行配置文件保存的操作。</li>
-<li>级别2即配置级，可以使用业务配置命令，包括路由、各个网络层次的命令，向用户提供直接网络服务。</li>
-<li>级别3即管理级，用于系统基本运行的命令，对业务提供支撑作用，包括文件系统、FTP、TFTP、配置文件切换命令、备板控制命令、用户管理命令、命令级别设置命令、系统内部参数设置命令；用于业务故障诊断的debugging命令。</li>
-</ul>
-<h3 id="access-limit"><a href="#access-limit" class="headerlink" title="access-limit"></a>access-limit</h3><p><strong>access-limit</strong>命令用来配置当前域允许接入的用户数。</p>
-<p><strong>undo access-limit</strong>命令用来恢复缺省配置。</p>
-<p>缺省情况下，不限制接入的用户数目。</p>
-<p>命令格式</p>
-<p><strong>access-limit</strong> <em>max-number</em></p>
-<p><strong>undo access-limit</strong></p>
-<table>
-<thead>
-<tr>
-<th><em>max-number</em></th>
-<th>指定允许接入的用户数。</th>
-<th>整数形式，取值范围是0～283648。</th>
-</tr>
-</thead>
-<tbody><tr>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-</tbody></table>
-<p>为了更方便地管理用户访问设备，可以限制域下用户的在线数量。</p>
-<p><strong>注意事项</strong></p>
-<p>执行这条配置命令后，当接入用户数大于允许的用户数时，系统不再允许用户接入系统，提示用户认证失败。</p>
-<p><strong>access-limit</strong>命令对一个域下所能接入的用户总数进行限制，不区分接入用户的类型。</p>
-<p># 设置当前域最多允许接入100个用户。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">access-limit 100</span><br></pre></td></tr></table></figure>
-
-
-
-<h3 id="local-user-ftp-directory"><a href="#local-user-ftp-directory" class="headerlink" title="local-user ftp-directory"></a>local-user ftp-directory</h3><p><strong>local-user ftp-directory</strong>命令用来配置本地用户的FTP目录。</p>
-<p><strong>undo local-user ftp-directory</strong>命令用来将本地用户的FTP目录恢复为缺省配置。</p>
-<p>缺省情况下，本地用户的FTP目录为空。</p>
-<p>当需要将设备配置为FTP服务器，从而便于本地用户以FTP方式登录设备，对设备上的文件进行增加、删除、修改等操作时，可以通过本命令配置本地用户以FTP方式登录设备后所处的目录。</p>
-<p>不指定该目录时，本地用户无法以FTP方式登录设备。</p>
-<p>配置本地用户的FTP目录时，该用户必须已由local-user password命令建立。</p>
-<h3 id="local-user-password"><a href="#local-user-password" class="headerlink" title="local-user password"></a>local-user password</h3><p><strong>local-user password</strong>命令用来创建一个本地用户并配置该用户的登录密码，或者修改已创建用户的登录密码。</p>
-<p><strong>undo local-user</strong>命令用来删除一个本地用户。</p>
-<p>缺省情况下，系统没有本地用户。</p>
-<p><strong>local-user</strong> <em>user-name</em> <strong>password</strong> [ <strong>cipher</strong> <em>password</em> | <strong>irreversible-cipher</strong> <em>irreversible-cipher-password</em> ]</p>
-<p><strong>undo local-user</strong> <em>user-name</em></p>
-<p><strong>cipher</strong> <em>password</em></p>
-<p>指定密文密钥。密钥以明文或密文形式输入，但配置文件中保存为密文形式。</p>
-<p><strong>irreversible-cipher</strong> <em>irreversible-cipher-password</em></p>
-<p>指定不可逆密文密钥。密钥以明文或不可逆密文形式输入，但配置文件中保存为密文形式。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>1.FTP服务器需要开启TCP的21号端口来建立控制连接，20号端口来建立数据连接。</p>
-<p>2.如果用户无权访问任何工作目录，则需要定义一个默认的FTP目录。执行set default ftp-directory <directory location>命令建立默认目录。</directory></p>
-<h2 id="FTP实验"><a href="#FTP实验" class="headerlink" title="FTP实验"></a>FTP实验</h2><p>R1 做为FTP Server 进行配置<br>R2 做为Client 测试</p>
-<p>R1：<br>undo ter mo<br>sys<br>sysname R1<br>int g0&#x2F;0&#x2F;0<br>ip add 192.168.1.1 24</p>
-<p>R2：<br>undo ter mo<br>sys<br>sysname R2<br>int g0&#x2F;0&#x2F;0<br>ip add 192.168.1.2 24</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/ftp1130183749.png" alt="ftp1130183749"></p>
-<p>R1:<br>ftp server enable<br>set default ftp-directory flash:&#x2F;</p>
-<p>（设置默认目录为flash:&#x2F;）</p>
-<p><strong>ftp server enable</strong>命令用来开启设备的FTP服务器功能，允许FTP用户登录。缺省情况下，FTP服务器功能处于关闭状态。</p>
-<p>其他可选的配置参数还包括：指定FTP服务器端口号、指定FTP服务器的源地址和配置FTP连接空闲时间等。</p>
-<p>R1：</p>
-<p>通过在AAA中设置用户名和密码（均为huawei）<br>aaa<br>local-user huawei password cipher huawei<br>local-user huawei service-type ftp<br>local-user huawei ftp-directory flash:&#x2F;<br>local-user huawei access-limit 200<br>local-user huawei idle-timeout 0 0<br>local-user huawei privilege level 3</p>
-<p>查看ftp server配置信息</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/diskvk30184121.png" alt="diskvk30184121"></p>
-<p>R2登录FTP服务器</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/ftpdenglu1130184259.png" alt="ftpdenglu1130184259"></p>
-<p>在R1和R2上分别保存文件text1.cfg和text2.cfg，用于后续测试</p>
-<p>R1：save text1.cfg</p>
-<p>R2：save text2.cfg</p>
-<p>R2上通过dir命令查看服务器上的文件</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/dirr2184558.png" alt="dirr2184558"></p>
-<p>R2从服务器上下载text1.cfg文件，并改名为newtext1.cfg</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/xiazaigaiming0184834.png" alt="xiazaigaiming0184834"></p>
-<p>R2本地查看dir</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/r2bendichakan30184952.png" alt="r2bendichakan30184952"></p>
-<p>put把本地文件text2.cfg上传到服务器，并改名为newtext2.cfg</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/putnew85130.png" alt="putnew85130"></p>
-<p>查看是否上传成功</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/yanzg5227.png" alt="yanzg5227"></p>
-<p>关闭ftp连接：bye</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>FTP</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>DHCP基础配置</title>
     <url>/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/</url>
     <content><![CDATA[<p> DHCP是一种终端自动配置协议，客户端通过DHCP协议可获取一个合法的动态IP地址。</p>
@@ -807,6 +646,167 @@
       <tags>
         <tag>DHCP Relay</tag>
         <tag>DHCP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>FTP实验</title>
+    <url>/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/</url>
+    <content><![CDATA[<h1 id="File-Transfer-Protocol-文件传输协议"><a href="#File-Transfer-Protocol-文件传输协议" class="headerlink" title="File Transfer Protocol 文件传输协议"></a>File Transfer Protocol 文件传输协议</h1><p>FTP服务器开启21号端口进行控制连接，20号端口与客户端建立数据连接</p>
+<p>ASCII ((American Standard Code for Information Interchange): 美国信息交换标准代码）是基于拉丁字母的一套电脑编码系统，主要用于显示现代英语和其他西欧语言，它是最通用的信息交换标准。</p>
+<p>FTP是用来传送文件的协议。使用FTP实现远程文件传输的同时，还可以保证数据传输的可靠性和高效性。</p>
+<p>FTP 是基于客户———服务器（C&#x2F;S）模型而设计的，在客户端与 FTP 服务器之间建立两个连接</p>
+<h2 id="传输方式"><a href="#传输方式" class="headerlink" title="传输方式"></a>传输方式</h2><p>FTP支持两种方式的传输：文本（ASCII）方式和二进制（Binary）方式。通常文本文件的传输采用ASCII方式，而图象、声音文件、加密和压缩文件等非文本文件采用二进制方式传输，如果为了从一个系统上传输文件而使用了与本地系统不同的计算机字节位数，那么就必须使用Tenex模式。FTP以ASCII方式作为缺省的文件传输方式。</p>
+<h2 id="传输过程"><a href="#传输过程" class="headerlink" title="传输过程"></a>传输过程</h2><p> 使用FTP进行文件传输时，会使用两个TCP连接。第一个连接是FTP客户端和FTP服务器间的控制连接。FTP服务器开启21号端口，等待FTP客户端发送连接请求。FTP客户端随机开启端口，向服务器发送建立连接的请求。控制连接用于在服务器和客户端之间传输控制命令。<br>        第二个连接是FTP客户端和FTP服务器间的数据连接。服务器使用TCP的20号端口与客户端建立数据连接。通常情况下，服务器主动建立或中断数据连接。</p>
+<h2 id="FTP服务器配置"><a href="#FTP服务器配置" class="headerlink" title="FTP服务器配置"></a>FTP服务器配置</h2><p>路由器和X7系列交换机均可提供FTP功能。<br>执行ftp server enable命令使能FTP功能。<br>执行set default ftp-directory命令设置FTP用户的默认工作目录。</p>
+<p>在配置FTP服务器时，可以使用AAA为每个用户分别配置登录账号和访问权限。 aaa命令用来进入AAA视图。</p>
+<p>  local-user user-name { access-limit max-number | ftp-directory directory | idle-timeout         minutes [ seconds ] | password cipher password [ opt ]         | privilege level level | state {active | block } } *命令用来创建本地用户，并配置本地用户的各项参数。</p>
+<pre><code>  user-name指定用户名。
+    local-user huawei service-type ftp命令用来配置本地用户的接入类型为ftp。
+    ftp-directory指定FTP用户可访问的目录。如果不配置FTP用户可访问的目录，则FTP用户无法登录设备。
+    access-limit指定用户名可建立的最大连接数目。
+    idle-timeout指定用户的闲置超时时间。
+    privilege level指定用户的优先级。
+</code></pre>
+<h2 id="命令详解"><a href="#命令详解" class="headerlink" title="命令详解"></a>命令详解</h2><h3 id="idle-timeout"><a href="#idle-timeout" class="headerlink" title="idle-timeout"></a>idle-timeout</h3><p><strong>idle-timeout</strong>命令用来设置用户连接的超时时间。</p>
+<p><strong>undo idle-timeout</strong>命令用来恢复超时时间的缺省值。</p>
+<p>缺省情况下，用户连接的超时时间是5分钟。</p>
+<p>命令格式</p>
+<p><strong>idle-timeout</strong> <em>minutes</em> [ <em>seconds</em> ]</p>
+<p><strong>undo idle-timeout</strong></p>
+<table>
+<thead>
+<tr>
+<th align="left"><em>minutes</em></th>
+<th>指定用户界面断连的超时时间的分钟数。</th>
+<th>整数形式，取值范围是0～35791，单位是分钟。</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><em>seconds</em></td>
+<td>指定用户界面断连的超时时间的秒数。</td>
+<td>整数形式，取值范围是0～59，单位是秒</td>
+</tr>
+</tbody></table>
+<p>缺省级别</p>
+<p>3：管理级</p>
+<ul>
+<li>设置执行命令<strong>idle-timeout</strong> <strong>0 0</strong>即关闭用户界面的超时断连功能。</li>
+<li>如果用户界面没有设置闲置断连功能，则会导致已登录的用户始终处于连接状态，给设备带来安全风险，同时还有可能导致其他用户无法获得连接。</li>
+<li>通常情况下，推荐设置用户界面断连的超时时间在10～15分钟之间。</li>
+</ul>
+<p># 设置超时为1分钟30秒。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">idle-timeout 1 30</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="local-user-privilege-level"><a href="#local-user-privilege-level" class="headerlink" title="local-user privilege level"></a>local-user privilege level</h3><p>必须配置在3以上，否则ftp连接无法成功</p>
+<p><strong>local-user privilege level</strong>命令用来配置本地用户的优先级。</p>
+<p><strong>undo</strong> <strong>local-user privilege level</strong>命令用来将本地用户的优先级恢复为缺省配置。</p>
+<p>缺省情况下，本地用户（如Telnet用户、SSH用户）的优先级由管理模块来决定。</p>
+<p>命令格式</p>
+<p><strong>local-user</strong> <em>user-name</em> <strong>privilege level</strong> <em>level</em></p>
+<p><strong>undo local-user</strong> <em>user-name</em> <strong>privilege level</strong></p>
+<table>
+<thead>
+<tr>
+<th><em>user-name</em></th>
+<th>用户名。</th>
+<th>字符串形式，不支持空格，不区分大小写，长度范围是1~64。</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><em>level</em></td>
+<td>用户的优先级。</td>
+<td>整数形式，取值范围是0~15，取值越大，用户的优先级越高。缺省级别是0级。不同级别的用户登录后，只能使用等于或低于自己级别的命令</td>
+</tr>
+</tbody></table>
+<p>缺省情况下，命令级别分为0~3级：</p>
+<ul>
+<li>级别0即参观级，网络诊断工具命令（ping、tracert）、从本设备出发访问外部设备的命令（包括：Telnet 客户端、SSH）等。该级别命令不允许进行配置文件保存的操作。</li>
+<li>级别1即监控级，用于系统维护，包括display命令。该级别命令不允许进行配置文件保存的操作。</li>
+<li>级别2即配置级，可以使用业务配置命令，包括路由、各个网络层次的命令，向用户提供直接网络服务。</li>
+<li>级别3即管理级，用于系统基本运行的命令，对业务提供支撑作用，包括文件系统、FTP、TFTP、配置文件切换命令、备板控制命令、用户管理命令、命令级别设置命令、系统内部参数设置命令；用于业务故障诊断的debugging命令。</li>
+</ul>
+<h3 id="access-limit"><a href="#access-limit" class="headerlink" title="access-limit"></a>access-limit</h3><p><strong>access-limit</strong>命令用来配置当前域允许接入的用户数。</p>
+<p><strong>undo access-limit</strong>命令用来恢复缺省配置。</p>
+<p>缺省情况下，不限制接入的用户数目。</p>
+<p>命令格式</p>
+<p><strong>access-limit</strong> <em>max-number</em></p>
+<p><strong>undo access-limit</strong></p>
+<table>
+<thead>
+<tr>
+<th><em>max-number</em></th>
+<th>指定允许接入的用户数。</th>
+<th>整数形式，取值范围是0～283648。</th>
+</tr>
+</thead>
+<tbody><tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>为了更方便地管理用户访问设备，可以限制域下用户的在线数量。</p>
+<p><strong>注意事项</strong></p>
+<p>执行这条配置命令后，当接入用户数大于允许的用户数时，系统不再允许用户接入系统，提示用户认证失败。</p>
+<p><strong>access-limit</strong>命令对一个域下所能接入的用户总数进行限制，不区分接入用户的类型。</p>
+<p># 设置当前域最多允许接入100个用户。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">access-limit 100</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="local-user-ftp-directory"><a href="#local-user-ftp-directory" class="headerlink" title="local-user ftp-directory"></a>local-user ftp-directory</h3><p><strong>local-user ftp-directory</strong>命令用来配置本地用户的FTP目录。</p>
+<p><strong>undo local-user ftp-directory</strong>命令用来将本地用户的FTP目录恢复为缺省配置。</p>
+<p>缺省情况下，本地用户的FTP目录为空。</p>
+<p>当需要将设备配置为FTP服务器，从而便于本地用户以FTP方式登录设备，对设备上的文件进行增加、删除、修改等操作时，可以通过本命令配置本地用户以FTP方式登录设备后所处的目录。</p>
+<p>不指定该目录时，本地用户无法以FTP方式登录设备。</p>
+<p>配置本地用户的FTP目录时，该用户必须已由local-user password命令建立。</p>
+<h3 id="local-user-password"><a href="#local-user-password" class="headerlink" title="local-user password"></a>local-user password</h3><p><strong>local-user password</strong>命令用来创建一个本地用户并配置该用户的登录密码，或者修改已创建用户的登录密码。</p>
+<p><strong>undo local-user</strong>命令用来删除一个本地用户。</p>
+<p>缺省情况下，系统没有本地用户。</p>
+<p><strong>local-user</strong> <em>user-name</em> <strong>password</strong> [ <strong>cipher</strong> <em>password</em> | <strong>irreversible-cipher</strong> <em>irreversible-cipher-password</em> ]</p>
+<p><strong>undo local-user</strong> <em>user-name</em></p>
+<p><strong>cipher</strong> <em>password</em></p>
+<p>指定密文密钥。密钥以明文或密文形式输入，但配置文件中保存为密文形式。</p>
+<p><strong>irreversible-cipher</strong> <em>irreversible-cipher-password</em></p>
+<p>指定不可逆密文密钥。密钥以明文或不可逆密文形式输入，但配置文件中保存为密文形式。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>1.FTP服务器需要开启TCP的21号端口来建立控制连接，20号端口来建立数据连接。</p>
+<p>2.如果用户无权访问任何工作目录，则需要定义一个默认的FTP目录。执行set default ftp-directory <directory location>命令建立默认目录。</directory></p>
+<h2 id="FTP实验"><a href="#FTP实验" class="headerlink" title="FTP实验"></a>FTP实验</h2><p>R1 做为FTP Server 进行配置<br>R2 做为Client 测试</p>
+<p>R1：<br>undo ter mo<br>sys<br>sysname R1<br>int g0&#x2F;0&#x2F;0<br>ip add 192.168.1.1 24</p>
+<p>R2：<br>undo ter mo<br>sys<br>sysname R2<br>int g0&#x2F;0&#x2F;0<br>ip add 192.168.1.2 24</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/ftp1130183749.png" alt="ftp1130183749"></p>
+<p>R1:<br>ftp server enable<br>set default ftp-directory flash:&#x2F;</p>
+<p>（设置默认目录为flash:&#x2F;）</p>
+<p><strong>ftp server enable</strong>命令用来开启设备的FTP服务器功能，允许FTP用户登录。缺省情况下，FTP服务器功能处于关闭状态。</p>
+<p>其他可选的配置参数还包括：指定FTP服务器端口号、指定FTP服务器的源地址和配置FTP连接空闲时间等。</p>
+<p>R1：</p>
+<p>通过在AAA中设置用户名和密码（均为huawei）<br>aaa<br>local-user huawei password cipher huawei<br>local-user huawei service-type ftp<br>local-user huawei ftp-directory flash:&#x2F;<br>local-user huawei access-limit 200<br>local-user huawei idle-timeout 0 0<br>local-user huawei privilege level 3</p>
+<p>查看ftp server配置信息</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/diskvk30184121.png" alt="diskvk30184121"></p>
+<p>R2登录FTP服务器</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/ftpdenglu1130184259.png" alt="ftpdenglu1130184259"></p>
+<p>在R1和R2上分别保存文件text1.cfg和text2.cfg，用于后续测试</p>
+<p>R1：save text1.cfg</p>
+<p>R2：save text2.cfg</p>
+<p>R2上通过dir命令查看服务器上的文件</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/dirr2184558.png" alt="dirr2184558"></p>
+<p>R2从服务器上下载text1.cfg文件，并改名为newtext1.cfg</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/xiazaigaiming0184834.png" alt="xiazaigaiming0184834"></p>
+<p>R2本地查看dir</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/r2bendichakan30184952.png" alt="r2bendichakan30184952"></p>
+<p>put把本地文件text2.cfg上传到服务器，并改名为newtext2.cfg</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/putnew85130.png" alt="putnew85130"></p>
+<p>查看是否上传成功</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/yanzg5227.png" alt="yanzg5227"></p>
+<p>关闭ftp连接：bye</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>FTP</tag>
       </tags>
   </entry>
   <entry>
