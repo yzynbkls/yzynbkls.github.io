@@ -172,6 +172,95 @@
       </tags>
   </entry>
   <entry>
+    <title>BGP路由反射器</title>
+    <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/</url>
+    <content><![CDATA[<h1 id="BGP路由反射器"><a href="#BGP路由反射器" class="headerlink" title="BGP路由反射器"></a>BGP路由反射器</h1><p>由于水平分割的原因，为了保证AS内所有的BGP路由器都能学习到完整的BGP路由，就必须在AS内实现IBGP全互联。</p>
+<p>然而实现IBGP全互联存在诸多短板：</p>
+<p> 路由器需维护大量的TCP及BGP连接，尤其在路由器数量较多时。</p>
+<p> AS内BGP网络的可扩展性较差，因为通过纯手工配置命令。</p>
+<p>为了解决该问题，可应用到RR路由反射器技术。</p>
+<p>1、Client：RR客户端，在RR设备上通过手动指定。</p>
+<blockquote>
+<p>指定命令：peer 邻居 reflect-client</p>
+</blockquote>
+<p>2、除了指定的设备为客户端，其它设备均为非客户端。</p>
+<p>实验：</p>
+<p>R1、R2、R3、R4都属于AS64511，其连接方式、互联接口地址如图所示。每台设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号。R1、R2上的Loopback1地址分别为10.1.1.1&#x2F;24、10.2.2.2&#x2F;24，用于模拟用户网段。</p>
+<span id="more"></span>
+
+<p>所有设备都使用Loopback0地址作为BGP Router ID，R1与R2、R2与R3、R3与R4、R4与R2之间基于直连接口建立IBGP对等体关系，其中R1为R2的路由反射器客户端，R2为R3的路由反射器客户端，R3为R4的路由反射器客户端。</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/bgpluy8165208.png" alt="bgpluy8165208"></p>
+<p>配置ip地址：略</p>
+<p>建立ibgp对等体：略</p>
+<h1 id="配置路由反射器"><a href="#配置路由反射器" class="headerlink" title="配置路由反射器"></a>配置路由反射器</h1><p>#R2上将R1配置为路由反射器客户端</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] peer 10.0.1.1 reflect-client</p>
+<p>#R3上将R2配置为路由反射器客户端</p>
+<p>[R3]bgp 64511</p>
+<p>[R3-bgp] peer 10.0.2.2 reflect-client</p>
+<p>#R4上将R3配置为路由反射器客户端</p>
+<p>[R4]bgp 64511</p>
+<p>[R4-bgp] peer 10.0.3.3 reflect-client</p>
+<h1 id="验证Orginator-ID实现路由防环"><a href="#验证Orginator-ID实现路由防环" class="headerlink" title="验证Orginator_ID实现路由防环"></a>验证Orginator_ID实现路由防环</h1><p>在本步骤中，我们将在R2上发布BGP路由10.2.2.0&#x2F;24，并观察该路由依次经路由反射器R3、R4反射后，被通告回R2从而引发潜在路由环路风险的情况。</p>
+<p>缺省情况下，R2发布BGP路由后，该路由将被R2直接通告给R4，另一方面也会通过R3反射给R4，此时R4将优选R2直接通告过来的路由，从而不会再将R3反射过来的路由再反射回给R2。为此，我们需要在R2上部署路由策略，使R2不直接向R4通告10.2.2.0&#x2F;24路由。</p>
+<p>#配置路由策略</p>
+<p>[R2]acl number 2000</p>
+<p>[R2-acl-basic-2000] rule 5 permit</p>
+<p>[R2-acl-basic-2000] quit</p>
+<p>[R2]route-policy bgp deny node 10</p>
+<p>[R2-route-policy] if-match acl 2000</p>
+<p>#在BGP中调用路由策略</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] peer 10.0.24.4 route-policy bgp export</p>
+<p>#在R2上发布路由</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] network 10.2.2.0 24</p>
+<p>#R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/chakan102224728.png" alt="chakan102224728"></p>
+<p>R2将该条路由通告给了R3、R1，但是并未通告给R4。</p>
+<p>#R3上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r174808.png" alt="r174808"></p>
+<p>R3将来自反射器客户端的BGP路由10.2.2.0&#x2F;24反射给了10.0.34.4（R4）。同时该BGP路由的nexthop为10.0.23.2。</p>
+<p># R4上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r4chakan80119.png" alt="r4chakan80119"></p>
+<p>该条路由来自反射器客户端R3，原始路由经由R3反射，路由的nexthop地址并未改变，同时R3为其添加了Orginator_ID属性，值为10.0.2.2。同时R4将该条路由反射给了R2。</p>
+<p>#再次在R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zacifa80349.png" alt="zacifa80349"></p>
+<p>依旧只存在本地通告的BGP路由，没有R4通告的BGP路由。</p>
+<p>#在R2上查看BGP对等体10.0.4.4的详细信息</p>
+<p>display bgp peer 10.0.4.4 verbose</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/safhaofbsh1128180629.png" alt="safhaofbsh1128180629"></p>
+<p>从输出信息可以看到R2从R4收到了1个Update报文，未向R4发送Update报文（路由策略限制），但是本地BGP路由表中不存在由R4通告的BGP路由10.2.2.0&#x2F;24。</p>
+<p>R4通告的BGP路由Orginator_ID属性值与本地的Router ID一致，R2忽略了该路由通告。</p>
+<h1 id="验证Cluster-List实现路由防环"><a href="#验证Cluster-List实现路由防环" class="headerlink" title="验证Cluster_List实现路由防环"></a>验证Cluster_List实现路由防环</h1><p>为了方便观察现象，取消R2上的BGP路由发布，在R1上将Loopback1接口路由发布到BGP，观察Cluster_List如何防止环路。</p>
+<p>#取消R2上的BGP路由发布</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] undo network 10.2.2.0 255.255.255.0</p>
+<p>#在R1上将Loopback1接口路由发布到BGP</p>
+<p>[R1]bgp 64511</p>
+<p>[R1-bgp] network 10.1.1.0 24</p>
+<p>#依次在R1、R2、R3、R4上查看BGP路由10.1.1.0 &#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/xinfuaiell181000.png" alt="xinfuaiell181000"></p>
+<p>R1为BGP路由10.1.1.0&#x2F;24的始发者，R1将路由通告给了R2</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/2xinfahol128181116.png" alt="2xinfahol128181116"></p>
+<p>来自路由反射器客户端R1的BGP路由10.1.1.0&#x2F;24，R2将其反射给了R3</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/3xinmbxmcx1128181206.png" alt="3xinmbxmcx1128181206"></p>
+<p>来自路由反射器客户端R2的BGP路由10.1.1.0&#x2F;24，R2反射时添加了Cluster_List属性，值为10.0.2.2，R3将该条路由反射给了R4</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/44xinm1334.png" alt="44xinm1334"></p>
+<p>来自路由反射器客户端R3的BGP路由10.1.1.0&#x2F;24，R3反射时添加了Cluster_List属性的值，当前值为10.0.3.3，10.0.2.2，R4将该条路由反射给了R2</p>
+<p>#再次查看R2的BGP路由表</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zaizaici661435.png" alt="zaizaici661435"></p>
+<p>R2的BGP路由表中依旧只有一条来自r1的BGP路由10.1.1.0&#x2F;24。</p>
+<p>4通告的BGP路由其Cluster_List属性值中包含了R2的Cluster-ID，R2忽略了该路由通告。</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>BGP路由反射器</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>BGP路由优选</title>
     <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/</url>
     <content><![CDATA[<h1 id="BGP路由优选"><a href="#BGP路由优选" class="headerlink" title="BGP路由优选"></a>BGP路由优选</h1><h2 id="实验背景"><a href="#实验背景" class="headerlink" title="实验背景"></a>实验背景</h2><p>你是公司的网络管理员。公司的网络采用了BGP协议接入了两个服务运营商。公司自己采用了私有的AS号64512，ISP1的AS号为100，ISP2的AS号为200。通过AS100、AS200都可以到达相同的网络，你通过改变BGP的各种属性达到了调整路由走向的目的。</p>
@@ -282,95 +371,6 @@
       </categories>
       <tags>
         <tag>BGP路由优选</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>BGP路由反射器</title>
-    <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/</url>
-    <content><![CDATA[<h1 id="BGP路由反射器"><a href="#BGP路由反射器" class="headerlink" title="BGP路由反射器"></a>BGP路由反射器</h1><p>由于水平分割的原因，为了保证AS内所有的BGP路由器都能学习到完整的BGP路由，就必须在AS内实现IBGP全互联。</p>
-<p>然而实现IBGP全互联存在诸多短板：</p>
-<p> 路由器需维护大量的TCP及BGP连接，尤其在路由器数量较多时。</p>
-<p> AS内BGP网络的可扩展性较差，因为通过纯手工配置命令。</p>
-<p>为了解决该问题，可应用到RR路由反射器技术。</p>
-<p>1、Client：RR客户端，在RR设备上通过手动指定。</p>
-<blockquote>
-<p>指定命令：peer 邻居 reflect-client</p>
-</blockquote>
-<p>2、除了指定的设备为客户端，其它设备均为非客户端。</p>
-<p>实验：</p>
-<p>R1、R2、R3、R4都属于AS64511，其连接方式、互联接口地址如图所示。每台设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号。R1、R2上的Loopback1地址分别为10.1.1.1&#x2F;24、10.2.2.2&#x2F;24，用于模拟用户网段。</p>
-<span id="more"></span>
-
-<p>所有设备都使用Loopback0地址作为BGP Router ID，R1与R2、R2与R3、R3与R4、R4与R2之间基于直连接口建立IBGP对等体关系，其中R1为R2的路由反射器客户端，R2为R3的路由反射器客户端，R3为R4的路由反射器客户端。</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/bgpluy8165208.png" alt="bgpluy8165208"></p>
-<p>配置ip地址：略</p>
-<p>建立ibgp对等体：略</p>
-<h1 id="配置路由反射器"><a href="#配置路由反射器" class="headerlink" title="配置路由反射器"></a>配置路由反射器</h1><p>#R2上将R1配置为路由反射器客户端</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] peer 10.0.1.1 reflect-client</p>
-<p>#R3上将R2配置为路由反射器客户端</p>
-<p>[R3]bgp 64511</p>
-<p>[R3-bgp] peer 10.0.2.2 reflect-client</p>
-<p>#R4上将R3配置为路由反射器客户端</p>
-<p>[R4]bgp 64511</p>
-<p>[R4-bgp] peer 10.0.3.3 reflect-client</p>
-<h1 id="验证Orginator-ID实现路由防环"><a href="#验证Orginator-ID实现路由防环" class="headerlink" title="验证Orginator_ID实现路由防环"></a>验证Orginator_ID实现路由防环</h1><p>在本步骤中，我们将在R2上发布BGP路由10.2.2.0&#x2F;24，并观察该路由依次经路由反射器R3、R4反射后，被通告回R2从而引发潜在路由环路风险的情况。</p>
-<p>缺省情况下，R2发布BGP路由后，该路由将被R2直接通告给R4，另一方面也会通过R3反射给R4，此时R4将优选R2直接通告过来的路由，从而不会再将R3反射过来的路由再反射回给R2。为此，我们需要在R2上部署路由策略，使R2不直接向R4通告10.2.2.0&#x2F;24路由。</p>
-<p>#配置路由策略</p>
-<p>[R2]acl number 2000</p>
-<p>[R2-acl-basic-2000] rule 5 permit</p>
-<p>[R2-acl-basic-2000] quit</p>
-<p>[R2]route-policy bgp deny node 10</p>
-<p>[R2-route-policy] if-match acl 2000</p>
-<p>#在BGP中调用路由策略</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] peer 10.0.24.4 route-policy bgp export</p>
-<p>#在R2上发布路由</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] network 10.2.2.0 24</p>
-<p>#R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/chakan102224728.png" alt="chakan102224728"></p>
-<p>R2将该条路由通告给了R3、R1，但是并未通告给R4。</p>
-<p>#R3上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r174808.png" alt="r174808"></p>
-<p>R3将来自反射器客户端的BGP路由10.2.2.0&#x2F;24反射给了10.0.34.4（R4）。同时该BGP路由的nexthop为10.0.23.2。</p>
-<p># R4上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r4chakan80119.png" alt="r4chakan80119"></p>
-<p>该条路由来自反射器客户端R3，原始路由经由R3反射，路由的nexthop地址并未改变，同时R3为其添加了Orginator_ID属性，值为10.0.2.2。同时R4将该条路由反射给了R2。</p>
-<p>#再次在R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zacifa80349.png" alt="zacifa80349"></p>
-<p>依旧只存在本地通告的BGP路由，没有R4通告的BGP路由。</p>
-<p>#在R2上查看BGP对等体10.0.4.4的详细信息</p>
-<p>display bgp peer 10.0.4.4 verbose</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/safhaofbsh1128180629.png" alt="safhaofbsh1128180629"></p>
-<p>从输出信息可以看到R2从R4收到了1个Update报文，未向R4发送Update报文（路由策略限制），但是本地BGP路由表中不存在由R4通告的BGP路由10.2.2.0&#x2F;24。</p>
-<p>R4通告的BGP路由Orginator_ID属性值与本地的Router ID一致，R2忽略了该路由通告。</p>
-<h1 id="验证Cluster-List实现路由防环"><a href="#验证Cluster-List实现路由防环" class="headerlink" title="验证Cluster_List实现路由防环"></a>验证Cluster_List实现路由防环</h1><p>为了方便观察现象，取消R2上的BGP路由发布，在R1上将Loopback1接口路由发布到BGP，观察Cluster_List如何防止环路。</p>
-<p>#取消R2上的BGP路由发布</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] undo network 10.2.2.0 255.255.255.0</p>
-<p>#在R1上将Loopback1接口路由发布到BGP</p>
-<p>[R1]bgp 64511</p>
-<p>[R1-bgp] network 10.1.1.0 24</p>
-<p>#依次在R1、R2、R3、R4上查看BGP路由10.1.1.0 &#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/xinfuaiell181000.png" alt="xinfuaiell181000"></p>
-<p>R1为BGP路由10.1.1.0&#x2F;24的始发者，R1将路由通告给了R2</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/2xinfahol128181116.png" alt="2xinfahol128181116"></p>
-<p>来自路由反射器客户端R1的BGP路由10.1.1.0&#x2F;24，R2将其反射给了R3</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/3xinmbxmcx1128181206.png" alt="3xinmbxmcx1128181206"></p>
-<p>来自路由反射器客户端R2的BGP路由10.1.1.0&#x2F;24，R2反射时添加了Cluster_List属性，值为10.0.2.2，R3将该条路由反射给了R4</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/44xinm1334.png" alt="44xinm1334"></p>
-<p>来自路由反射器客户端R3的BGP路由10.1.1.0&#x2F;24，R3反射时添加了Cluster_List属性的值，当前值为10.0.3.3，10.0.2.2，R4将该条路由反射给了R2</p>
-<p>#再次查看R2的BGP路由表</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zaizaici661435.png" alt="zaizaici661435"></p>
-<p>R2的BGP路由表中依旧只有一条来自r1的BGP路由10.1.1.0&#x2F;24。</p>
-<p>4通告的BGP路由其Cluster_List属性值中包含了R2的Cluster-ID，R2忽略了该路由通告。</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>BGP路由反射器</tag>
       </tags>
   </entry>
   <entry>
@@ -810,37 +810,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Hybrid接口</title>
-    <url>/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/</url>
-    <content><![CDATA[<h1 id="接口属性"><a href="#接口属性" class="headerlink" title="接口属性"></a>接口属性</h1><p>​	交换机接口的类型，可以是Access、Trunk和Hybrid。Access类型的接口仅属于一个VLAN,,,,只能接收、转发相应VLAN的帧；而Trunk类型接口则默认属于所有VLAN任何Tagged帧都能经过Trunk接收和转发； Hybrid类型接口则介于二者之间，可自主定义端口上能接收和转发那些VLAN Tag帧，并可决定VLAN Tag是否继续携带或者剥离。。Access和Trunk类型接口是Hybrid类型接口的两个特例，，，一个仅支持一个VLAN传递，，一个默认支持所有VLAN的传递，而Access类型和Trunk类型的接口能做到的，Hybrid接口都能做到。</p>
-<p>​    hybrid属性具有trunk和access两种端口属性的特点，tag类似trunk，untag类似access，但是又不同，因为hybrid端口可以接收某个或者多个vlan的数据。</p>
-<p>在开始研究之前强调几点：</p>
-<p>1、在hybrid端口中，所有端口都默认属于vlan1，除非配置undo port hybrid vlan 1 才能将该hybrid剔除出vlan1，可以使用display vlan 查看端口所属的vlan</p>
-<p>2、在hybrid端口中，无论是tag还是untag后面配置的vlan-id就是该hybrid端口所能够收到vlan数据的vlan-id，换句话说就是这些vlan中发出的数据该端口都能收到，可以使用display vlan查看（这里注意虽然可以收到这些vlan的数据但是严格意义上讲hybrid端口并不属于任何一个vlan）</p>
-<p>3、所有类型端口的默认pvid都是vlan1，而pvid这个属性只！针对！进入！该端口的！没有标签的！普通数据包有效，作用是将没有标签的普通数据包打上pvid中配置的标签号</p>
-<p>4、hybrid属性中，tag是针对于端口的接收方向的（从该端口进来的流量允许带有这些vlan标签的通过），untag是针对端口的发送方向的（从该端口出去的流量去除这些vlan标签）</p>
-<p>5、加入一个hybrid端口配置tag vlan 2 3和untag vlan 4 5 ，那么默认情况下这个hybrid属于vlan1、2、3、4、5，在display vlan中可以查看到，只有端口属于了某个vlan，那么该端口才能收到某个vlan的数据包，这一点是理解下列两种配置和hybrid端口属性的关键！！！</p>
-<h1 id="收发过程"><a href="#收发过程" class="headerlink" title="收发过程"></a>收发过程</h1><p>在数据发送时untag列表的原理，如下图<br>1.带有vlan 3标签的数据从F0&#x2F;0接口出去，通过时查看untag列表，发现有对应的标签，将标签脱掉发送出去<br>2.带有vlan 8标签的数据从F0&#x2F;1接口出去，通过时查看untag列表，发现没有对应的标签，继续查看tag表，发现有对应标签，所以直接带有vlan 8标签的数据发送出去<br>3.带有vlan 5标签的数据从F0&#x2F;2接口出去，通过时查看untag列表，发现没有对应的标签 ，继续查看tag列表，发现也没有对应的标签，所以数据直接被丢弃<br><img src="/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/shoufa6505133622.png" alt="shoufa6505133622"></p>
-<p>tag列表处理数据帧的接收和发送的原理，如下图<br>1.没有标签的数据进入F0&#x2F;0接口，接口查看到数据没有标签，根据接口PVID&#x3D;3，将vlan 3标签打入数据<br>2.带有vlan 9标签的数据进入接口F0&#x2F;1，接口查看到数据带有标签，接着查看tag列表，发现列表中存在对应标签，放通数据<br>3.带有vlan 5标签的数据从接口F0&#x2F;2出去，接口查看到数据带有标签，查看untag列表，发现列表中没有对应vlan 5标签，继续查看tag列表，发现列表中存在对应标签vlan 5，放通数据出去<br>4.带有vlan 3标签的数据从F0&#x2F;2接口出去，查看untag列表，发现列表中存在对应vlan 3标签，将标签脱掉，放通数据出去<br>5.带有vlan 9标签的数据从F0&#x2F;2接口出去，查看untag表，发现列表中不存在对应vlan 9标签，继续查看tag列表，发现列表中不存在vlan 9标签，将数据丢弃</p>
-<p><img src="/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/fataf2133722.png" alt="fataf2133722"></p>
-<h1 id="实例分析"><a href="#实例分析" class="headerlink" title="实例分析"></a>实例分析</h1><p><img src="/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/tuo2205133307.png" alt="tuo2205133307"></p>
-<p>1、为了让我们更加简洁的理解hydrid的属性，首先在所有的端口上移除了vlan1这个默认有的vlan，假设为所有端口初始不属于任何vlan，都不能相互之间通信</p>
-<p>2、pvid是当普通的主机数据帧进入交换机端口后被打上的vlan-tag的属性，在途中可以看出PC1、PC2、PC3的流量在进入交换机的时候分别会被打上vlan2、vlan3、vlan99的vlan标签</p>
-<p>3、untag后面的vlan就是该端口属于的vlan，那么不难看出LSW1的G0&#x2F;0&#x2F;1属于vlan2、3，G0&#x2F;0&#x2F;2属于vlan2、10，G0&#x2F;0&#x2F;3属于vlan3、10，而untag的动作是在流量出端口去往主机的时候把vlan-tag全部去除，那么不难看出LSW1的G0&#x2F;0&#x2F;1将去除vlan2、3的标签，G0&#x2F;0&#x2F;2去除vlan2、10的标签，G0&#x2F;0&#x2F;3去除vlan3、10的标签（还原成普通帧）</p>
-<p>LSW2的G0&#x2F;0&#x2F;1属于vlan99，G0&#x2F;0&#x2F;2属于vlan99，在流量出端口的时候会去除vlan99的标签（还原成普通帧）</p>
-<p>那么PC1与PC2的通信现在分析如下：当PC1发送arp去请求PC2的MAC地址的时候，PC1会将数据包广播发往LSW1的G0&#x2F;0&#x2F;2接口，LSW1收到后发现是个普通的不带标签的数据帧，于是根据接口的pvid给该帧打上vlan2的tag，然后往vlan2中进行泛红，无奈G0&#x2F;0&#x2F;3端口只属于vlan3、10所以无法收到vlan2中的泛红，故PC1与PC2通信失败。</p>
-<p>下面再来分析PC1与PC3通信：前面已经分析了PC1要去请求PC3的MAC，被LSW1的G0&#x2F;0&#x2F;2收到，并且打上vlan2的tag，然后在vlan2中泛红，那么在vlan2中的端口就都能收到该泛红了，所以在配置了untag vlan 2 3的G0&#x2F;0&#x2F;1端口自然也能收到vlan2和vlan3的泛红并转发出去，但是LSW1发现G0&#x2F;0&#x2F;1配置untag vlan2 3，所以将从该端口发送出去的所有带有vlan2和vlan3的数据包的tag全部去除（还原成普通帧），然后这个普通的帧就会发往LSW2被G0&#x2F;0&#x2F;1端口接收到，LSW2发现了一个普通的帧，那么就会用到pvid了不是，所以LSW2收到这个帧后打上vlan99的tag进行泛红，那么PC3所在的hybrid因为配置有untag vlan99必然能够收到vlan99的数据包了，然后在G0&#x2F;0&#x2F;2发给PC3的时候将vlan99的tag去除掉，PC3收到的就是一个不带任何tag的普通包（PC3完全不知道在它个PC1之间还有SW这种东西存在），好了PC3收到了PC1发来的arp请求，那么作为有礼貌的人应该回复自己的MAC地址了，与回一个arp响应给PC1，</p>
-<p>下面PC3的回包分析：PC3使用PC1的MAC和ip封装好数据包后从网卡发送出去，LSW2的G0&#x2F;0&#x2F;2端口收到了，发现是一个普通帧，OK来pvid打上vlan99的tag，然后查看mac地址表发现PC1的MAC地址在G0&#x2F;0&#x2F;1口，在查看vlan信息，发现G0&#x2F;0&#x2F;1口可以接收vlan99的数据（untag vlan99），两个转发条件都满足了，那么久把数据包发给G0&#x2F;0&#x2F;1转发，G0&#x2F;0&#x2F;1转发的时候根据untag vlan99把数据包vlan-id去除还原成普通帧，被LSW1的G0&#x2F;0&#x2F;1收到，按照pvid的惯例，普通帧被打上了pvid vlan10的tag（用vlan10举例，也可以是任意vlan），然后LSW1根据MAC地址表找到PC1在自己的G0&#x2F;0&#x2F;2口，再查看vlan信息发现G0&#x2F;0&#x2F;2接口配置了untag vlan2 10，可以接收vlan10的数据包，于是就把这个被打上vlan10的PC3发来的arp响应通过G0&#x2F;0&#x2F;2发送给了PC1，当然在从G0&#x2F;0&#x2F;2接口出去的时候根据untag vlan2 10的配置将vlan10的tag去除还原成一个普通的帧，PC1收到的是一个普通的帧，完全不知道它和PC3之间还有交换机这个东西。好了，这就是一次通信过程，PC2与PC3的通信原理也是一样的，于是就实现了PC3与PC1、PC2互通，PC1与PC2之间不通的效果。</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>hybrid</tag>
-        <tag>tag</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>VRRP基础实验</title>
     <url>/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/</url>
     <content><![CDATA[<p>设备连接方式如图所示，网络中存在VLAN10、20，每个VLAN中部署一组VRRP，使用与VLAN ID相同的数值作为VRID，将S1配置为VLAN10的VRRP Master，将S2配置为VLAN20的VRRP Master。</p>
@@ -997,6 +966,37 @@
       <tags>
         <tag>VRRP</tag>
         <tag>BFD</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hybrid接口</title>
+    <url>/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/</url>
+    <content><![CDATA[<h1 id="接口属性"><a href="#接口属性" class="headerlink" title="接口属性"></a>接口属性</h1><p>​	交换机接口的类型，可以是Access、Trunk和Hybrid。Access类型的接口仅属于一个VLAN,,,,只能接收、转发相应VLAN的帧；而Trunk类型接口则默认属于所有VLAN任何Tagged帧都能经过Trunk接收和转发； Hybrid类型接口则介于二者之间，可自主定义端口上能接收和转发那些VLAN Tag帧，并可决定VLAN Tag是否继续携带或者剥离。。Access和Trunk类型接口是Hybrid类型接口的两个特例，，，一个仅支持一个VLAN传递，，一个默认支持所有VLAN的传递，而Access类型和Trunk类型的接口能做到的，Hybrid接口都能做到。</p>
+<p>​    hybrid属性具有trunk和access两种端口属性的特点，tag类似trunk，untag类似access，但是又不同，因为hybrid端口可以接收某个或者多个vlan的数据。</p>
+<p>在开始研究之前强调几点：</p>
+<p>1、在hybrid端口中，所有端口都默认属于vlan1，除非配置undo port hybrid vlan 1 才能将该hybrid剔除出vlan1，可以使用display vlan 查看端口所属的vlan</p>
+<p>2、在hybrid端口中，无论是tag还是untag后面配置的vlan-id就是该hybrid端口所能够收到vlan数据的vlan-id，换句话说就是这些vlan中发出的数据该端口都能收到，可以使用display vlan查看（这里注意虽然可以收到这些vlan的数据但是严格意义上讲hybrid端口并不属于任何一个vlan）</p>
+<p>3、所有类型端口的默认pvid都是vlan1，而pvid这个属性只！针对！进入！该端口的！没有标签的！普通数据包有效，作用是将没有标签的普通数据包打上pvid中配置的标签号</p>
+<p>4、hybrid属性中，tag是针对于端口的接收方向的（从该端口进来的流量允许带有这些vlan标签的通过），untag是针对端口的发送方向的（从该端口出去的流量去除这些vlan标签）</p>
+<p>5、加入一个hybrid端口配置tag vlan 2 3和untag vlan 4 5 ，那么默认情况下这个hybrid属于vlan1、2、3、4、5，在display vlan中可以查看到，只有端口属于了某个vlan，那么该端口才能收到某个vlan的数据包，这一点是理解下列两种配置和hybrid端口属性的关键！！！</p>
+<h1 id="收发过程"><a href="#收发过程" class="headerlink" title="收发过程"></a>收发过程</h1><p>在数据发送时untag列表的原理，如下图<br>1.带有vlan 3标签的数据从F0&#x2F;0接口出去，通过时查看untag列表，发现有对应的标签，将标签脱掉发送出去<br>2.带有vlan 8标签的数据从F0&#x2F;1接口出去，通过时查看untag列表，发现没有对应的标签，继续查看tag表，发现有对应标签，所以直接带有vlan 8标签的数据发送出去<br>3.带有vlan 5标签的数据从F0&#x2F;2接口出去，通过时查看untag列表，发现没有对应的标签 ，继续查看tag列表，发现也没有对应的标签，所以数据直接被丢弃<br><img src="/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/shoufa6505133622.png" alt="shoufa6505133622"></p>
+<p>tag列表处理数据帧的接收和发送的原理，如下图<br>1.没有标签的数据进入F0&#x2F;0接口，接口查看到数据没有标签，根据接口PVID&#x3D;3，将vlan 3标签打入数据<br>2.带有vlan 9标签的数据进入接口F0&#x2F;1，接口查看到数据带有标签，接着查看tag列表，发现列表中存在对应标签，放通数据<br>3.带有vlan 5标签的数据从接口F0&#x2F;2出去，接口查看到数据带有标签，查看untag列表，发现列表中没有对应vlan 5标签，继续查看tag列表，发现列表中存在对应标签vlan 5，放通数据出去<br>4.带有vlan 3标签的数据从F0&#x2F;2接口出去，查看untag列表，发现列表中存在对应vlan 3标签，将标签脱掉，放通数据出去<br>5.带有vlan 9标签的数据从F0&#x2F;2接口出去，查看untag表，发现列表中不存在对应vlan 9标签，继续查看tag列表，发现列表中不存在vlan 9标签，将数据丢弃</p>
+<p><img src="/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/fataf2133722.png" alt="fataf2133722"></p>
+<h1 id="实例分析"><a href="#实例分析" class="headerlink" title="实例分析"></a>实例分析</h1><p><img src="/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/tuo2205133307.png" alt="tuo2205133307"></p>
+<p>1、为了让我们更加简洁的理解hydrid的属性，首先在所有的端口上移除了vlan1这个默认有的vlan，假设为所有端口初始不属于任何vlan，都不能相互之间通信</p>
+<p>2、pvid是当普通的主机数据帧进入交换机端口后被打上的vlan-tag的属性，在途中可以看出PC1、PC2、PC3的流量在进入交换机的时候分别会被打上vlan2、vlan3、vlan99的vlan标签</p>
+<p>3、untag后面的vlan就是该端口属于的vlan，那么不难看出LSW1的G0&#x2F;0&#x2F;1属于vlan2、3，G0&#x2F;0&#x2F;2属于vlan2、10，G0&#x2F;0&#x2F;3属于vlan3、10，而untag的动作是在流量出端口去往主机的时候把vlan-tag全部去除，那么不难看出LSW1的G0&#x2F;0&#x2F;1将去除vlan2、3的标签，G0&#x2F;0&#x2F;2去除vlan2、10的标签，G0&#x2F;0&#x2F;3去除vlan3、10的标签（还原成普通帧）</p>
+<p>LSW2的G0&#x2F;0&#x2F;1属于vlan99，G0&#x2F;0&#x2F;2属于vlan99，在流量出端口的时候会去除vlan99的标签（还原成普通帧）</p>
+<p>那么PC1与PC2的通信现在分析如下：当PC1发送arp去请求PC2的MAC地址的时候，PC1会将数据包广播发往LSW1的G0&#x2F;0&#x2F;2接口，LSW1收到后发现是个普通的不带标签的数据帧，于是根据接口的pvid给该帧打上vlan2的tag，然后往vlan2中进行泛红，无奈G0&#x2F;0&#x2F;3端口只属于vlan3、10所以无法收到vlan2中的泛红，故PC1与PC2通信失败。</p>
+<p>下面再来分析PC1与PC3通信：前面已经分析了PC1要去请求PC3的MAC，被LSW1的G0&#x2F;0&#x2F;2收到，并且打上vlan2的tag，然后在vlan2中泛红，那么在vlan2中的端口就都能收到该泛红了，所以在配置了untag vlan 2 3的G0&#x2F;0&#x2F;1端口自然也能收到vlan2和vlan3的泛红并转发出去，但是LSW1发现G0&#x2F;0&#x2F;1配置untag vlan2 3，所以将从该端口发送出去的所有带有vlan2和vlan3的数据包的tag全部去除（还原成普通帧），然后这个普通的帧就会发往LSW2被G0&#x2F;0&#x2F;1端口接收到，LSW2发现了一个普通的帧，那么就会用到pvid了不是，所以LSW2收到这个帧后打上vlan99的tag进行泛红，那么PC3所在的hybrid因为配置有untag vlan99必然能够收到vlan99的数据包了，然后在G0&#x2F;0&#x2F;2发给PC3的时候将vlan99的tag去除掉，PC3收到的就是一个不带任何tag的普通包（PC3完全不知道在它个PC1之间还有SW这种东西存在），好了PC3收到了PC1发来的arp请求，那么作为有礼貌的人应该回复自己的MAC地址了，与回一个arp响应给PC1，</p>
+<p>下面PC3的回包分析：PC3使用PC1的MAC和ip封装好数据包后从网卡发送出去，LSW2的G0&#x2F;0&#x2F;2端口收到了，发现是一个普通帧，OK来pvid打上vlan99的tag，然后查看mac地址表发现PC1的MAC地址在G0&#x2F;0&#x2F;1口，在查看vlan信息，发现G0&#x2F;0&#x2F;1口可以接收vlan99的数据（untag vlan99），两个转发条件都满足了，那么久把数据包发给G0&#x2F;0&#x2F;1转发，G0&#x2F;0&#x2F;1转发的时候根据untag vlan99把数据包vlan-id去除还原成普通帧，被LSW1的G0&#x2F;0&#x2F;1收到，按照pvid的惯例，普通帧被打上了pvid vlan10的tag（用vlan10举例，也可以是任意vlan），然后LSW1根据MAC地址表找到PC1在自己的G0&#x2F;0&#x2F;2口，再查看vlan信息发现G0&#x2F;0&#x2F;2接口配置了untag vlan2 10，可以接收vlan10的数据包，于是就把这个被打上vlan10的PC3发来的arp响应通过G0&#x2F;0&#x2F;2发送给了PC1，当然在从G0&#x2F;0&#x2F;2接口出去的时候根据untag vlan2 10的配置将vlan10的tag去除还原成一个普通的帧，PC1收到的是一个普通的帧，完全不知道它和PC3之间还有交换机这个东西。好了，这就是一次通信过程，PC2与PC3的通信原理也是一样的，于是就实现了PC3与PC1、PC2互通，PC1与PC2之间不通的效果。</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>hybrid</tag>
+        <tag>tag</tag>
       </tags>
   </entry>
   <entry>
@@ -1282,6 +1282,158 @@
       </categories>
       <tags>
         <tag>nat</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>rstp和mstp</title>
+    <url>/2023/12/07/rstp%E5%92%8Cmstp/</url>
+    <content><![CDATA[<h1 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h1><p><strong>STP三个版本：</strong><br>STP（802.1d）<br>RSTP（802.1w）<br>MSTP （802.1s）<br>作用：打破二层环路，实现设备或者链路的冗余<br><strong>STP的计算过程</strong><br>①选举根桥<br>BID&#x3D;优先级+MAC，优先级值越小越优，如果优先级相等，MAC小的成为根桥<br>②选举根端口<br>RPC（小的越优）+上行交换机的BID+上行交换机的PID（优先级和接口ID，越小越优）+本地的PID<br>③选举指定接口<br>RPC（小的越优）+本端的BID+本端的PID（小的越优）<br>④非指定接口</p>
+<p><strong>端口优先级</strong></p>
+<p>端口ID（pid）&#x3D; 端口优先级（Port Priority）4 bit+ 端口编号12 bit 构成； 缺省情况下，端口优先级是128；端口优先级取值范围是0到240，取值必须为16的整数倍。</p>
+<p><strong>优先级</strong></p>
+<p>默认32768</p>
+<p>越小越优</p>
+<p>必须是4096倍数</p>
+<p>0-65535</p>
+<p><strong>接口根路径开销：</strong></p>
+<p>1、dot1t<br>G：20000<br>E：200000</p>
+<p>PRC&#x3D;根桥到非根桥经过所有的入方向接口的cost累加</p>
+<p><strong>STP的收敛时间：</strong></p>
+<p>①根桥故障<br>50s<br>②直连链路发生故障<br>30s<br>③非直连链路故障<br>50s</p>
+<p>转发延迟计时器：15s<br>BPDU发送时间：2s<br>老化时间：20s</p>
+<p><strong>端口状态：</strong><br>disable:未启用<br>blocking：阻塞<br>listening:侦听<br>learning:学习<br>forwarding：转发</p>
+<p><strong>RSTP:</strong><br><strong>一、端口角色：</strong><br>根端口<br>指定端口<br>A:根端口的备份端口，提供了指定桥到达根的另一条路径<br>Backup:<br>作为指定接口的备份，提供了另一条从根桥到相应网段的备份链路</p>
+<p><strong>二、端口状态</strong><br>Discarding状态：不转发用户流量也不学习MAC地址；<br>Learning状态：不转发用户流量但是学习MAC地址；<br>Forwarding状：既转发用户流量又学习MAC地址<br><strong>三、配置BPDU</strong><br>BPDU类型和flag字段<br><strong>四、配置BPDU的处理</strong><br>拓扑稳定后，运行RSTP协议的非根桥设备会定期的发送配置BPDU<br>RSTP的任何端口角色都会处理次优BPDU，从而加快拓扑收敛<br><strong>五、P&#x2F;A</strong><br>作用：保证一个指定接口从discarding—&gt;forwarding<br>触发：只有指定discarding状态下才可以触发P&#x2F;A机制，必须是根端口在forwarding状态下回复一个A&#x3D;1的一个BPDU</p>
+<p>① 选举根桥、根接口、指定接口，然后根接口、指定接口处于discarding<br>②根桥的指定接口处于discarsing，触发到P&#x2F;A，根桥会从指定接口发送P&#x3D;1BPDU；<br>③非根桥的根接口收到P&#x3D;1的BPDU，会启动一个同步过程，将非边缘接口全部阻塞，同步完成之后，根接口切换到转发状态，并且从根接口发送A&#x3D;1 BPDU<br>④根桥收到A&#x3D;1 BPDU，立即切换为转发状态，实现指定接口的快速收敛</p>
+<p><strong>保护功能：</strong><br><strong>1、BPDU保护</strong><br>存在问题：边缘端口收到BPDU之后，接口会变成普通接口，那么会引起网络中生成树重新计算，对网络造成影响。<br>解决：开启BPDU保护功能，只要边缘端口收到BPDU，交换机立即把接口置位Error-down，同时会产生告警。（接口恢复两种方式：手工恢复、自动恢复）</p>
+<p><strong>2、根保护</strong></p>
+<p>存在问题：加入在一个稳定的STP网络，此时根桥连接一台交换机，该交换机支持生成树，发送BPDU，STP网络重新计算；如果新加入的交换机比根桥优先级更优，会抢占根桥的位置，从而引起网络震荡<br>解决：根桥的指定接口下激活跟保护功能，如何接口收到了更优的BPDU，会忽略并且切换到discarding。<br>注意：跟保护只能在指定接口下激活。<br>状态恢复：如果接口不再收到更优的BPDU，在一段时间后（2*转发延迟时间）自动恢复转发状态。</p>
+<p><strong>3、环路保护</strong><br>存在问题：<br>AP单向故障：假如交换机之间通过光纤（一收一发），链路发生单向故障，AP接口老化时间后没有收到BPDU,接口会成为DP并切换到转发状态，并转发流量，环路产生<br>RP单向故障：假如交换机之间通过光纤（一收一发），链路发生单向故障，导致DP到RP的单向故障，RP在一段时间没有收到BPDU，AP会切换到RP角色，RP切换到DP，收敛完成，DP开始转发业务流量，环路产生。<br>解决：在AP接口下开启环路保护功能，如何接口长时间没有BPDU	,那么AP接口切换成DP，端口状态保持discarding状态，避免环路。</p>
+<p>在RP接口下开启环路保护功能，如何接口长时间没有BPDU，那么会重新计算选举根端口，并将原端口调整为DP，接口状态保持discarding状态，避免环路。</p>
+<p><strong>4、拓扑变更保护（TC protection）</strong><br>存在问题：假如网络中存在攻击者，会仿冒TC置位为1的BPDU报文发送大量的TC BPDU，交换机收到BPDU之后，会删除mac地址表项，会消耗大量的设备资源。<br>解决：默认情况交换机开启了拓扑变更保护，缺省2s只会处理异常TC BPDU，超出的部分等待一段时间处理</p>
+<p><strong>如何生成STP树？</strong><br>主要通过比较4个参数：根桥ID、根路径开销、网桥ID和端口ID，值越小，越优先。而这些参数，都是报文BPDU中的字段。<br>根桥选举：比较根桥ID，最小胜出。<br>根端口选举：依次比较RPC、对端BID、对端PID和本端PID，最小胜出。<br>指定端口选举：依次比较RPC、本端BID和本端PID，最小胜出。</p>
+<p><strong>在确定了根端口和指定端口之后，交换机上所有剩余的非根端口和非指定端口被阻塞。</strong></p>
+<p><strong>MSTP：</strong><br><strong>一、概念</strong><br>MST Region：Multiple Spanning Tree Region，多生成树域），也可简称MST域<br>MSTI（Multiple Spanning Tree Instance，多生成树实例）：MSTI使用Instance ID标识，为0~4094。<br>Instance0是缺省存在的，而且缺省时，华为交换机上所有的VLAN都映射到了Instance0。<br>通过设置VLAN映射表（即VLAN和MSTI的对应关系表），把VLAN和MSTI联系起来。<br>每个VLAN只能对应一个MSTI，即同一VLAN的数据只能在一个MSTI中传输，而一个MSTI可能对应多个VLAN。<br>CST公共生成树：是连接交换网络内所有MST域的一棵生成树<br>IST（内部生成树）是各MST域内的一棵生成树。<br>CIST（公共和内部生成树）<br>通过生成树协议计算生成的，连接一个交换网络内所有交换设备的单生成树<br>SST（Single Spanning Tree，单生成树）有两种情况：<br>运行生成树协议的交换设备只能属于一个生成树。<br>MST域中只有一个交换设备，这个交换设备构成单生成树。</p>
+<p>总根（CIST Root）是CIST的根桥</p>
+<p>域根（Regional Root）<br>分为IST域根和MSTI域根。<br>IST域根，在MST域中IST生成树中距离总根最近的交换设备是IST域根，<br>MSTI域根是每个多生成树实例的树根</p>
+<p>主桥（Master Bridge）是IST Master，它是域内距离总根最近的交换设备，如果总根在MST域中，则总根为该域的主桥</p>
+<p><strong>新增的端口角色：</strong><br>①Master端口</p>
+<p>Master端口是MST域和总根相连的所有路径中最短路径上的端口，它是交换设备上连接MST域到总根的端口。<br>Master端口是域中的报文去往总根的必经之路。<br>Master端口是特殊域边缘端口，Master端口在CIST上的角色是Root Port，在其它各实例上的角色都是Master端口。</p>
+<p>②域边缘端口<br>域边缘端口是指位于MST域的边缘并连接其它MST域或SST的端口</p>
+<p>MSTP计算<br>优先级向量说明：<br>根交换设备ID：根交换设备ID用于选择CIST中的根交换设备。<br>根交换设备ID &#x3D; Priority(16 bit) + MAC(48 bit)。<br>其中Priority为MSTI0的优先级。<br>外部路径开销（External Root Path Cost，ERPC）：从CIST的域根到达总根的路径开销。<br>MST域内所有交换设备上保存的外部路径开销相同。<br>若CIST根交换设备在域中，则域内所有交换设备上保存的外部路径开销为0。<br>域根ID：域根ID用于选择MSTI中的域根。<br>域根ID &#x3D; Priority(16 bit) + MAC(48 bit)。<br>其中Priority为MSTI0的优先级。<br>内部路径开销（Internal Root Path Cost，IRPC）：本桥到达域根的路径开销。<br>域边缘端口保存的内部路径开销大于非域边缘端口保存的内部路径开销。<br>指定交换设备ID：CIST或MSTI实例的指定交换设备是本桥通往域根的最邻近的上游桥。<br>如果本桥就是总根或域根，则指定交换设备为自己。<br>指定端口ID：指定交换设备上同本设备上根端口相连的端口。<br>Port ID &#x3D; Priority(4 bit) + 端口号（12 bit）。<br>端口优先级必须是16的整数倍。<br>接收端口ID：接收到BPDU报文的端口。<br>Port ID &#x3D; Priority(4 bit) + 端口号（12 bit）。</p>
+<p><strong>端口优先级必须是16的整数倍。</strong></p>
+<p>优先级向量比较原则：<br>同一向量比较，值最小的向量具有最高优先级。<br>优先级向量比较原则如下<br>首先，比较根交换设备ID。<br>如果根交换设备ID相同，再比较外部路径开销。<br>如果外部路径开销相同，再比较域根ID。<br>如果域根ID仍然相同，再比较内部路径开销。<br>如果内部路径仍然相同，再比较指定交换设备ID。<br>如果指定交换设备ID仍然相同，再比较指定端口ID。<br>如果指定端口ID还相同，再比较接收端口ID。<br>如果端口接收到的BPDU内包含的配置消息优于端口上保存的配置消息，则端口上原来保存的配置消息被新收到的配置消息替代。端口同时更新交换设备保存的全局配置消息。反之，新收到的BPDU被丢弃。</p>
+<h1 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h1><p><img src="/2023/12/07/rstp%E5%92%8Cmstp/rstptuopu7180923.png" alt="rstptuopu7180923"></p>
+<ol>
+<li>开启STP，修改STP模式为RSTP。</li>
+<li>手动指定S1为RSTP根桥、S2为RSTP备份根桥。</li>
+<li>通过修改接口开销值，使得S4的GE0&#x2F;0&#x2F;1接口成为根端口。</li>
+<li>通过修改S1的GE0&#x2F;0&#x2F;11接口优先级，使得S2的GE0&#x2F;0&#x2F;11接口成为根端口。</li>
+<li>修改STP模式为MSTP，创建Instance1、2，指定SW1为MSTI1的根桥、MSTI2的备份根桥，指定SW2为MSTI2的根桥、MSTI1的备份根桥。</li>
+</ol>
+<h2 id="RSTP基础配置"><a href="#RSTP基础配置" class="headerlink" title="RSTP基础配置"></a>RSTP基础配置</h2><p>#S1-s4 上都配置</p>
+<p>stp enable</p>
+<p>stp mode rstp</p>
+<p>#查看STP的状态和统计信息摘要</p>
+<p>dis stp brief</p>
+<p>接口都为指定端口的是根桥，本实验中s4是根桥</p>
+<p> 根桥选举控制</p>
+<p>#手动调整STP优先级，指定S1为主根桥、S2为备份根桥</p>
+<p>[S1]stp priority 4096</p>
+<p>[S2]stp priority 8192</p>
+<p>在另外两台交换机保持默认桥优先级（32768）的情况下，S1拥有最小的桥优先级，S2次之。</p>
+<p>此时s1变为根桥，s2备份根桥</p>
+<p>dis stp可以看到优先级已经改变</p>
+<p>#取消S1、S2上手动调整桥优先级的配置，使用<strong>stp root</strong>命令指定根桥、备份根桥</p>
+<p>[S1]undo stp priority</p>
+<p>[S1]stp root primary</p>
+<p>[S2]undo stp priority</p>
+<p>[S2]stp root secondary</p>
+<p>#S1、S2上查看STP的状态和统计信息，可以看到如下内容</p>
+<p>s1：</p>
+<p><img src="/2023/12/07/rstp%E5%92%8Cmstp/s1dis182725.png" alt="s1dis182725"></p>
+<p>s2:</p>
+<p><img src="/2023/12/07/rstp%E5%92%8Cmstp/s2disgg182834.png" alt="s2disgg182834"></p>
+<p>S1的桥优先级为0，而S2的桥优先级为4096，此时S1为根桥，S2为备份根桥。</p>
+<p>修改接口开销值控制根端口选举</p>
+<p>#在S4上查看STP的状态和统计信息摘要</p>
+<p><img src="/2023/12/07/rstp%E5%92%8Cmstp/s4disg83008.png" alt="s4disg83008"></p>
+<p>S4上GE0&#x2F;0&#x2F;2拥有更小的RPC（根路径开销），从而成为根端口。</p>
+<p>#在S4上查看GE0&#x2F;0&#x2F;2接口的STP的状态和统计信息</p>
+<p><img src="/2023/12/07/rstp%E5%92%8Cmstp/s4disint232.png" alt="s4disint232"></p>
+<p>此时路径开销计算方法为Dot1t，接口的STP cost值为20000。</p>
+<p>#修改S4的GE0&#x2F;0&#x2F;2接口的STP cost值为40001</p>
+<p>[S4]interface GigabitEthernet 0&#x2F;0&#x2F;2</p>
+<p>[S4-GigabitEthernet0&#x2F;0&#x2F;2] stp cost 40001</p>
+<p>#再次在S4上查看STP的状态和统计信息摘要</p>
+<p><img src="/2023/12/07/rstp%E5%92%8Cmstp/s4gen333559.png" alt="s4gen333559"></p>
+<p>此时GE0&#x2F;0&#x2F;1接口的RPC为20000，小于GE0&#x2F;0&#x2F;2接口的RPC 40001，S4的GE0&#x2F;0&#x2F;1接口成为根端口。</p>
+<p>修改接口优先级控制根端口选举</p>
+<p>#在S2上查看STP的状态和统计信息摘要</p>
+<p><img src="/2023/12/07/rstp%E5%92%8Cmstp/s2disf83853.png" alt="s2disf83853"></p>
+<p>S2上GE0&#x2F;0&#x2F;10、GE0&#x2F;0&#x2F;11接口收到的BPDU拥有相同的RPC、上行交换机BID，此时比较上行交换机PID（优先级+接口id），接口优先级一样，接口id小的优，所以g0&#x2F;0&#x2F;10小，所以是根端口</p>
+<p>#在S1上修改GE0&#x2F;0&#x2F;11的STP接口优先级，使其发送的BPDU优于 GE0&#x2F;0&#x2F;10发送的BPDU</p>
+<p>（修改上行交换机的PID）</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;11</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11] stp port priority 64</p>
+<p>端口ID&#x3D; 端口优先级（Port Priority）4 bit+ 端口编号12 bit 构成； 缺省情况下，端口优先级是128；端口优先级取值范围是<strong>0到240</strong>，取值必须为<strong>16</strong>的整数倍。</p>
+<p>#再次查看S2上的STP状态和统计信息摘要</p>
+<p><img src="/2023/12/07/rstp%E5%92%8Cmstp/g0011gen759.png" alt="g0011gen759"></p>
+<p>此时S2的GE0&#x2F;0&#x2F;1接口成为根端口。</p>
+<h2 id="MSTP基础配置"><a href="#MSTP基础配置" class="headerlink" title="MSTP基础配置"></a>MSTP基础配置</h2><p>在所有交换机上创建VLAN10、20、30、40、50、60、70、80，配置MSTP域hcip，并创建两个新的实例：Instance 1、Instance 2，将VLAN10、30、50、70映射到Instance 1，将VLAN20、40、60、80映射到Instance 2，同时将SW1规划为MSTI1的主根桥、MSTI2的备份根桥，将SW2规划为MSTI2的主根桥、MSTI1的备份根桥。</p>
+<p>#创建VLAN</p>
+<p>[S1]vlan batch 10 20 30 40 50 60 70 80</p>
+<p>[S2]vlan batch 10 20 30 40 50 60 70 80</p>
+<p>[S3]vlan batch 10 20 30 40 50 60 70 80</p>
+<p>[S4]vlan batch 10 20 30 40 50 60 70 80</p>
+<p>#将所有互联接口配置为Trunk接口，放通所有VLAN</p>
+<p>略</p>
+<p>#修改STP模式为MSTP</p>
+<p>[S1]stp mode mstp</p>
+<p>[S2]stp mode mstp</p>
+<p>[S3]stp mode mstp</p>
+<p>[S4]stp mode mstp</p>
+<p>#配置MSTP</p>
+<p>[S1]stp region-configuration</p>
+<p>[S1-mst-region] region-name hcip &#x2F;&#x2F;域名为hcip</p>
+<p>[S1-mst-region] revision-level 1 &#x2F;&#x2F;版本1</p>
+<p>[S1-mst-region] instance 1 vlan 10 30 50 70 实例1映射vlan 10 30 50 70</p>
+<p>[S1-mst-region] instance 2 vlan 20 40 60 80</p>
+<p>[S1-mst-region] active region-configuration &#x2F;&#x2F;生效</p>
+<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
+<p>[S1-mst-region] quit</p>
+<p>（s2，s3，s4同理配置）</p>
+<p>#在S1检查MSTP实例和VLAN的映射关系</p>
+<p>[S1]display stp region-configuration </p>
+<p>#配置SW1为MSTI1的根桥、MSTI2的备份根桥</p>
+<p>[S1]stp instance 1 root primary </p>
+<p>[S1]stp instance 2 root secondary</p>
+<p>#配置SW2为MSTI2的根桥、MSTI1的备份根桥</p>
+<p>[S2]stp instance 1 root secondary </p>
+<p>[S2]stp instance 2 root primary</p>
+<p>#在S1上查看MSTI1的状态和统计信息摘要</p>
+<p>[S1]display stp instance 1 brief</p>
+<p> MSTID  Port           Role  STP State      Protection</p>
+<p>  1   GigabitEthernet0&#x2F;0&#x2F;10    DESI  FORWARDING    NONE</p>
+<p>  1   GigabitEthernet0&#x2F;0&#x2F;11    DESI  FORWARDING    NONE</p>
+<p>  1   GigabitEthernet0&#x2F;0&#x2F;12    DESI  FORWARDING    NONE</p>
+<p>  1   GigabitEthernet0&#x2F;0&#x2F;13    DESI  FORWARDING    NONE</p>
+<p>S1上所有接口都是指定接口，S1为MSTI1的根桥。</p>
+<p>#在S2上查看MSTI2的状态和统计信息摘要</p>
+<p>[S2]display stp instance 2 brief </p>
+<p> MSTID  Port           Role  STP State    	 Protection</p>
+<p>  2   GigabitEthernet0&#x2F;0&#x2F;10    DESI  FORWARDING    NONE</p>
+<p>  2   GigabitEthernet0&#x2F;0&#x2F;11    DESI  FORWARDING    NONE</p>
+<p>  2   GigabitEthernet0&#x2F;0&#x2F;12    DESI  FORWARDING    NONE</p>
+<p>  2   GigabitEthernet0&#x2F;0&#x2F;13    DESI  FORWARDING    NONE</p>
+<p>S2上所有接口都是指定接口，S2为MSTI2的根桥。</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>rstp</tag>
+        <tag>mstp</tag>
       </tags>
   </entry>
   <entry>
