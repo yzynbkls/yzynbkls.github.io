@@ -172,6 +172,208 @@
       </tags>
   </entry>
   <entry>
+    <title>BGP路由优选</title>
+    <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/</url>
+    <content><![CDATA[<h1 id="BGP路由优选"><a href="#BGP路由优选" class="headerlink" title="BGP路由优选"></a>BGP路由优选</h1><h2 id="实验背景"><a href="#实验背景" class="headerlink" title="实验背景"></a>实验背景</h2><p>你是公司的网络管理员。公司的网络采用了BGP协议接入了两个服务运营商。公司自己采用了私有的AS号64512，ISP1的AS号为100，ISP2的AS号为200。通过AS100、AS200都可以到达相同的网络，你通过改变BGP的各种属性达到了调整路由走向的目的。</p>
+<span id="more"></span>
+
+<p>实验介绍：</p>
+<p>设备互联方式、互联接口地址如图所示，所有设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号，所有设备都使用Loopback0地址作为BGP Router ID。</p>
+<p>R1在AS100，R5在AS200，R2、R3、R4在AS64512。AS64512内运行OSPF，在互联接口（不包括连接外部AS的接口）、Loopback0接口上激活OSPF。</p>
+<p>EBGP对等体关系基于直连接口建立，IBGP对等体关系基于Loopback0接口建立。</p>
+<p>R1、R5上存在相同的网段172.16.1.0&#x2F;24、172.16.2.0&#x2F;24、172.16.3.0&#x2F;24、172.16.4.0&#x2F;24，在R1、R5上将其发布到BGP，以用于BGP路由优选。</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/tuopu22sd182306.png" alt="tuopu22sd182306"></p>
+<p>配置ip，配置bgp：略</p>
+<p>#在R1、R5上将Loopback1、Loopback2、Loopback3、Loopback4接口路由发布到BGP中</p>
+<p>[R1]bgp 100</p>
+<p>[R1-bgp] network 172.16.1.0 24</p>
+<p>[R1-bgp] network 172.16.2.0 24</p>
+<p>[R1-bgp] network 172.16.3.0 24</p>
+<p>[R1-bgp] network 172.16.4.0 24</p>
+<p>[R5]bgp 200</p>
+<p>[R5-bgp] network 172.16.1.0 24</p>
+<p>[R5-bgp] network 172.16.2.0 24</p>
+<p>[R5-bgp] network 172.16.3.0 24</p>
+<p>[R5-bgp] network 172.16.4.0 24</p>
+<p>#在R3上查看BGP路由表，检查BGP路由是否成功学习</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/r3chakandp128185306.png" alt="r3chakandp128185306"></p>
+<p>R3已经成功学习R1、R5发布的路由，此时所有路由都优选由R2通告的。</p>
+<h2 id="修改AS-Path属性"><a href="#修改AS-Path属性" class="headerlink" title="修改AS_Path属性"></a>修改AS_Path属性</h2><p>在R1上通过路由策略修改BGP路由172.16.1.0&#x2F;24的 AS_Path属性值，使得R3优选R5发布的BGP路由172.16.1.0&#x2F;24。</p>
+<p>#创建IP前缀列表1，匹配Loopback1接口路由</p>
+<p>[R1]ip ip-prefix 1 permit 172.16.1.0 24 greater-equal 24 less-equal 24</p>
+<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改AS_Path属性值</p>
+<p>[R1]route-policy hcip permit node 10</p>
+<p>[R1-route-policy] if-match ip-prefix 1</p>
+<p>[R1-route-policy] apply as-path 300 400 additive</p>
+<p>[R1-route-policy] quit</p>
+<p>[R1]route-policy hcip permit node 20</p>
+<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
+<p>#对向BGP对等体R2通告的BGP路由应用Route-Policy</p>
+<p>[R1]bgp 100</p>
+<p>[R1-bgp] peer 10.0.12.2 route-policy hcip export</p>
+<p>#在R1上触发出方向的软复位，刷新对外通告的BGP路由</p>
+<p><R1>refresh bgp all export</R1></p>
+<p>#在R3上查看BGP路由172.16.1.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/as5cs28190005.png" alt="as5cs28190005"></p>
+<p>此时R3优选R4通告的BGP路由172.16.1.0&#x2F;24，R2通告的未被优选的原因是AS_Path长度。</p>
+<h2 id="修改Local-Preference属性"><a href="#修改Local-Preference属性" class="headerlink" title="修改Local_Preference属性"></a>修改Local_Preference属性</h2><p>local_Preference：默认100，越大越优先，只能在ibgp对等体之间传递</p>
+<p>在R4上通过路由策略修改BGP路由172.16.2.0&#x2F;24的Local_Preference属性值，使得R3优选R4通告的BGP路由172.16.2.0&#x2F;24。</p>
+<p>#创建IP前缀列表1，匹配BGP路由172.16.2.0&#x2F;24</p>
+<p>[R4]ip ip-prefix 1 permit 172.16.2.0 24 greater-equal 24 less-equal 24</p>
+<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改Local_Preference属性值</p>
+<p>[R4]route-policy hcip permit node 10</p>
+<p>[R4-route-policy] if-match ip-prefix 1</p>
+<p>[R4-route-policy] apply local-preference 200</p>
+<p>[R4-route-policy] quit</p>
+<p>[R4]route-policy hcip permit node 20</p>
+<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
+<p>#对向BGP对等体R3通告的BGP路由应用Route-Policy</p>
+<p>[R4]bgp 64512</p>
+<p>[R4-bgp] peer 10.0.3.3 route-policy hcip export</p>
+<p>#在R4上触发出方向的软复位，刷新对外通告的BGP路由</p>
+<p><R4>refresh bgp all export</R4></p>
+<p>#在R3上查看BGP路由172.16.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/local55chakan192014.png" alt="local55chakan192014"></p>
+<p>此时R3优选R4通告的BGP路由172.16.2.0&#x2F;24，R2通告的BGP路由其Local_Preference值为100，小于R3通告的BGP路由Local_Preference值200，因此R2通告的BGP路由未被优选。</p>
+<h2 id="修改MED属性"><a href="#修改MED属性" class="headerlink" title="修改MED属性"></a>修改MED属性</h2><p>在R2上通过路由策略修改BGP路由172.16.3.0&#x2F;24的MED属性值，使得R3优选R5发布的BGP路由172.16.3.0&#x2F;24。</p>
+<p>#创建IP前缀列表1，匹配BGP路由172.16.3.0&#x2F;24</p>
+<p>[R2]ip ip-prefix 1 permit 172.16.3.0 24 greater-equal 24 less-equal 24</p>
+<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改MED属性值</p>
+<p>[R2]route-policy hcip permit node 10</p>
+<p>[R2-route-policy] if-match ip-prefix 1</p>
+<p>[R2-route-policy] apply cost 200</p>
+<p>[R2-route-policy] quit</p>
+<p>[R2]route-policy hcip permit node 20</p>
+<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
+<p>#对来自BGP对等体R1的BGP路由应用Route-Policy</p>
+<p>[R2]bgp 64512</p>
+<p>[R2-bgp] peer 10.0.12.1 route-policy hcip import</p>
+<p>#在R2上触发入方向的软复位，刷新接收到的BGP路由</p>
+<p><R2>refresh bgp all import</R2></p>
+<p>#在R3上配置允许比较来自不同AS的BGP路由的MED值</p>
+<p>[R3]bgp 64512</p>
+<p>[R3-bgp] compare-different-as-med  </p>
+<p>缺省情况下，不比较来自不同AS邻居的BGP的MED属性值。</p>
+<p>#在R3上查看BGP路由172.16.3.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/medchakanf2735.png" alt="medchakanf2735"></p>
+<p>R2通告的BGP路由172.16.3.0&#x2F;24其MED值为200，而R4通告BGP路由MED值为0，R3优选MED值较小的BGP路由，因此R2通告的BGP路由未被优选。</p>
+<h2 id="修改preferred-value属性"><a href="#修改preferred-value属性" class="headerlink" title="修改preferred-value属性"></a>修改preferred-value属性</h2><p>preferred-value：华为特有的属性值，仅在本地有效，当bgp存在到相同的路由时，将优选prefeerred-value大的路由。只能在路由器本地配置，只影响本设备的路由优选，不会传递给任何bgp对等体。</p>
+<p>在R3上通过路由策略修改BGP路由172.16.4.0&#x2F;24的preferred-value属性值，使得R3优选R4通告的BGP路由172.16.4.0&#x2F;24。</p>
+<p>#创建IP前缀列表1，匹配BGP路由172.16.4.0&#x2F;24</p>
+<p>[R3]ip ip-prefix 1 permit 172.16.4.0 24 greater-equal 24 less-equal 24</p>
+<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改preferred-value属性值</p>
+<p>[R3]route-policy hcip permit node 10</p>
+<p>[R3-route-policy] if-match ip-prefix 1</p>
+<p>[R3-route-policy] apply preferred-value 300</p>
+<p>[R3-route-policy] quit</p>
+<p>[R3]route-policy hcip permit node 20</p>
+<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
+<p>#对来自BGP对等体R4的BGP路由应用Route-Policy</p>
+<p>[R3]bgp 64512</p>
+<p>[R3-bgp] peer 10.0.4.4 route-policy hcip import</p>
+<p>#在R3上触发入方向的软复位，刷新收到的BGP路由</p>
+<p><R3>refresh bgp all import</R3></p>
+<p>#在R3上查看BGP路由172.16.4.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/prexiiuhai8193458.png" alt="prexiiuhai8193458"></p>
+<p>R4通告的BGP路由172.16.3.0&#x2F;24其preferred-value值为300，而R2通告的preferred-value值为0，R3优选preferred-value值较大的BGP路由，因此R3优选R4通告的BGP路由。</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>BGP路由优选</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>BGP路由反射器</title>
+    <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/</url>
+    <content><![CDATA[<h1 id="BGP路由反射器"><a href="#BGP路由反射器" class="headerlink" title="BGP路由反射器"></a>BGP路由反射器</h1><p>由于水平分割的原因，为了保证AS内所有的BGP路由器都能学习到完整的BGP路由，就必须在AS内实现IBGP全互联。</p>
+<p>然而实现IBGP全互联存在诸多短板：</p>
+<p> 路由器需维护大量的TCP及BGP连接，尤其在路由器数量较多时。</p>
+<p> AS内BGP网络的可扩展性较差，因为通过纯手工配置命令。</p>
+<p>为了解决该问题，可应用到RR路由反射器技术。</p>
+<p>1、Client：RR客户端，在RR设备上通过手动指定。</p>
+<blockquote>
+<p>指定命令：peer 邻居 reflect-client</p>
+</blockquote>
+<p>2、除了指定的设备为客户端，其它设备均为非客户端。</p>
+<p>实验：</p>
+<p>R1、R2、R3、R4都属于AS64511，其连接方式、互联接口地址如图所示。每台设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号。R1、R2上的Loopback1地址分别为10.1.1.1&#x2F;24、10.2.2.2&#x2F;24，用于模拟用户网段。</p>
+<span id="more"></span>
+
+<p>所有设备都使用Loopback0地址作为BGP Router ID，R1与R2、R2与R3、R3与R4、R4与R2之间基于直连接口建立IBGP对等体关系，其中R1为R2的路由反射器客户端，R2为R3的路由反射器客户端，R3为R4的路由反射器客户端。</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/bgpluy8165208.png" alt="bgpluy8165208"></p>
+<p>配置ip地址：略</p>
+<p>建立ibgp对等体：略</p>
+<h1 id="配置路由反射器"><a href="#配置路由反射器" class="headerlink" title="配置路由反射器"></a>配置路由反射器</h1><p>#R2上将R1配置为路由反射器客户端</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] peer 10.0.1.1 reflect-client</p>
+<p>#R3上将R2配置为路由反射器客户端</p>
+<p>[R3]bgp 64511</p>
+<p>[R3-bgp] peer 10.0.2.2 reflect-client</p>
+<p>#R4上将R3配置为路由反射器客户端</p>
+<p>[R4]bgp 64511</p>
+<p>[R4-bgp] peer 10.0.3.3 reflect-client</p>
+<h1 id="验证Orginator-ID实现路由防环"><a href="#验证Orginator-ID实现路由防环" class="headerlink" title="验证Orginator_ID实现路由防环"></a>验证Orginator_ID实现路由防环</h1><p>在本步骤中，我们将在R2上发布BGP路由10.2.2.0&#x2F;24，并观察该路由依次经路由反射器R3、R4反射后，被通告回R2从而引发潜在路由环路风险的情况。</p>
+<p>缺省情况下，R2发布BGP路由后，该路由将被R2直接通告给R4，另一方面也会通过R3反射给R4，此时R4将优选R2直接通告过来的路由，从而不会再将R3反射过来的路由再反射回给R2。为此，我们需要在R2上部署路由策略，使R2不直接向R4通告10.2.2.0&#x2F;24路由。</p>
+<p>#配置路由策略</p>
+<p>[R2]acl number 2000</p>
+<p>[R2-acl-basic-2000] rule 5 permit</p>
+<p>[R2-acl-basic-2000] quit</p>
+<p>[R2]route-policy bgp deny node 10</p>
+<p>[R2-route-policy] if-match acl 2000</p>
+<p>#在BGP中调用路由策略</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] peer 10.0.24.4 route-policy bgp export</p>
+<p>#在R2上发布路由</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] network 10.2.2.0 24</p>
+<p>#R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/chakan102224728.png" alt="chakan102224728"></p>
+<p>R2将该条路由通告给了R3、R1，但是并未通告给R4。</p>
+<p>#R3上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r174808.png" alt="r174808"></p>
+<p>R3将来自反射器客户端的BGP路由10.2.2.0&#x2F;24反射给了10.0.34.4（R4）。同时该BGP路由的nexthop为10.0.23.2。</p>
+<p># R4上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r4chakan80119.png" alt="r4chakan80119"></p>
+<p>该条路由来自反射器客户端R3，原始路由经由R3反射，路由的nexthop地址并未改变，同时R3为其添加了Orginator_ID属性，值为10.0.2.2。同时R4将该条路由反射给了R2。</p>
+<p>#再次在R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zacifa80349.png" alt="zacifa80349"></p>
+<p>依旧只存在本地通告的BGP路由，没有R4通告的BGP路由。</p>
+<p>#在R2上查看BGP对等体10.0.4.4的详细信息</p>
+<p>display bgp peer 10.0.4.4 verbose</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/safhaofbsh1128180629.png" alt="safhaofbsh1128180629"></p>
+<p>从输出信息可以看到R2从R4收到了1个Update报文，未向R4发送Update报文（路由策略限制），但是本地BGP路由表中不存在由R4通告的BGP路由10.2.2.0&#x2F;24。</p>
+<p>R4通告的BGP路由Orginator_ID属性值与本地的Router ID一致，R2忽略了该路由通告。</p>
+<h1 id="验证Cluster-List实现路由防环"><a href="#验证Cluster-List实现路由防环" class="headerlink" title="验证Cluster_List实现路由防环"></a>验证Cluster_List实现路由防环</h1><p>为了方便观察现象，取消R2上的BGP路由发布，在R1上将Loopback1接口路由发布到BGP，观察Cluster_List如何防止环路。</p>
+<p>#取消R2上的BGP路由发布</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] undo network 10.2.2.0 255.255.255.0</p>
+<p>#在R1上将Loopback1接口路由发布到BGP</p>
+<p>[R1]bgp 64511</p>
+<p>[R1-bgp] network 10.1.1.0 24</p>
+<p>#依次在R1、R2、R3、R4上查看BGP路由10.1.1.0 &#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/xinfuaiell181000.png" alt="xinfuaiell181000"></p>
+<p>R1为BGP路由10.1.1.0&#x2F;24的始发者，R1将路由通告给了R2</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/2xinfahol128181116.png" alt="2xinfahol128181116"></p>
+<p>来自路由反射器客户端R1的BGP路由10.1.1.0&#x2F;24，R2将其反射给了R3</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/3xinmbxmcx1128181206.png" alt="3xinmbxmcx1128181206"></p>
+<p>来自路由反射器客户端R2的BGP路由10.1.1.0&#x2F;24，R2反射时添加了Cluster_List属性，值为10.0.2.2，R3将该条路由反射给了R4</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/44xinm1334.png" alt="44xinm1334"></p>
+<p>来自路由反射器客户端R3的BGP路由10.1.1.0&#x2F;24，R3反射时添加了Cluster_List属性的值，当前值为10.0.3.3，10.0.2.2，R4将该条路由反射给了R2</p>
+<p>#再次查看R2的BGP路由表</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zaizaici661435.png" alt="zaizaici661435"></p>
+<p>R2的BGP路由表中依旧只有一条来自r1的BGP路由10.1.1.0&#x2F;24。</p>
+<p>4通告的BGP路由其Cluster_List属性值中包含了R2的Cluster-ID，R2忽略了该路由通告。</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>BGP路由反射器</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>DHCP基础配置</title>
     <url>/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/</url>
     <content><![CDATA[<p> DHCP是一种终端自动配置协议，客户端通过DHCP协议可获取一个合法的动态IP地址。</p>
@@ -444,208 +646,6 @@
       <tags>
         <tag>DHCP Relay</tag>
         <tag>DHCP</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>BGP路由反射器</title>
-    <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/</url>
-    <content><![CDATA[<h1 id="BGP路由反射器"><a href="#BGP路由反射器" class="headerlink" title="BGP路由反射器"></a>BGP路由反射器</h1><p>由于水平分割的原因，为了保证AS内所有的BGP路由器都能学习到完整的BGP路由，就必须在AS内实现IBGP全互联。</p>
-<p>然而实现IBGP全互联存在诸多短板：</p>
-<p> 路由器需维护大量的TCP及BGP连接，尤其在路由器数量较多时。</p>
-<p> AS内BGP网络的可扩展性较差，因为通过纯手工配置命令。</p>
-<p>为了解决该问题，可应用到RR路由反射器技术。</p>
-<p>1、Client：RR客户端，在RR设备上通过手动指定。</p>
-<blockquote>
-<p>指定命令：peer 邻居 reflect-client</p>
-</blockquote>
-<p>2、除了指定的设备为客户端，其它设备均为非客户端。</p>
-<p>实验：</p>
-<p>R1、R2、R3、R4都属于AS64511，其连接方式、互联接口地址如图所示。每台设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号。R1、R2上的Loopback1地址分别为10.1.1.1&#x2F;24、10.2.2.2&#x2F;24，用于模拟用户网段。</p>
-<span id="more"></span>
-
-<p>所有设备都使用Loopback0地址作为BGP Router ID，R1与R2、R2与R3、R3与R4、R4与R2之间基于直连接口建立IBGP对等体关系，其中R1为R2的路由反射器客户端，R2为R3的路由反射器客户端，R3为R4的路由反射器客户端。</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/bgpluy8165208.png" alt="bgpluy8165208"></p>
-<p>配置ip地址：略</p>
-<p>建立ibgp对等体：略</p>
-<h1 id="配置路由反射器"><a href="#配置路由反射器" class="headerlink" title="配置路由反射器"></a>配置路由反射器</h1><p>#R2上将R1配置为路由反射器客户端</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] peer 10.0.1.1 reflect-client</p>
-<p>#R3上将R2配置为路由反射器客户端</p>
-<p>[R3]bgp 64511</p>
-<p>[R3-bgp] peer 10.0.2.2 reflect-client</p>
-<p>#R4上将R3配置为路由反射器客户端</p>
-<p>[R4]bgp 64511</p>
-<p>[R4-bgp] peer 10.0.3.3 reflect-client</p>
-<h1 id="验证Orginator-ID实现路由防环"><a href="#验证Orginator-ID实现路由防环" class="headerlink" title="验证Orginator_ID实现路由防环"></a>验证Orginator_ID实现路由防环</h1><p>在本步骤中，我们将在R2上发布BGP路由10.2.2.0&#x2F;24，并观察该路由依次经路由反射器R3、R4反射后，被通告回R2从而引发潜在路由环路风险的情况。</p>
-<p>缺省情况下，R2发布BGP路由后，该路由将被R2直接通告给R4，另一方面也会通过R3反射给R4，此时R4将优选R2直接通告过来的路由，从而不会再将R3反射过来的路由再反射回给R2。为此，我们需要在R2上部署路由策略，使R2不直接向R4通告10.2.2.0&#x2F;24路由。</p>
-<p>#配置路由策略</p>
-<p>[R2]acl number 2000</p>
-<p>[R2-acl-basic-2000] rule 5 permit</p>
-<p>[R2-acl-basic-2000] quit</p>
-<p>[R2]route-policy bgp deny node 10</p>
-<p>[R2-route-policy] if-match acl 2000</p>
-<p>#在BGP中调用路由策略</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] peer 10.0.24.4 route-policy bgp export</p>
-<p>#在R2上发布路由</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] network 10.2.2.0 24</p>
-<p>#R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/chakan102224728.png" alt="chakan102224728"></p>
-<p>R2将该条路由通告给了R3、R1，但是并未通告给R4。</p>
-<p>#R3上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r174808.png" alt="r174808"></p>
-<p>R3将来自反射器客户端的BGP路由10.2.2.0&#x2F;24反射给了10.0.34.4（R4）。同时该BGP路由的nexthop为10.0.23.2。</p>
-<p># R4上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r4chakan80119.png" alt="r4chakan80119"></p>
-<p>该条路由来自反射器客户端R3，原始路由经由R3反射，路由的nexthop地址并未改变，同时R3为其添加了Orginator_ID属性，值为10.0.2.2。同时R4将该条路由反射给了R2。</p>
-<p>#再次在R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zacifa80349.png" alt="zacifa80349"></p>
-<p>依旧只存在本地通告的BGP路由，没有R4通告的BGP路由。</p>
-<p>#在R2上查看BGP对等体10.0.4.4的详细信息</p>
-<p>display bgp peer 10.0.4.4 verbose</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/safhaofbsh1128180629.png" alt="safhaofbsh1128180629"></p>
-<p>从输出信息可以看到R2从R4收到了1个Update报文，未向R4发送Update报文（路由策略限制），但是本地BGP路由表中不存在由R4通告的BGP路由10.2.2.0&#x2F;24。</p>
-<p>R4通告的BGP路由Orginator_ID属性值与本地的Router ID一致，R2忽略了该路由通告。</p>
-<h1 id="验证Cluster-List实现路由防环"><a href="#验证Cluster-List实现路由防环" class="headerlink" title="验证Cluster_List实现路由防环"></a>验证Cluster_List实现路由防环</h1><p>为了方便观察现象，取消R2上的BGP路由发布，在R1上将Loopback1接口路由发布到BGP，观察Cluster_List如何防止环路。</p>
-<p>#取消R2上的BGP路由发布</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] undo network 10.2.2.0 255.255.255.0</p>
-<p>#在R1上将Loopback1接口路由发布到BGP</p>
-<p>[R1]bgp 64511</p>
-<p>[R1-bgp] network 10.1.1.0 24</p>
-<p>#依次在R1、R2、R3、R4上查看BGP路由10.1.1.0 &#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/xinfuaiell181000.png" alt="xinfuaiell181000"></p>
-<p>R1为BGP路由10.1.1.0&#x2F;24的始发者，R1将路由通告给了R2</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/2xinfahol128181116.png" alt="2xinfahol128181116"></p>
-<p>来自路由反射器客户端R1的BGP路由10.1.1.0&#x2F;24，R2将其反射给了R3</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/3xinmbxmcx1128181206.png" alt="3xinmbxmcx1128181206"></p>
-<p>来自路由反射器客户端R2的BGP路由10.1.1.0&#x2F;24，R2反射时添加了Cluster_List属性，值为10.0.2.2，R3将该条路由反射给了R4</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/44xinm1334.png" alt="44xinm1334"></p>
-<p>来自路由反射器客户端R3的BGP路由10.1.1.0&#x2F;24，R3反射时添加了Cluster_List属性的值，当前值为10.0.3.3，10.0.2.2，R4将该条路由反射给了R2</p>
-<p>#再次查看R2的BGP路由表</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zaizaici661435.png" alt="zaizaici661435"></p>
-<p>R2的BGP路由表中依旧只有一条来自r1的BGP路由10.1.1.0&#x2F;24。</p>
-<p>4通告的BGP路由其Cluster_List属性值中包含了R2的Cluster-ID，R2忽略了该路由通告。</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>BGP路由反射器</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>BGP路由优选</title>
-    <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/</url>
-    <content><![CDATA[<h1 id="BGP路由优选"><a href="#BGP路由优选" class="headerlink" title="BGP路由优选"></a>BGP路由优选</h1><h2 id="实验背景"><a href="#实验背景" class="headerlink" title="实验背景"></a>实验背景</h2><p>你是公司的网络管理员。公司的网络采用了BGP协议接入了两个服务运营商。公司自己采用了私有的AS号64512，ISP1的AS号为100，ISP2的AS号为200。通过AS100、AS200都可以到达相同的网络，你通过改变BGP的各种属性达到了调整路由走向的目的。</p>
-<span id="more"></span>
-
-<p>实验介绍：</p>
-<p>设备互联方式、互联接口地址如图所示，所有设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号，所有设备都使用Loopback0地址作为BGP Router ID。</p>
-<p>R1在AS100，R5在AS200，R2、R3、R4在AS64512。AS64512内运行OSPF，在互联接口（不包括连接外部AS的接口）、Loopback0接口上激活OSPF。</p>
-<p>EBGP对等体关系基于直连接口建立，IBGP对等体关系基于Loopback0接口建立。</p>
-<p>R1、R5上存在相同的网段172.16.1.0&#x2F;24、172.16.2.0&#x2F;24、172.16.3.0&#x2F;24、172.16.4.0&#x2F;24，在R1、R5上将其发布到BGP，以用于BGP路由优选。</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/tuopu22sd182306.png" alt="tuopu22sd182306"></p>
-<p>配置ip，配置bgp：略</p>
-<p>#在R1、R5上将Loopback1、Loopback2、Loopback3、Loopback4接口路由发布到BGP中</p>
-<p>[R1]bgp 100</p>
-<p>[R1-bgp] network 172.16.1.0 24</p>
-<p>[R1-bgp] network 172.16.2.0 24</p>
-<p>[R1-bgp] network 172.16.3.0 24</p>
-<p>[R1-bgp] network 172.16.4.0 24</p>
-<p>[R5]bgp 200</p>
-<p>[R5-bgp] network 172.16.1.0 24</p>
-<p>[R5-bgp] network 172.16.2.0 24</p>
-<p>[R5-bgp] network 172.16.3.0 24</p>
-<p>[R5-bgp] network 172.16.4.0 24</p>
-<p>#在R3上查看BGP路由表，检查BGP路由是否成功学习</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/r3chakandp128185306.png" alt="r3chakandp128185306"></p>
-<p>R3已经成功学习R1、R5发布的路由，此时所有路由都优选由R2通告的。</p>
-<h2 id="修改AS-Path属性"><a href="#修改AS-Path属性" class="headerlink" title="修改AS_Path属性"></a>修改AS_Path属性</h2><p>在R1上通过路由策略修改BGP路由172.16.1.0&#x2F;24的 AS_Path属性值，使得R3优选R5发布的BGP路由172.16.1.0&#x2F;24。</p>
-<p>#创建IP前缀列表1，匹配Loopback1接口路由</p>
-<p>[R1]ip ip-prefix 1 permit 172.16.1.0 24 greater-equal 24 less-equal 24</p>
-<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改AS_Path属性值</p>
-<p>[R1]route-policy hcip permit node 10</p>
-<p>[R1-route-policy] if-match ip-prefix 1</p>
-<p>[R1-route-policy] apply as-path 300 400 additive</p>
-<p>[R1-route-policy] quit</p>
-<p>[R1]route-policy hcip permit node 20</p>
-<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
-<p>#对向BGP对等体R2通告的BGP路由应用Route-Policy</p>
-<p>[R1]bgp 100</p>
-<p>[R1-bgp] peer 10.0.12.2 route-policy hcip export</p>
-<p>#在R1上触发出方向的软复位，刷新对外通告的BGP路由</p>
-<p><R1>refresh bgp all export</R1></p>
-<p>#在R3上查看BGP路由172.16.1.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/as5cs28190005.png" alt="as5cs28190005"></p>
-<p>此时R3优选R4通告的BGP路由172.16.1.0&#x2F;24，R2通告的未被优选的原因是AS_Path长度。</p>
-<h2 id="修改Local-Preference属性"><a href="#修改Local-Preference属性" class="headerlink" title="修改Local_Preference属性"></a>修改Local_Preference属性</h2><p>local_Preference：默认100，越大越优先，只能在ibgp对等体之间传递</p>
-<p>在R4上通过路由策略修改BGP路由172.16.2.0&#x2F;24的Local_Preference属性值，使得R3优选R4通告的BGP路由172.16.2.0&#x2F;24。</p>
-<p>#创建IP前缀列表1，匹配BGP路由172.16.2.0&#x2F;24</p>
-<p>[R4]ip ip-prefix 1 permit 172.16.2.0 24 greater-equal 24 less-equal 24</p>
-<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改Local_Preference属性值</p>
-<p>[R4]route-policy hcip permit node 10</p>
-<p>[R4-route-policy] if-match ip-prefix 1</p>
-<p>[R4-route-policy] apply local-preference 200</p>
-<p>[R4-route-policy] quit</p>
-<p>[R4]route-policy hcip permit node 20</p>
-<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
-<p>#对向BGP对等体R3通告的BGP路由应用Route-Policy</p>
-<p>[R4]bgp 64512</p>
-<p>[R4-bgp] peer 10.0.3.3 route-policy hcip export</p>
-<p>#在R4上触发出方向的软复位，刷新对外通告的BGP路由</p>
-<p><R4>refresh bgp all export</R4></p>
-<p>#在R3上查看BGP路由172.16.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/local55chakan192014.png" alt="local55chakan192014"></p>
-<p>此时R3优选R4通告的BGP路由172.16.2.0&#x2F;24，R2通告的BGP路由其Local_Preference值为100，小于R3通告的BGP路由Local_Preference值200，因此R2通告的BGP路由未被优选。</p>
-<h2 id="修改MED属性"><a href="#修改MED属性" class="headerlink" title="修改MED属性"></a>修改MED属性</h2><p>在R2上通过路由策略修改BGP路由172.16.3.0&#x2F;24的MED属性值，使得R3优选R5发布的BGP路由172.16.3.0&#x2F;24。</p>
-<p>#创建IP前缀列表1，匹配BGP路由172.16.3.0&#x2F;24</p>
-<p>[R2]ip ip-prefix 1 permit 172.16.3.0 24 greater-equal 24 less-equal 24</p>
-<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改MED属性值</p>
-<p>[R2]route-policy hcip permit node 10</p>
-<p>[R2-route-policy] if-match ip-prefix 1</p>
-<p>[R2-route-policy] apply cost 200</p>
-<p>[R2-route-policy] quit</p>
-<p>[R2]route-policy hcip permit node 20</p>
-<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
-<p>#对来自BGP对等体R1的BGP路由应用Route-Policy</p>
-<p>[R2]bgp 64512</p>
-<p>[R2-bgp] peer 10.0.12.1 route-policy hcip import</p>
-<p>#在R2上触发入方向的软复位，刷新接收到的BGP路由</p>
-<p><R2>refresh bgp all import</R2></p>
-<p>#在R3上配置允许比较来自不同AS的BGP路由的MED值</p>
-<p>[R3]bgp 64512</p>
-<p>[R3-bgp] compare-different-as-med  </p>
-<p>缺省情况下，不比较来自不同AS邻居的BGP的MED属性值。</p>
-<p>#在R3上查看BGP路由172.16.3.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/medchakanf2735.png" alt="medchakanf2735"></p>
-<p>R2通告的BGP路由172.16.3.0&#x2F;24其MED值为200，而R4通告BGP路由MED值为0，R3优选MED值较小的BGP路由，因此R2通告的BGP路由未被优选。</p>
-<h2 id="修改preferred-value属性"><a href="#修改preferred-value属性" class="headerlink" title="修改preferred-value属性"></a>修改preferred-value属性</h2><p>preferred-value：华为特有的属性值，仅在本地有效，当bgp存在到相同的路由时，将优选prefeerred-value大的路由。只能在路由器本地配置，只影响本设备的路由优选，不会传递给任何bgp对等体。</p>
-<p>在R3上通过路由策略修改BGP路由172.16.4.0&#x2F;24的preferred-value属性值，使得R3优选R4通告的BGP路由172.16.4.0&#x2F;24。</p>
-<p>#创建IP前缀列表1，匹配BGP路由172.16.4.0&#x2F;24</p>
-<p>[R3]ip ip-prefix 1 permit 172.16.4.0 24 greater-equal 24 less-equal 24</p>
-<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改preferred-value属性值</p>
-<p>[R3]route-policy hcip permit node 10</p>
-<p>[R3-route-policy] if-match ip-prefix 1</p>
-<p>[R3-route-policy] apply preferred-value 300</p>
-<p>[R3-route-policy] quit</p>
-<p>[R3]route-policy hcip permit node 20</p>
-<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
-<p>#对来自BGP对等体R4的BGP路由应用Route-Policy</p>
-<p>[R3]bgp 64512</p>
-<p>[R3-bgp] peer 10.0.4.4 route-policy hcip import</p>
-<p>#在R3上触发入方向的软复位，刷新收到的BGP路由</p>
-<p><R3>refresh bgp all import</R3></p>
-<p>#在R3上查看BGP路由172.16.4.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/prexiiuhai8193458.png" alt="prexiiuhai8193458"></p>
-<p>R4通告的BGP路由172.16.3.0&#x2F;24其preferred-value值为300，而R2通告的preferred-value值为0，R3优选preferred-value值较大的BGP路由，因此R3优选R4通告的BGP路由。</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>BGP路由优选</tag>
       </tags>
   </entry>
   <entry>
@@ -1000,87 +1000,6 @@
       </tags>
   </entry>
   <entry>
-    <title>nat实验</title>
-    <url>/2023/11/25/nat%E5%AE%9E%E9%AA%8C/</url>
-    <content><![CDATA[<h1 id="静态nat"><a href="#静态nat" class="headerlink" title="静态nat"></a>静态nat</h1><p>静态NAT实现了私有地址和公有地址的一对一映射。如果希望一台主机优先使用某个关联地址，或者想要外部网络使用一个指定的公网地址访问内部服务器时，可以使用静态NAT。但是在大型网络中，这种一对一的IP地址映射无法缓解公用地址短缺的问题。</p>
-<span id="more"></span>
-
-<p>静态NAT实现了私有地址和共有地址一对一的映射（一个私有地址对应一个共有地址），并没有做到缓解地址短缺的问题，只是做到了地址转换。</p>
-<p>一个公网地址只会分配给唯一且固定的内网地址</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingttuopu4509.png" alt="jingttuopu4509"></p>
-<p>如图配置ip地址和网关</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingta15204327.png" alt="jingta15204327"></p>
-<p>r1上配置静态nat（注意是在公网的接口上，出接口）</p>
-<p>注意配置一条静态路由，不然没有路由的下一跳会被丢弃</p>
-<p>在r1上查看nat映射关系：dis nat static</p>
-<p>验证一下：<img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingtainatjg25204222.png" alt="jingtainatjg25204222"></p>
-<p>发现去往2.2.2.2的源地址变为2.2.2.3，说明nat完成转换。</p>
-<p>静态nat两种配置方式：</p>
-<p>1.接口下（上述实验采用这种方式）：进入到连接外网路由器的出接口下，然后在接口视图下配置nat映射关系</p>
-<p>2.全局：在全局视图下，配置好nat映射关系，再进入到出接口，执行：nat static enable</p>
-<h1 id="动态nat"><a href="#动态nat" class="headerlink" title="动态nat"></a>动态nat</h1><p>动态NAT通过使用地址池来实现。</p>
-<p>如上图，当内部主机A和主机B需要与公网中的目的主机通信时，网关RTA会从配置的公网地址池中选择一个未使用的公网地址与之做映射。每台主机都会分配到地址池中的一个唯一地址。当不需要此连接时，对应的地址映射将会被删除，公网地址也会被恢复到地址池中待用。当网关收到回复报文后，会根据之前的映射再次进行转换之后转发给对应主机。</p>
-<p>注意：</p>
-<p>动态NAT实际上实现的还是私有地址和公有地址一对一的关系，但是共有地址不再绑定给特定的内网地址。实现了一定程度的缓解地址短缺问题。<br>动态NAT地址池中的地址用尽以后，只能等待被占用的公用IP被释放后，其他主机才能使用它来访问公网。<img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dongtaitu00800.png" alt="dongtaitu00800"></p>
-<h2 id="动态NAT转换流程："><a href="#动态NAT转换流程：" class="headerlink" title="动态NAT转换流程："></a>动态NAT转换流程：</h2><p>1）路由器上配置一个内部地址池（公司内部所有主机用到的私有IP）动态映射一个外部地址池（所购买的公有IP）。<br>2）当有一个内网主机访问外网时，路由器首先查看NAT地址转换表；<br>3）若无，则再查看是否配置了动态NAT映射，若配置，则将IP包头中的源IP与内部地址池进行匹配，若有匹配项，则将该内网IP从内部地址池中取出，同时取出外部地址池中的一个IP地址，动态形成NAT地址转换表。注意，外部地址池的公网IP地址取出后，外部地址池中将没有该公网IP了。<br>4）默认当该主机24小时没有联系外网时，该动态NAT条目会自动消失，所被取出的公私有地址重新回到地址池中。</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/tuopudawda12714.png" alt="tuopudawda12714"></p>
-<p>ip如图，pc的网关192.168.1.254</p>
-<p>r1上配置默认路由，ip route-static 0.0.0.0 0 172.16.1.2</p>
-<p>r1上配置动态地址池：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/acldongtai2005212357.png" alt="acldongtai2005212357"></p>
-<p>地址池验证：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dizhichi1201.png" alt="dizhichi1201"></p>
-<p>配置acl策略：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/acl55da612432.png" alt="acl55da612432"></p>
-<p>在r1的外网出接口上调用：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/natout25212448.png" alt="natout25212448"></p>
-<p>验证：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dongtaijiegy12547.png" alt="dongtaijiegy12547"></p>
-<p>其中源IP为3、4、5不定，说明是在动态分配外网地址。动态NAT配置完成。</p>
-<p>在动态NAT实验中，最后利用PC1测试连通性时，间歇性会丢包</p>
-<p>可能的原因：ping的时候默认按地址池中可用地址顺序从1~254进行地址转换，放大nat地址池可解决。</p>
-<h1 id="NAPT"><a href="#NAPT" class="headerlink" title="NAPT"></a>NAPT</h1><p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/NApttu39.png" alt="NApttu39"></p>
-<p>如上图，RTA收到一个私网主机发送的报文，源IP地址是192.168.1.1，源端口号是1025，目的IP地址是100.1.1.1，目的端口是80。RTA会从配置的公网地址池中选择一个空闲的公网IP地址和端口号，并建立相应的NAPT表项。这些NAPT表项指定了报文的私网IP地址和端口号与公网IP地址和端口号的映射关系。之后，RTA将报文的源IP地址和端口号转换成公网地址200.10.10.1和端口号2843，并转发报文到公网。当网关RTA收到回复报文后，会根据之前的映射表再次进行转换之后转发给主机A。主机B同理。</p>
-<p>注意：</p>
-<p>NAPT技术允许多个内部地址映射到同一个公有地址的不同端口。<br>NAPT实现了私有地址对共有地址多对一</p>
-<p>相当于一种特殊的动态nat</p>
-<p>1、端口NAT和动态NAT的配置过程基本一致，只是在应用到接口时，配置命令少no-pat<br>2、端口NAT一个地址可以给多个源地址转换，不是单对单的转换，所以节省了nat地址！<br>3、端口NAT实际应用较多，静态NAT和动态NAT因为地址不能节约，所以实际应用少</p>
-<h1 id="Easy-IP"><a href="#Easy-IP" class="headerlink" title="Easy IP"></a>Easy IP</h1><p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/easydahwka5.png" alt="easydahwka5"></p>
-<p>Easy IP本质上是NAPT（所以原理与NAPT大致相似）<br>由于网关设备出接口IP地址为公网地址，所以可以利用该<strong>出接口地址</strong>来作为地址转换的公有地址。<br>Easy IP适用于小规模局域网中的主机访问Internet的场景。小规模局域网通常部署在小型的网吧或者办公室中，这些地方内部主机不多，出接口可以通过拨号方式获取一个临时公网IP地址。Easy IP可以实现内部主机使用这个临时公网IP地址访问Internet。</p>
-<p>Easy IP适用于小规模局域网中的主机访问Internet的场景。小规模局域网通常部署在小型的网吧或者办公室中，这些地方内部主机不多，出接口可以通过拨号方式获取一个临时公网IP地址。Easy IP可以实现内部主机使用这个临时公网IP地址访问Internet。</p>
-<h2 id="Easy-IP的配置："><a href="#Easy-IP的配置：" class="headerlink" title="Easy IP的配置："></a>Easy IP的配置：</h2><p>1.创建ACL：acl 2000</p>
-<p>2.允许1.0的数据进行转换：rule 5 permit source 192.168.1.0 0 .0.0.255</p>
-<p>3.进入公网出接口</p>
-<p>4.应用acl：nat outbound 2000</p>
-<p>（相较于napt少了地址池）</p>
-<p>验证：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/easadwaawh215116.png" alt="easadwaawh215116"></p>
-<p>源地址为出接口地址172.16.1.1，只是端口不同</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>nat</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>telnet</title>
-    <url>/2023/12/02/telnet/</url>
-    <content><![CDATA[<h1 id="两种配置方法"><a href="#两种配置方法" class="headerlink" title="两种配置方法"></a>两种配置方法</h1><h2 id="1-仅密码登录验证"><a href="#1-仅密码登录验证" class="headerlink" title="1.仅密码登录验证"></a>1.仅密码登录验证</h2><p>代码如下（示例）：<br><Quidway>system-view —–进入配置模式<br>[Quidway]interface vlan 1 —–进入管理vlan<br>[Quidway-Vlanif1]ip address 192.168.28.49 255.255.255.0 —–配置管理ip地址<br>[Quidway-Vlanif1]quit —–退出<br>[Quidway]telnet server enable —–打开telnet服务 （一般默认开启）<br>[Quidway]user-interface vty 0 4 —–用户指定虚拟用户终端接口<br>[Quidway-ui-vty0-4]authentication-mode password —–配置用户终端接口认证方式 密码验证<br>[Quidway-ui-vty0-4]set authentication password cipher huawei123 —–设置接口验证密码,密码为huawei123<br>[Quidway-ui-vty0-4]user privilege level 15 —–设置用户优先级 （可选）<br>[Quidway-ui-vty0-4]idle-timeout 1 —–设置登陆超时为一分钟 （可选）<br>[Quidway-ui-vty0-4]return —–返回用户视图<br><Quidway>save —–保存</Quidway></Quidway></p>
-<h2 id="2-配置AAA登录"><a href="#2-配置AAA登录" class="headerlink" title="2.配置AAA登录"></a>2.配置AAA登录</h2><p>代码如下（示例）：<br><Quidway>system-view —–进入配置模式<br>[Quidway]interface vlan 1 —–进入管理vlan<br>[Quidway-Vlanif1]ip address 192.168.28.49 255.255.255.0 —–配置管理ip地址<br>[Quidway-Vlanif1]quit —–退出<br>[Quidway]telnet server enable —–打开telnet服务 （一般默认开启）<br>[Quidway]user-interface vty 0 4 —–用户指定虚拟用户终端接口<br>[Quidway-ui-vty0-4]authentication-mode aaa —–配置用户终端接口认证方式 aaa验证<br>[Quidway-ui-vty0-4]user privilege level 15 —–设置用户优先级<br>[Quidway-ui-vty0-4]idle-timeout 1 —–设置登陆超时为一分钟<br>[Quidway-ui-vty0-4]quit —–退出<br>[Quidway]aaa —–进入aaa<br>[Quidway-aaa]local-user huawei password cipher huawei123 —–创建用户名huawei 密码huawei123<br>[Quidway-aaa]local-user huawei privilege level 15 —–设置用户优先级<br>[Quidway-aaa]local-user huawei service-type telnet —–授权用户使用telnet<br>[Quidway-ui-vty0-4]return —–返回用户视图<br><Quidway>save —–保存</Quidway></Quidway></p>
-<h2 id="user-interface-vty-0-4-详解"><a href="#user-interface-vty-0-4-详解" class="headerlink" title="user-interface vty 0 4 详解"></a>user-interface vty 0 4 详解</h2><p>Quidway]user-interface vty 0 4                    ；进入虚拟终端<br>[S3026-ui-vty0-4]authentication-mode password           ；设置口令模式<br>[S3026-ui-vty0-4]set authentication-mode password simple 222 ；设置口令<br>[S3026-ui-vty0-4]user privilege level 3 </p>
-<p>一、第一句的意思是：进入到vty 终端，在华为的交换机里，vty就是人家用telnet远程进入到你交换机的界面，最多有五个，所以说你可以vty 0  vty 1 vty… vty 4交换机最多可以允许五个人同时在线进到交换机里去配置命令的。vty0 4 就是说把这五个界面一起配置了，这五个界面进去的话，都是使用以下的配置。<br>二、用的认证模式是密码认证，可以使用scheme模式来，也可以用password来，用password的话，是要密码的，就是说你telnet的话，要输入密码才能登陆到包交换机里去的。<br>二、设置密码为明文密码，密码是123 ，如果是密文的话，就是cipher<br>四、用户等级为3，也就是最高的，华为的命令级别很多，分为四级，0 1 2 3 ，0是参观级，只能看，1比0要高，可以使用一些命令，2 是可以配置了，3可以备份与删除IOS啦，呵呵，这个命令就是说用这个123密码，进来就是最高级别的，不用换级别。</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>telnet</tag>
-        <tag>aaa</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>mpls实验</title>
     <url>/2023/12/05/mpls%E5%AE%9E%E9%AA%8C/</url>
     <content><![CDATA[<h1 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h1><p>MPLS（Multiprotocol Label Switching）多协议标签转发复习总结<br>首先我们要先知道MPLS是为何出现的？<br>MPLS是基于传统IP网络（RIP，OSPF等）的缺陷由IETF确定的</p>
@@ -1298,6 +1217,87 @@
       </categories>
       <tags>
         <tag>mpls</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>nat实验</title>
+    <url>/2023/11/25/nat%E5%AE%9E%E9%AA%8C/</url>
+    <content><![CDATA[<h1 id="静态nat"><a href="#静态nat" class="headerlink" title="静态nat"></a>静态nat</h1><p>静态NAT实现了私有地址和公有地址的一对一映射。如果希望一台主机优先使用某个关联地址，或者想要外部网络使用一个指定的公网地址访问内部服务器时，可以使用静态NAT。但是在大型网络中，这种一对一的IP地址映射无法缓解公用地址短缺的问题。</p>
+<span id="more"></span>
+
+<p>静态NAT实现了私有地址和共有地址一对一的映射（一个私有地址对应一个共有地址），并没有做到缓解地址短缺的问题，只是做到了地址转换。</p>
+<p>一个公网地址只会分配给唯一且固定的内网地址</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingttuopu4509.png" alt="jingttuopu4509"></p>
+<p>如图配置ip地址和网关</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingta15204327.png" alt="jingta15204327"></p>
+<p>r1上配置静态nat（注意是在公网的接口上，出接口）</p>
+<p>注意配置一条静态路由，不然没有路由的下一跳会被丢弃</p>
+<p>在r1上查看nat映射关系：dis nat static</p>
+<p>验证一下：<img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingtainatjg25204222.png" alt="jingtainatjg25204222"></p>
+<p>发现去往2.2.2.2的源地址变为2.2.2.3，说明nat完成转换。</p>
+<p>静态nat两种配置方式：</p>
+<p>1.接口下（上述实验采用这种方式）：进入到连接外网路由器的出接口下，然后在接口视图下配置nat映射关系</p>
+<p>2.全局：在全局视图下，配置好nat映射关系，再进入到出接口，执行：nat static enable</p>
+<h1 id="动态nat"><a href="#动态nat" class="headerlink" title="动态nat"></a>动态nat</h1><p>动态NAT通过使用地址池来实现。</p>
+<p>如上图，当内部主机A和主机B需要与公网中的目的主机通信时，网关RTA会从配置的公网地址池中选择一个未使用的公网地址与之做映射。每台主机都会分配到地址池中的一个唯一地址。当不需要此连接时，对应的地址映射将会被删除，公网地址也会被恢复到地址池中待用。当网关收到回复报文后，会根据之前的映射再次进行转换之后转发给对应主机。</p>
+<p>注意：</p>
+<p>动态NAT实际上实现的还是私有地址和公有地址一对一的关系，但是共有地址不再绑定给特定的内网地址。实现了一定程度的缓解地址短缺问题。<br>动态NAT地址池中的地址用尽以后，只能等待被占用的公用IP被释放后，其他主机才能使用它来访问公网。<img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dongtaitu00800.png" alt="dongtaitu00800"></p>
+<h2 id="动态NAT转换流程："><a href="#动态NAT转换流程：" class="headerlink" title="动态NAT转换流程："></a>动态NAT转换流程：</h2><p>1）路由器上配置一个内部地址池（公司内部所有主机用到的私有IP）动态映射一个外部地址池（所购买的公有IP）。<br>2）当有一个内网主机访问外网时，路由器首先查看NAT地址转换表；<br>3）若无，则再查看是否配置了动态NAT映射，若配置，则将IP包头中的源IP与内部地址池进行匹配，若有匹配项，则将该内网IP从内部地址池中取出，同时取出外部地址池中的一个IP地址，动态形成NAT地址转换表。注意，外部地址池的公网IP地址取出后，外部地址池中将没有该公网IP了。<br>4）默认当该主机24小时没有联系外网时，该动态NAT条目会自动消失，所被取出的公私有地址重新回到地址池中。</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/tuopudawda12714.png" alt="tuopudawda12714"></p>
+<p>ip如图，pc的网关192.168.1.254</p>
+<p>r1上配置默认路由，ip route-static 0.0.0.0 0 172.16.1.2</p>
+<p>r1上配置动态地址池：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/acldongtai2005212357.png" alt="acldongtai2005212357"></p>
+<p>地址池验证：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dizhichi1201.png" alt="dizhichi1201"></p>
+<p>配置acl策略：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/acl55da612432.png" alt="acl55da612432"></p>
+<p>在r1的外网出接口上调用：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/natout25212448.png" alt="natout25212448"></p>
+<p>验证：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dongtaijiegy12547.png" alt="dongtaijiegy12547"></p>
+<p>其中源IP为3、4、5不定，说明是在动态分配外网地址。动态NAT配置完成。</p>
+<p>在动态NAT实验中，最后利用PC1测试连通性时，间歇性会丢包</p>
+<p>可能的原因：ping的时候默认按地址池中可用地址顺序从1~254进行地址转换，放大nat地址池可解决。</p>
+<h1 id="NAPT"><a href="#NAPT" class="headerlink" title="NAPT"></a>NAPT</h1><p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/NApttu39.png" alt="NApttu39"></p>
+<p>如上图，RTA收到一个私网主机发送的报文，源IP地址是192.168.1.1，源端口号是1025，目的IP地址是100.1.1.1，目的端口是80。RTA会从配置的公网地址池中选择一个空闲的公网IP地址和端口号，并建立相应的NAPT表项。这些NAPT表项指定了报文的私网IP地址和端口号与公网IP地址和端口号的映射关系。之后，RTA将报文的源IP地址和端口号转换成公网地址200.10.10.1和端口号2843，并转发报文到公网。当网关RTA收到回复报文后，会根据之前的映射表再次进行转换之后转发给主机A。主机B同理。</p>
+<p>注意：</p>
+<p>NAPT技术允许多个内部地址映射到同一个公有地址的不同端口。<br>NAPT实现了私有地址对共有地址多对一</p>
+<p>相当于一种特殊的动态nat</p>
+<p>1、端口NAT和动态NAT的配置过程基本一致，只是在应用到接口时，配置命令少no-pat<br>2、端口NAT一个地址可以给多个源地址转换，不是单对单的转换，所以节省了nat地址！<br>3、端口NAT实际应用较多，静态NAT和动态NAT因为地址不能节约，所以实际应用少</p>
+<h1 id="Easy-IP"><a href="#Easy-IP" class="headerlink" title="Easy IP"></a>Easy IP</h1><p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/easydahwka5.png" alt="easydahwka5"></p>
+<p>Easy IP本质上是NAPT（所以原理与NAPT大致相似）<br>由于网关设备出接口IP地址为公网地址，所以可以利用该<strong>出接口地址</strong>来作为地址转换的公有地址。<br>Easy IP适用于小规模局域网中的主机访问Internet的场景。小规模局域网通常部署在小型的网吧或者办公室中，这些地方内部主机不多，出接口可以通过拨号方式获取一个临时公网IP地址。Easy IP可以实现内部主机使用这个临时公网IP地址访问Internet。</p>
+<p>Easy IP适用于小规模局域网中的主机访问Internet的场景。小规模局域网通常部署在小型的网吧或者办公室中，这些地方内部主机不多，出接口可以通过拨号方式获取一个临时公网IP地址。Easy IP可以实现内部主机使用这个临时公网IP地址访问Internet。</p>
+<h2 id="Easy-IP的配置："><a href="#Easy-IP的配置：" class="headerlink" title="Easy IP的配置："></a>Easy IP的配置：</h2><p>1.创建ACL：acl 2000</p>
+<p>2.允许1.0的数据进行转换：rule 5 permit source 192.168.1.0 0 .0.0.255</p>
+<p>3.进入公网出接口</p>
+<p>4.应用acl：nat outbound 2000</p>
+<p>（相较于napt少了地址池）</p>
+<p>验证：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/easadwaawh215116.png" alt="easadwaawh215116"></p>
+<p>源地址为出接口地址172.16.1.1，只是端口不同</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>nat</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>telnet</title>
+    <url>/2023/12/02/telnet/</url>
+    <content><![CDATA[<h1 id="两种配置方法"><a href="#两种配置方法" class="headerlink" title="两种配置方法"></a>两种配置方法</h1><h2 id="1-仅密码登录验证"><a href="#1-仅密码登录验证" class="headerlink" title="1.仅密码登录验证"></a>1.仅密码登录验证</h2><p>代码如下（示例）：<br><Quidway>system-view —–进入配置模式<br>[Quidway]interface vlan 1 —–进入管理vlan<br>[Quidway-Vlanif1]ip address 192.168.28.49 255.255.255.0 —–配置管理ip地址<br>[Quidway-Vlanif1]quit —–退出<br>[Quidway]telnet server enable —–打开telnet服务 （一般默认开启）<br>[Quidway]user-interface vty 0 4 —–用户指定虚拟用户终端接口<br>[Quidway-ui-vty0-4]authentication-mode password —–配置用户终端接口认证方式 密码验证<br>[Quidway-ui-vty0-4]set authentication password cipher huawei123 —–设置接口验证密码,密码为huawei123<br>[Quidway-ui-vty0-4]user privilege level 15 —–设置用户优先级 （可选）<br>[Quidway-ui-vty0-4]idle-timeout 1 —–设置登陆超时为一分钟 （可选）<br>[Quidway-ui-vty0-4]return —–返回用户视图<br><Quidway>save —–保存</Quidway></Quidway></p>
+<h2 id="2-配置AAA登录"><a href="#2-配置AAA登录" class="headerlink" title="2.配置AAA登录"></a>2.配置AAA登录</h2><p>代码如下（示例）：<br><Quidway>system-view —–进入配置模式<br>[Quidway]interface vlan 1 —–进入管理vlan<br>[Quidway-Vlanif1]ip address 192.168.28.49 255.255.255.0 —–配置管理ip地址<br>[Quidway-Vlanif1]quit —–退出<br>[Quidway]telnet server enable —–打开telnet服务 （一般默认开启）<br>[Quidway]user-interface vty 0 4 —–用户指定虚拟用户终端接口<br>[Quidway-ui-vty0-4]authentication-mode aaa —–配置用户终端接口认证方式 aaa验证<br>[Quidway-ui-vty0-4]user privilege level 15 —–设置用户优先级<br>[Quidway-ui-vty0-4]idle-timeout 1 —–设置登陆超时为一分钟<br>[Quidway-ui-vty0-4]quit —–退出<br>[Quidway]aaa —–进入aaa<br>[Quidway-aaa]local-user huawei password cipher huawei123 —–创建用户名huawei 密码huawei123<br>[Quidway-aaa]local-user huawei privilege level 15 —–设置用户优先级<br>[Quidway-aaa]local-user huawei service-type telnet —–授权用户使用telnet<br>[Quidway-ui-vty0-4]return —–返回用户视图<br><Quidway>save —–保存</Quidway></Quidway></p>
+<h2 id="user-interface-vty-0-4-详解"><a href="#user-interface-vty-0-4-详解" class="headerlink" title="user-interface vty 0 4 详解"></a>user-interface vty 0 4 详解</h2><p>Quidway]user-interface vty 0 4                    ；进入虚拟终端<br>[S3026-ui-vty0-4]authentication-mode password           ；设置口令模式<br>[S3026-ui-vty0-4]set authentication-mode password simple 222 ；设置口令<br>[S3026-ui-vty0-4]user privilege level 3 </p>
+<p>一、第一句的意思是：进入到vty 终端，在华为的交换机里，vty就是人家用telnet远程进入到你交换机的界面，最多有五个，所以说你可以vty 0  vty 1 vty… vty 4交换机最多可以允许五个人同时在线进到交换机里去配置命令的。vty0 4 就是说把这五个界面一起配置了，这五个界面进去的话，都是使用以下的配置。<br>二、用的认证模式是密码认证，可以使用scheme模式来，也可以用password来，用password的话，是要密码的，就是说你telnet的话，要输入密码才能登陆到包交换机里去的。<br>二、设置密码为明文密码，密码是123 ，如果是密文的话，就是cipher<br>四、用户等级为3，也就是最高的，华为的命令级别很多，分为四级，0 1 2 3 ，0是参观级，只能看，1比0要高，可以使用一些命令，2 是可以配置了，3可以备份与删除IOS啦，呵呵，这个命令就是说用这个123密码，进来就是最高级别的，不用换级别。</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>telnet</tag>
+        <tag>aaa</tag>
       </tags>
   </entry>
   <entry>
