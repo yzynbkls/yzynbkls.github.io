@@ -841,6 +841,112 @@
       </tags>
   </entry>
   <entry>
+    <title>USG5500防火墙基础实验</title>
+    <url>/2023/12/08/USG5500%E9%98%B2%E7%81%AB%E5%A2%99%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/</url>
+    <content><![CDATA[<h1 id="基础配置"><a href="#基础配置" class="headerlink" title="基础配置"></a>基础配置</h1><p><img src="/2023/12/08/USG5500%E9%98%B2%E7%81%AB%E5%A2%99%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/usg5500tuopi11.png" alt="usg5500tuopi11"></p>
+<p>1、本实验中的防火墙为USG5500系列防火墙； </p>
+<p>2、 防火墙三个接口的IP地址按照上图所示进行配置；将这三个接口划入相应的安全域； </p>
+<p>3、配置防火墙的域间包过滤策略，使得PC1能够主动访问PC2，但是PC2无法主动访问PC1；PC2能够主动访问WebServer的WEB服务。</p>
+<p>防火墙配置：</p>
+<p>[FW] interface GigabitEthernet0&#x2F;0&#x2F;1 </p>
+<p>[FW-GigabitEthernet0&#x2F;0&#x2F;1] ip address 192.168.1.254 24 </p>
+<p>[FW] interface GigabitEthernet0&#x2F;0&#x2F;2 </p>
+<p>[FW-GigabitEthernet0&#x2F;0&#x2F;2] ip address 172.16.1.254 24 </p>
+<p>[FW] interface GigabitEthernet0&#x2F;0&#x2F;3 </p>
+<p>[FW-GigabitEthernet0&#x2F;0&#x2F;3] ip address 10.1.1.254 24 </p>
+<p>将接口添加到相应的安全区域：</p>
+<p>[FW] firewall zone trust </p>
+<p>[FW-zone-trust] add interface GigabitEthernet0&#x2F;0&#x2F;1 </p>
+<p>[FW] firewall zone dmz </p>
+<p>[FW-zone-dmz] add interface GigabitEthernet0&#x2F;0&#x2F;2 </p>
+<p>[FW] firewall zone untrust </p>
+<p>[FW-zone-untrust] add interface GigabitEthernet0&#x2F;0&#x2F;3 </p>
+<p>配置域间策略，使得trust域的192.168.1.0&#x2F;24网段用户能够访问untrust区域的10.1.1.0&#x2F;24网段</p>
+<p>[FW] policy interzone trust untrust outbound </p>
+<p>[FW-policy-interzone-trust-untrust-outbound] policy 10 </p>
+<p>[FW-policy-interzone-trust-untrust-outbound-10] policy destination 10.1.1.0 </p>
+<p>0.0.0.255 </p>
+<p>[FW-policy-interzone-trust-untrust-outbound-10] policy source 192.168.1.0 </p>
+<p>0.0.0.255 </p>
+<p>[FW-policy-interzone-trust-untrust-outbound-10] action permit </p>
+<p>配置域间策略，使得untrust可以访问server</p>
+<p>[FW] policy interzone dmz untrust inbound </p>
+<p>[FW-policy-interzone-dmz-untrust-inbound] policy 10 </p>
+<p>[FW-policy-interzone-dmz-untrust-inbound-10] policy source 10.1.1.0 0.0.0.255 </p>
+<p>[FW-policy-interzone-dmz-untrust-inbound-10] policy destination 172.16.1.1 0 </p>
+<p>[FW-policy-interzone-dmz-untrust-inbound-10] policy service service-set http </p>
+<p>[FW-policy-interzone-dmz-untrust-inbound-10] action permit </p>
+<p>完成上述配置后，PC1即可主动发起访问PC2，而PC2无法主动访问PC1；另外，PC2能够访问WebServer的HTTP服务</p>
+<p>（ping不同，需要再配置一条允许icmp协议通过）</p>
+<p>通过命令display zone，可以查看防火墙的安全区域、安全等级，以及每个安全区域下的接口.</p>
+<p>使用<strong>display firewall packet-filter default</strong> 命令，能查看防火墙的缺省安全策略。当数据包经过防火墙且从一个安全域试图访问另一个安全域时，防火墙会根据数据包的流向首先检查用户定义的policy interzone，如果没有自定义的policy interone，则会看根据防火墙的缺省安全策略进行处理。例如从上面的显示中，我们可以看到local-trust的inbound及outbound都是permit，因此即使我们没有显式的配置local及trust安全区域的区域间策略，但是由于默认的策略就是放行，所以 trust区域的用户可以直接ping通防火墙的接口。</p>
+<p>如果要让防火墙默认放行所有域间的流量，可以使用：firewall packet-filter default permit all命令，值得注意的是，在网络正式投入现网使用之前，此命令必须关闭（firewall packet-filter default deny all），针对需要放行的流量，需通过policy interzone的配置来放行，而不能鲁莽地将所有流量统统放行。</p>
+<p>使用display policy命令，能查看我们定义的区域间安全策略，例如： </p>
+<p>[FW] display policy interzone trust untrust outbound </p>
+<h1 id="USG5500-nat实验"><a href="#USG5500-nat实验" class="headerlink" title="USG5500 nat实验"></a>USG5500 nat实验</h1><p><img src="/2023/12/08/USG5500%E9%98%B2%E7%81%AB%E5%A2%99%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/usg5500naty.png" alt="usg5500naty"></p>
+<p>防火墙FW的配置如下：</p>
+<p>[FW] interface GigabitEthernet0&#x2F;0&#x2F;1 </p>
+<p>[FW-GigabitEthernet0&#x2F;0&#x2F;1] ip address 192.168.1.254 24 </p>
+<p>[FW] interface GigabitEthernet0&#x2F;0&#x2F;2 </p>
+<p>[FW-GigabitEthernet0&#x2F;0&#x2F;2] ip address 172.16.1.254 24 </p>
+<p>[FW] interface GigabitEthernet0&#x2F;0&#x2F;3 </p>
+<p>[FW-GigabitEthernet0&#x2F;0&#x2F;3] ip address 200.1.1.1 24 </p>
+<p>向安全域中添加接口</p>
+<p>[FW] firewall zone trust </p>
+<p>[FW-zone-trust] add interface GigabitEthernet0&#x2F;0&#x2F;1 </p>
+<p>[FW] firewall zone dmz </p>
+<p>[FW-zone-dmz] add interface GigabitEthernet0&#x2F;0&#x2F;2 </p>
+<p>[FW] firewall zone untrust </p>
+<p>[FW-zone-untrust] add interface GigabitEthernet0&#x2F;0&#x2F;3</p>
+<p>配置域间包过滤策略，使得trust区域的192.168.1.0&#x2F;24网段用户能够访问Internet：</p>
+<p>[FW] policy interzone trust untrust outbound </p>
+<p>[FW-policy-interzone-trust-untrust-outbound] policy 10 </p>
+<p>[FW-policy-interzone-trust-untrust-outbound-10] policy source 192.168.1.0 </p>
+<p>0.0.0.255 </p>
+<p>[FW-policy-interzone-trust-untrust-outbound-10] action permit </p>
+<p>上述配置虽然放通了192.168.1.0&#x2F;24访问Internet的流量，但是由于192.168.1.0&#x2F;24是私有IP地址，不能直接进入公网，因此为了让这部分用户能够访问公网，还必须部署NAT源地址转换</p>
+<p>[FW] nat address-group 1 200.1.1.10 200.1.1.20 </p>
+<p>定义NAT地址池，该地址池使用的公网地址区间是200.1.1.10到200.1.1.20</p>
+<p>[FW] nat-policy interzone trust untrust outbound </p>
+<p>配置NAT策略</p>
+<p>[FW-nat-policy-interzone-trust-untrust-outbound] policy 10 </p>
+<p>[FW-nat-policy-interzone-trust-untrust-outbound-10] policy source 192.168.1.0  0.0.0.255 </p>
+<p>[FW-nat-policy-interzone-trust-untrust-outbound-10] action source-nat &#x2F;&#x2F;对匹配的流量执行源地址转换</p>
+<p>[FW-nat-policy-interzone-trust-untrust-outbound-10] address-group 1 &#x2F;&#x2F;关联nat地址池1</p>
+<p>完成上述配置后，内网用户PC1即可访问公网用户PC2。接下来继续配置防火墙，使得公网用户PC2能够访问WebServer。 </p>
+<p>配置域间包过滤策略，使得untrust区域的Internet用户能够访问DMZ区域的web服务</p>
+<p>[FW] policy interzone dmz untrust inbound </p>
+<p>[FW-policy-interzone-dmz-untrust-inbound] policy 10 </p>
+<p>[FW-policy-interzone-dmz-untrust-inbound-10] policy destination 172.16.1.1 0 </p>
+<p>[FW-policy-interzone-dmz-untrust-inbound-10] policy service service-set http </p>
+<p>[FW-policy-interzone-dmz-untrust-inbound-10] action permit </p>
+<p>[FW-policy-interzone-dmz-untrust-inbound-10] quit </p>
+<p>[FW-policy-interzone-dmz-untrust-inbound] quit </p>
+<p>完成上述配置后，Internet用户是依然无法访问WebServer的，因为WebServer是私有IP地址，因此还需要配置NAT server，将DMZ域内的WebServer映射到公网。</p>
+<p>下面的命令，将内部IP地址172.16.1.1的80端口映射到了公网地址200.1.1.21的80端口，这样一来，当公网用户访问200.1.1.21的80端口服务时，实际上访问的就是内部服务器172.16.1.1的80端口。</p>
+<p>[FW] nat server zone untrust protocol tcp global 200.1.1.21 80 inside 172.16.1.1 </p>
+<p>80 </p>
+<p>完成上述配置后，PC2即可使用目的地址200.1.1.21来访问WebServer。 </p>
+<p>当PC1 ping PC2时，能够在FW上能看到如下会话： </p>
+<p><FW>display firewall session table </FW></p>
+<p>Current Total Sessions : 5 </p>
+<p>icmp VPN:public –&gt; public 192.168.1.1:40373[<strong>200.1.1.15:2048</strong>]–&gt;200.1.1.2:2048 </p>
+<p>icmp VPN:public –&gt; public 192.168.1.1:40885[200.1.1.15:2049]–&gt;200.1.1.2:2048</p>
+<p>留意到中括号内的IP地址，便是被NAT转换后的IP地址。 </p>
+<p>当PC2访问Server的WEB服务时，在FW上能看到如下会话： </p>
+<p>[FW]display firewall session table </p>
+<p>Current Total Sessions : 1 </p>
+<p>http VPN:public –&gt; public 200.1.1.2:2055–&gt;200.1.1.21:80[<strong>172.16.1.1:80</strong>] </p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>USG5500</tag>
+        <tag>防火墙nat</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>VRRP基础实验</title>
     <url>/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/</url>
     <content><![CDATA[<p>设备连接方式如图所示，网络中存在VLAN10、20，每个VLAN中部署一组VRRP，使用与VLAN ID相同的数值作为VRID，将S1配置为VLAN10的VRRP Master，将S2配置为VLAN20的VRRP Master。</p>
