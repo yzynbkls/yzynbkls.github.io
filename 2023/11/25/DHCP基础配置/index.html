@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"><title>DHCP基础配置 | 沃德发</title><meta name="keywords" content="DHCP Relay,DHCP"><meta name="author" content="Yang"><meta name="copyright" content="Yang"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#f7f9fe"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-touch-fullscreen" content="yes"><meta name="apple-mobile-web-app-title" content="DHCP基础配置"><meta name="application-name" content="DHCP基础配置"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="#f7f9fe"><meta property="og:type" content="article"><meta property="og:title" content="DHCP基础配置"><meta property="og:url" content="http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/index.html"><meta property="og:site_name" content="沃德发"><meta property="og:description" content="DHCP是一种终端自动配置协议，客户端通过DHCP协议可获取一个合法的动态IP地址。   概述随着网络规模的扩大和网络复杂度的提高，网络配置越来越复杂，经常出现计算机位置变化（如便携机或无线网络）和计算机数量超过可分配的IP地址的情况。动态主机配置协议DHCP（Dynamic Host Confi"><meta property="og:locale" content="zh-CN"><meta property="og:image" content="http://example.com/img/toux.jpg"><meta property="article:author" content="Yang"><meta property="article:tag"><meta name="twitter:card" content="summary"><meta name="twitter:image" content="http://example.com/img/toux.jpg"><meta name="description" content="DHCP是一种终端自动配置协议，客户端通过DHCP协议可获取一个合法的动态IP地址。   概述随着网络规模的扩大和网络复杂度的提高，网络配置越来越复杂，经常出现计算机位置变化（如便携机或无线网络）和计算机数量超过可分配的IP地址的情况。动态主机配置协议DHCP（Dynamic Host Confi"><link rel="shortcut icon" href="/favicon.ico"><link rel="canonical" href="http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/"><link rel="preconnect" href="//cdn.cbd.int"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta name="google-site-verification" content="xxx"/><meta name="baidu-site-verification" content="code-xxx"/><meta name="msvalidate.01" content="xxx"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.cbd.int/node-snackbar@0.1.16/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.cbd.int/@fancyapps/ui@5.0.20/dist/fancybox/fancybox.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"><title>DHCP基础配置 | 沃德发</title><meta name="keywords" content="DHCP Relay,DHCP"><meta name="author" content="Yang"><meta name="copyright" content="Yang"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#f7f9fe"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-touch-fullscreen" content="yes"><meta name="apple-mobile-web-app-title" content="DHCP基础配置"><meta name="application-name" content="DHCP基础配置"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="#f7f9fe"><meta property="og:type" content="article"><meta property="og:title" content="DHCP基础配置"><meta property="og:url" content="http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/index.html"><meta property="og:site_name" content="沃德发"><meta property="og:description" content="DHCP是一种终端自动配置协议，客户端通过DHCP协议可获取一个合法的动态IP地址。  概述 随着网络规模的扩大和网络复杂度的提高，网络配置越来越复杂，经常出现计算机位置变化（如便携机或无线网络）和计算机数量超过可分配的IP地址的情况。动态主机配置协议DHCP（Dynamic Host Config"><meta property="og:locale" content="zh-CN"><meta property="og:image" content="http://example.com/img/toux.jpg"><meta property="article:author" content="Yang"><meta property="article:tag"><meta name="twitter:card" content="summary"><meta name="twitter:image" content="http://example.com/img/toux.jpg"><meta name="description" content="DHCP是一种终端自动配置协议，客户端通过DHCP协议可获取一个合法的动态IP地址。  概述 随着网络规模的扩大和网络复杂度的提高，网络配置越来越复杂，经常出现计算机位置变化（如便携机或无线网络）和计算机数量超过可分配的IP地址的情况。动态主机配置协议DHCP（Dynamic Host Config"><link rel="shortcut icon" href="/favicon.ico"><link rel="canonical" href="http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/"><link rel="preconnect" href="//cdn.cbd.int"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta name="google-site-verification" content="xxx"/><meta name="baidu-site-verification" content="code-xxx"/><meta name="msvalidate.01" content="xxx"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.cbd.int/node-snackbar@0.1.16/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.cbd.int/@fancyapps/ui@5.0.20/dist/fancybox/fancybox.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
   linkPageTop: undefined,
   peoplecanvas: {"enable":true,"img":"https://upload-bbs.miyoushe.com/upload/2023/09/03/125766904/ee23df8517f3c3e3efc4145658269c06_5714860933110284659.png"},
   postHeadAiDescription: {"enable":true,"gptName":"AnZhiYu","mode":"local","switchBtn":false,"btnLink":"https://afdian.net/item/886a79d4db6711eda42a52540025c377","randomNum":3,"basicWordCount":1000,"key":"xxxx","Referer":"https://xx.xx/"},
@@ -202,170 +202,218 @@ setTimeout(function(){preloader.endLoading();},10000)
 if (true) {
   document.addEventListener('pjax:send', () => { preloader.initLoading() })
   document.addEventListener('pjax:complete', () => { preloader.endLoading() })
-}</script><link rel="stylesheet" href="https://cdn.cbd.int/anzhiyu-theme-static@1.1.10/progress_bar/progress_bar.css"/><script async="async" src="https://cdn.cbd.int/pace-js@1.2.4/pace.min.js" data-pace-options="{ &quot;restartOnRequestAfter&quot;:false,&quot;eventLag&quot;:false}"></script><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><div id="nav-group"><span id="blog_name"><a id="site-name" href="/" accesskey="h"><div class="title">沃德发</div><i class="anzhiyufont anzhiyu-icon-house-chimney"></i></a></span><div class="mask-name-container"><div id="name-container"><a id="page-name" href="javascript:anzhiyu.scrollToDest(0, 500)">PAGE_NAME</a></div></div><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 文章</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/categories/"><i class="anzhiyufont anzhiyu-icon-shapes faa-tada" style="font-size: 0.9em;"></i><span> 分类</span></a></li><li><a class="site-page child faa-parent animated-hover" href="/tags/"><i class="anzhiyufont anzhiyu-icon-tags faa-tada" style="font-size: 0.9em;"></i><span> 标签</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 友链</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/link/"><i class="anzhiyufont anzhiyu-icon-link faa-tada" style="font-size: 0.9em;"></i><span> 友人帐</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 关于</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="javascript:toRandomPost()"><i class="anzhiyufont anzhiyu-icon-shoe-prints1 faa-tada" style="font-size: 0.9em;"></i><span> 随便逛逛</span></a></li></ul></div></div></div><div id="nav-right"><div class="nav-button" id="randomPost_button"><a class="site-page" onclick="toRandomPost()" title="随机前往一个文章" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-dice"></i></a></div><div class="nav-button" id="search-button"><a class="site-page social-icon search" href="javascript:void(0);" title="搜索🔍" accesskey="s"><i class="anzhiyufont anzhiyu-icon-magnifying-glass"></i><span> 搜索</span></a></div><input id="center-console" type="checkbox"/><label class="widget" for="center-console" title="中控台" onclick="anzhiyu.switchConsole();"><i class="left"></i><i class="widget center"></i><i class="widget right"></i></label><div id="console"><div class="console-card-group-reward"><ul class="reward-all console-card"><li class="reward-item"><a href="/img/weixinfukuan.png" target="_blank"><img class="post-qr-code-img" alt="微信" src="/img/weixinfukuan.png"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/zhifubaofukuan.jpg" target="_blank"><img class="post-qr-code-img" alt="支付宝" src="/img/zhifubaofukuan.jpg"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div><div class="console-card-group"><div class="console-card-group-left"><div class="console-card" id="card-newest-comments"><div class="card-content"><div class="author-content-item-tips">互动</div><span class="author-content-item-title"> 最新评论</span></div><div class="aside-list"><span>正在加载中...</span></div></div></div><div class="console-card-group-right"><div class="console-card tags"><div class="card-content"><div class="author-content-item-tips">兴趣点</div><span class="author-content-item-title">寻找你感兴趣的领域</span><div class="card-tags"><div class="item-headline"></div><div class="card-tag-cloud"><a href="/tags/BFD/" style="font-size: 1.05rem;">BFD<sup>1</sup></a><a href="/tags/BGP/" style="font-size: 1.05rem;">BGP<sup>1</sup></a><a href="/tags/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/" style="font-size: 1.05rem;">BGP路由优选<sup>1</sup></a><a href="/tags/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/" style="font-size: 1.05rem;">BGP路由反射器<sup>1</sup></a><a href="/tags/DHCP/" style="font-size: 1.05rem;">DHCP<sup>1</sup></a><a href="/tags/DHCP-Relay/" style="font-size: 1.05rem;">DHCP Relay<sup>1</sup></a><a href="/tags/FTP/" style="font-size: 1.05rem;">FTP<sup>1</sup></a><a href="/tags/USG5500/" style="font-size: 1.05rem;">USG5500<sup>1</sup></a><a href="/tags/VRRP/" style="font-size: 1.05rem;">VRRP<sup>1</sup></a><a href="/tags/aaa/" style="font-size: 1.05rem;">aaa<sup>1</sup></a><a href="/tags/dot1q/" style="font-size: 1.05rem;">dot1q<sup>1</sup></a><a href="/tags/eth-trunk/" style="font-size: 1.05rem;">eth-trunk<sup>1</sup></a><a href="/tags/hybrid/" style="font-size: 1.05rem;">hybrid<sup>1</sup></a><a href="/tags/lacp/" style="font-size: 1.05rem;">lacp<sup>1</sup></a><a href="/tags/mpls/" style="font-size: 1.05rem;">mpls<sup>1</sup></a><a href="/tags/mstp/" style="font-size: 1.05rem;">mstp<sup>1</sup></a><a href="/tags/nat/" style="font-size: 1.05rem;">nat<sup>1</sup></a><a href="/tags/rstp/" style="font-size: 1.05rem;">rstp<sup>1</sup></a><a href="/tags/tag/" style="font-size: 1.05rem;">tag<sup>1</sup></a><a href="/tags/telnet/" style="font-size: 1.05rem;">telnet<sup>1</sup></a><a href="/tags/vlanif/" style="font-size: 1.05rem;">vlanif<sup>1</sup></a><a href="/tags/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/" style="font-size: 1.05rem;">vlan间通信<sup>1</sup></a><a href="/tags/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/" style="font-size: 1.05rem;">路由策略<sup>1</sup></a><a href="/tags/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/" style="font-size: 1.05rem;">链路聚合<sup>1</sup></a><a href="/tags/%E9%98%B2%E7%81%AB%E5%A2%99nat/" style="font-size: 1.05rem;">防火墙nat<sup>1</sup></a></div></div><hr/></div></div><div class="console-card history"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-box-archiv"></i><span>文章</span></div><div class="card-archives"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-archive"></i><span>归档</span></div><ul class="card-archive-list"><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2023/12/"><span class="card-archive-list-date">十二月 2023</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">6</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2023/11/"><span class="card-archive-list-date">十一月 2023</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">9</span><span>篇</span></div></a></li></ul></div><hr/></div></div></div><div class="button-group"><div class="console-btn-item"><a class="darkmode_switchbutton" title="显示模式切换" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-moon"></i></a></div><div class="console-btn-item" id="consoleHideAside" onclick="anzhiyu.hideAsideBtn()" title="边栏显示控制"><a class="asideSwitch"><i class="anzhiyufont anzhiyu-icon-arrows-left-right"></i></a></div><div class="console-btn-item" id="consoleMusic" onclick="anzhiyu.musicToggle()" title="音乐开关"><a class="music-switch"><i class="anzhiyufont anzhiyu-icon-music"></i></a></div></div><div class="console-mask" onclick="anzhiyu.hideConsole()" href="javascript:void(0);"></div></div><div class="nav-button" id="nav-totop"><a class="totopbtn" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-arrow-up"></i><span id="percent" onclick="anzhiyu.scrollToDest(0,500)">0</span></a></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);" title="切换"><i class="anzhiyufont anzhiyu-icon-bars"></i></a></div></div></div></nav><div id="post-info"><div id="post-firstinfo"><div class="meta-firstline"><a class="post-meta-original">原创</a><span class="post-meta-categories"><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-inbox post-meta-icon"></i><a class="post-meta-categories" href="/categories/ip%E5%AE%9E%E9%AA%8C/" itemprop="url">ip实验</a></span><span class="article-meta tags"><a class="article-meta__tags" href="/tags/DHCP-Relay/" tabindex="-1" itemprop="url"> <span> <i class="anzhiyufont anzhiyu-icon-hashtag"></i>DHCP Relay</span></a><a class="article-meta__tags" href="/tags/DHCP/" tabindex="-1" itemprop="url"> <span> <i class="anzhiyufont anzhiyu-icon-hashtag"></i>DHCP</span></a></span></div></div><h1 class="post-title" itemprop="name headline">DHCP基础配置</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="anzhiyufont anzhiyu-icon-calendar-days post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" itemprop="dateCreated datePublished" datetime="2023-11-25T06:34:51.000Z" title="发表于 2023-11-25 14:34:51">2023-11-25</time><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-history post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" itemprop="dateCreated datePublished" datetime="2023-12-03T13:57:57.899Z" title="更新于 2023-12-03 21:57:57">2023-12-03</time></span></div><div class="meta-secondline"><span class="post-meta-separator"></span><span class="post-meta-wordcount"><i class="anzhiyufont anzhiyu-icon-file-word post-meta-icon" title="文章字数"></i><span class="post-meta-label" title="文章字数">字数总计:</span><span class="word-count" title="文章字数">3.8k</span><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-clock post-meta-icon" title="阅读时长"></i><span class="post-meta-label" title="阅读时长">阅读时长:</span><span>16分钟</span></span><span class="post-meta-separator"></span><span class="post-meta-pv-cv" id="" data-flag-title="DHCP基础配置"><i class="anzhiyufont anzhiyu-icon-fw-eye post-meta-icon"></i><span class="post-meta-label" title="阅读量">阅读量:</span><span id="busuanzi_value_page_pv"><i class="anzhiyufont anzhiyu-icon-spinner anzhiyu-spin"></i></span></span><span class="post-meta-separator">       </span><span class="post-meta-position" title="作者IP属地为长沙"><i class="anzhiyufont anzhiyu-icon-location-dot"></i>长沙</span></div></div></div><section class="main-hero-waves-area waves-area"><svg class="waves-svg" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto"><defs><path id="gentle-wave" d="M -160 44 c 30 0 58 -18 88 -18 s 58 18 88 18 s 58 -18 88 -18 s 58 18 88 18 v 44 h -352 Z"></path></defs><g class="parallax"><use href="#gentle-wave" x="48" y="0"></use><use href="#gentle-wave" x="48" y="3"></use><use href="#gentle-wave" x="48" y="5"></use><use href="#gentle-wave" x="48" y="7"></use></g></svg></section><div id="post-top-cover"><img class="nolazyload" id="post-top-bg" src=""></div></header><main id="blog-container"><div class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container" itemscope itemtype="http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/"><header><a class="post-meta-categories" href="/categories/ip%E5%AE%9E%E9%AA%8C/" itemprop="url">ip实验</a><a href="/tags/DHCP-Relay/" tabindex="-1" itemprop="url">DHCP Relay</a><a href="/tags/DHCP/" tabindex="-1" itemprop="url">DHCP</a><h1 id="CrawlerTitle" itemprop="name headline">DHCP基础配置</h1><span itemprop="author" itemscope itemtype="http://schema.org/Person">Yang</span><time itemprop="dateCreated datePublished" datetime="2023-11-25T06:34:51.000Z" title="发表于 2023-11-25 14:34:51">2023-11-25</time><time itemprop="dateCreated datePublished" datetime="2023-12-03T13:57:57.899Z" title="更新于 2023-12-03 21:57:57">2023-12-03</time></header><p> DHCP是一种终端自动配置协议，客户端通过DHCP协议可获取一个合法的动态IP地址。</p>
+}</script><link rel="stylesheet" href="https://cdn.cbd.int/anzhiyu-theme-static@1.1.10/progress_bar/progress_bar.css"/><script async="async" src="https://cdn.cbd.int/pace-js@1.2.4/pace.min.js" data-pace-options="{ &quot;restartOnRequestAfter&quot;:false,&quot;eventLag&quot;:false}"></script><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><div id="nav-group"><span id="blog_name"><a id="site-name" href="/" accesskey="h"><div class="title">沃德发</div><i class="anzhiyufont anzhiyu-icon-house-chimney"></i></a></span><div class="mask-name-container"><div id="name-container"><a id="page-name" href="javascript:anzhiyu.scrollToDest(0, 500)">PAGE_NAME</a></div></div><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 文章</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/categories/"><i class="anzhiyufont anzhiyu-icon-shapes faa-tada" style="font-size: 0.9em;"></i><span> 分类</span></a></li><li><a class="site-page child faa-parent animated-hover" href="/tags/"><i class="anzhiyufont anzhiyu-icon-tags faa-tada" style="font-size: 0.9em;"></i><span> 标签</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 友链</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/link/"><i class="anzhiyufont anzhiyu-icon-link faa-tada" style="font-size: 0.9em;"></i><span> 友人帐</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 关于</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="javascript:toRandomPost()"><i class="anzhiyufont anzhiyu-icon-shoe-prints1 faa-tada" style="font-size: 0.9em;"></i><span> 随便逛逛</span></a></li></ul></div></div></div><div id="nav-right"><div class="nav-button" id="randomPost_button"><a class="site-page" onclick="toRandomPost()" title="随机前往一个文章" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-dice"></i></a></div><div class="nav-button" id="search-button"><a class="site-page social-icon search" href="javascript:void(0);" title="搜索🔍" accesskey="s"><i class="anzhiyufont anzhiyu-icon-magnifying-glass"></i><span> 搜索</span></a></div><input id="center-console" type="checkbox"/><label class="widget" for="center-console" title="中控台" onclick="anzhiyu.switchConsole();"><i class="left"></i><i class="widget center"></i><i class="widget right"></i></label><div id="console"><div class="console-card-group-reward"><ul class="reward-all console-card"><li class="reward-item"><a href="/img/weixinfukuan.png" target="_blank"><img class="post-qr-code-img" alt="微信" src="/img/weixinfukuan.png"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/zhifubaofukuan.jpg" target="_blank"><img class="post-qr-code-img" alt="支付宝" src="/img/zhifubaofukuan.jpg"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div><div class="console-card-group"><div class="console-card-group-left"><div class="console-card" id="card-newest-comments"><div class="card-content"><div class="author-content-item-tips">互动</div><span class="author-content-item-title"> 最新评论</span></div><div class="aside-list"><span>正在加载中...</span></div></div></div><div class="console-card-group-right"><div class="console-card tags"><div class="card-content"><div class="author-content-item-tips">兴趣点</div><span class="author-content-item-title">寻找你感兴趣的领域</span><div class="card-tags"><div class="item-headline"></div><div class="card-tag-cloud"><a href="/tags/BFD/" style="font-size: 1.05rem;">BFD<sup>1</sup></a><a href="/tags/BGP/" style="font-size: 1.05rem;">BGP<sup>1</sup></a><a href="/tags/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/" style="font-size: 1.05rem;">BGP路由优选<sup>1</sup></a><a href="/tags/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/" style="font-size: 1.05rem;">BGP路由反射器<sup>1</sup></a><a href="/tags/DHCP/" style="font-size: 1.05rem;">DHCP<sup>1</sup></a><a href="/tags/DHCP-Relay/" style="font-size: 1.05rem;">DHCP Relay<sup>1</sup></a><a href="/tags/FTP/" style="font-size: 1.05rem;">FTP<sup>1</sup></a><a href="/tags/USG5500/" style="font-size: 1.05rem;">USG5500<sup>1</sup></a><a href="/tags/VRRP/" style="font-size: 1.05rem;">VRRP<sup>1</sup></a><a href="/tags/aaa/" style="font-size: 1.05rem;">aaa<sup>1</sup></a><a href="/tags/dot1q/" style="font-size: 1.05rem;">dot1q<sup>1</sup></a><a href="/tags/eth-trunk/" style="font-size: 1.05rem;">eth-trunk<sup>1</sup></a><a href="/tags/hybrid/" style="font-size: 1.05rem;">hybrid<sup>1</sup></a><a href="/tags/lacp/" style="font-size: 1.05rem;">lacp<sup>1</sup></a><a href="/tags/mpls/" style="font-size: 1.05rem;">mpls<sup>1</sup></a><a href="/tags/mstp/" style="font-size: 1.05rem;">mstp<sup>1</sup></a><a href="/tags/nat/" style="font-size: 1.05rem;">nat<sup>1</sup></a><a href="/tags/rstp/" style="font-size: 1.05rem;">rstp<sup>1</sup></a><a href="/tags/tag/" style="font-size: 1.05rem;">tag<sup>1</sup></a><a href="/tags/telnet/" style="font-size: 1.05rem;">telnet<sup>1</sup></a><a href="/tags/vlanif/" style="font-size: 1.05rem;">vlanif<sup>1</sup></a><a href="/tags/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/" style="font-size: 1.05rem;">vlan间通信<sup>1</sup></a><a href="/tags/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/" style="font-size: 1.05rem;">路由策略<sup>1</sup></a><a href="/tags/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/" style="font-size: 1.05rem;">链路聚合<sup>1</sup></a><a href="/tags/%E9%98%B2%E7%81%AB%E5%A2%99nat/" style="font-size: 1.05rem;">防火墙nat<sup>1</sup></a></div></div><hr/></div></div><div class="console-card history"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-box-archiv"></i><span>文章</span></div><div class="card-archives"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-archive"></i><span>归档</span></div><ul class="card-archive-list"><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2023/12/"><span class="card-archive-list-date">十二月 2023</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">6</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2023/11/"><span class="card-archive-list-date">十一月 2023</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">9</span><span>篇</span></div></a></li></ul></div><hr/></div></div></div><div class="button-group"><div class="console-btn-item"><a class="darkmode_switchbutton" title="显示模式切换" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-moon"></i></a></div><div class="console-btn-item" id="consoleHideAside" onclick="anzhiyu.hideAsideBtn()" title="边栏显示控制"><a class="asideSwitch"><i class="anzhiyufont anzhiyu-icon-arrows-left-right"></i></a></div><div class="console-btn-item" id="consoleMusic" onclick="anzhiyu.musicToggle()" title="音乐开关"><a class="music-switch"><i class="anzhiyufont anzhiyu-icon-music"></i></a></div></div><div class="console-mask" onclick="anzhiyu.hideConsole()" href="javascript:void(0);"></div></div><div class="nav-button" id="nav-totop"><a class="totopbtn" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-arrow-up"></i><span id="percent" onclick="anzhiyu.scrollToDest(0,500)">0</span></a></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);" title="切换"><i class="anzhiyufont anzhiyu-icon-bars"></i></a></div></div></div></nav><div id="post-info"><div id="post-firstinfo"><div class="meta-firstline"><a class="post-meta-original">原创</a><span class="post-meta-categories"><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-inbox post-meta-icon"></i><a class="post-meta-categories" href="/categories/ip%E5%AE%9E%E9%AA%8C/" itemprop="url">ip实验</a></span><span class="article-meta tags"><a class="article-meta__tags" href="/tags/DHCP-Relay/" tabindex="-1" itemprop="url"> <span> <i class="anzhiyufont anzhiyu-icon-hashtag"></i>DHCP Relay</span></a><a class="article-meta__tags" href="/tags/DHCP/" tabindex="-1" itemprop="url"> <span> <i class="anzhiyufont anzhiyu-icon-hashtag"></i>DHCP</span></a></span></div></div><h1 class="post-title" itemprop="name headline">DHCP基础配置</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="anzhiyufont anzhiyu-icon-calendar-days post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" itemprop="dateCreated datePublished" datetime="2023-11-25T06:34:51.000Z" title="发表于 2023-11-25 14:34:51">2023-11-25</time><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-history post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" itemprop="dateCreated datePublished" datetime="2023-12-03T13:57:57.899Z" title="更新于 2023-12-03 21:57:57">2023-12-03</time></span></div><div class="meta-secondline"><span class="post-meta-separator"></span><span class="post-meta-wordcount"><i class="anzhiyufont anzhiyu-icon-file-word post-meta-icon" title="文章字数"></i><span class="post-meta-label" title="文章字数">字数总计:</span><span class="word-count" title="文章字数">3.8k</span><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-clock post-meta-icon" title="阅读时长"></i><span class="post-meta-label" title="阅读时长">阅读时长:</span><span>16分钟</span></span><span class="post-meta-separator"></span><span class="post-meta-pv-cv" id="" data-flag-title="DHCP基础配置"><i class="anzhiyufont anzhiyu-icon-fw-eye post-meta-icon"></i><span class="post-meta-label" title="阅读量">阅读量:</span><span id="busuanzi_value_page_pv"><i class="anzhiyufont anzhiyu-icon-spinner anzhiyu-spin"></i></span></span><span class="post-meta-separator">       </span><span class="post-meta-position" title="作者IP属地为安阳"><i class="anzhiyufont anzhiyu-icon-location-dot"></i>安阳</span></div></div></div><section class="main-hero-waves-area waves-area"><svg class="waves-svg" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto"><defs><path id="gentle-wave" d="M -160 44 c 30 0 58 -18 88 -18 s 58 18 88 18 s 58 -18 88 -18 s 58 18 88 18 v 44 h -352 Z"></path></defs><g class="parallax"><use href="#gentle-wave" x="48" y="0"></use><use href="#gentle-wave" x="48" y="3"></use><use href="#gentle-wave" x="48" y="5"></use><use href="#gentle-wave" x="48" y="7"></use></g></svg></section><div id="post-top-cover"><img class="nolazyload" id="post-top-bg" src=""></div></header><main id="blog-container"><div class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container" itemscope itemtype="http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/"><header><a class="post-meta-categories" href="/categories/ip%E5%AE%9E%E9%AA%8C/" itemprop="url">ip实验</a><a href="/tags/DHCP-Relay/" tabindex="-1" itemprop="url">DHCP Relay</a><a href="/tags/DHCP/" tabindex="-1" itemprop="url">DHCP</a><h1 id="CrawlerTitle" itemprop="name headline">DHCP基础配置</h1><span itemprop="author" itemscope itemtype="http://schema.org/Person">Yang</span><time itemprop="dateCreated datePublished" datetime="2023-11-25T06:34:51.000Z" title="发表于 2023-11-25 14:34:51">2023-11-25</time><time itemprop="dateCreated datePublished" datetime="2023-12-03T13:57:57.899Z" title="更新于 2023-12-03 21:57:57">2023-12-03</time></header><p>DHCP是一种终端自动配置协议，客户端通过DHCP协议可获取一个合法的动态IP地址。</p>
 <span id="more"></span>
-
-<h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>随着网络规模的扩大和网络复杂度的提高，网络配置越来越复杂，经常出现计算机位置变化（如便携机或无线网络）和计算机数量超过可分配的IP地址的情况。动态主机配置协议DHCP（Dynamic Host Configuration Protocol）就是为满足这些需求而发展起来的。DHCP协议以服务器&#x2F;客户端（Server&#x2F;Client）模式工作，DHCP客户端向DHCP服务器动态地请求配置信息，DHCP服务器可以很方便地为客户端动态发送配置信息。</p>
-<h3 id="DHCP服务器"><a href="#DHCP服务器" class="headerlink" title="DHCP服务器"></a>DHCP服务器</h3><p>DHCP Server即DHCP服务器，负责客户端IP地址的分配。客户端向服务器发送配置申请报文（包括IP地址、子网掩码、缺省网关等参数），服务器根据策略返回携带相应配置信息的报文，请求报文和回应报文都采用UDP进行封装。</p>
-<h3 id="DHCP中继"><a href="#DHCP中继" class="headerlink" title="DHCP中继"></a>DHCP中继</h3><p>DHCP Relay即DHCP中继，它是为解决服务器和客户端不在同一个网段而提出来的，它提供了对DHCP广播报文的透明传输功能，能够把DHCP客户端的广播报文透明地传送到其它网段的DHCP服务器上，同样能够把DHCP服务器端的广播报文透明地传送到其它网段的DHCP客户端。</p>
-<h2 id="基本命令"><a href="#基本命令" class="headerlink" title="基本命令"></a>基本命令</h2><p>基本命令<br><strong>pc：</strong></p>
-<p>ipconfig &#x2F;release—释放ip地址<br>ipconfig &#x2F;renew—重新获取ip</p>
+<h1>概述</h1>
+<p>随着网络规模的扩大和网络复杂度的提高，网络配置越来越复杂，经常出现计算机位置变化（如便携机或无线网络）和计算机数量超过可分配的IP地址的情况。动态主机配置协议DHCP（Dynamic Host Configuration Protocol）就是为满足这些需求而发展起来的。DHCP协议以服务器/客户端（Server/Client）模式工作，DHCP客户端向DHCP服务器动态地请求配置信息，DHCP服务器可以很方便地为客户端动态发送配置信息。</p>
+<h3 id="DHCP服务器">DHCP服务器</h3>
+<p>DHCP Server即DHCP服务器，负责客户端IP地址的分配。客户端向服务器发送配置申请报文（包括IP地址、子网掩码、缺省网关等参数），服务器根据策略返回携带相应配置信息的报文，请求报文和回应报文都采用UDP进行封装。</p>
+<h3 id="DHCP中继">DHCP中继</h3>
+<p>DHCP Relay即DHCP中继，它是为解决服务器和客户端不在同一个网段而提出来的，它提供了对DHCP广播报文的透明传输功能，能够把DHCP客户端的广播报文透明地传送到其它网段的DHCP服务器上，同样能够把DHCP服务器端的广播报文透明地传送到其它网段的DHCP客户端。</p>
+<h2 id="基本命令">基本命令</h2>
+<p>基本命令<br>
+<strong>pc：</strong></p>
+<p>ipconfig /release—释放ip地址<br>
+ipconfig /renew—重新获取ip</p>
 <p><strong>将DHCP转化为固定的地址：</strong></p>
-<p>ip pool 名字—进入地址池<br>staic-bind ip-address 要分配的固定ip mac-address 目标的mac地址—添加固定地址到pc端<br>lease day &lt;0-999&gt;—修改租期（不建议修改）</p>
+<p>ip pool 名字—进入地址池<br>
+staic-bind ip-address 要分配的固定ip mac-address 目标的mac地址—添加固定地址到pc端<br>
+lease day &lt;0-999&gt;—修改租期（不建议修改）</p>
 <p>将部分ip地址排除地址池，用于静态路由配置</p>
-<p>ip pool 名字—进入地址池<br>excluded-ip-address 192.168.1.1 192.168.1.50—把1.1到1.50的地址排除出地址池不使用</p>
+<p>ip pool 名字—进入地址池<br>
+excluded-ip-address 192.168.1.1 192.168.1.50—把1.1到1.50的地址排除出地址池不使用</p>
 <p><strong>重置与查看地址池</strong></p>
-<p>reset ip pool name 名字—重置ip配置<br>dis ip pool name 名字—查看指定地址池<br>dis ip pool—查看地址池<br>dis ip pool 名字 used—查看使用情况</p>
+<p>reset ip pool name 名字—重置ip配置<br>
+dis ip pool name 名字—查看指定地址池<br>
+dis ip pool—查看地址池<br>
+dis ip pool 名字 used—查看使用情况</p>
 <p><strong>配置global全局模式</strong></p>
 <p>先配置物理接口</p>
-<p>interface 接口号—进入物理接口<br>ip address ip地址—配置物理接口IP</p>
-<p>DHCP enable—开启DHCP功能<br>ip pool 名字—创建一个ip地址池（有几个网段就建几个池）<br>network 192.168.1.0 mask 24—给ip地址池添加一个网段<br>gateway-list 192.168.1.1—设置192.168.1.1这个ip地址为网关<br>dns-list 8.8.8.8 192.168.1.1—配置DNS为8.8.8.8（前面的优先）<br>interface ip地址—进入物理接口<br>dhcp select global—给接口配置全局模式</p>
+<p>interface 接口号—进入物理接口<br>
+ip address ip地址—配置物理接口IP</p>
+<p>DHCP enable—开启DHCP功能<br>
+ip pool 名字—创建一个ip地址池（有几个网段就建几个池）<br>
+network 192.168.1.0 mask 24—给ip地址池添加一个网段<br>
+gateway-list 192.168.1.1—设置192.168.1.1这个ip地址为网关<br>
+dns-list 8.8.8.8 192.168.1.1—配置DNS为8.8.8.8（前面的优先）<br>
+interface ip地址—进入物理接口<br>
+dhcp select global—给接口配置全局模式</p>
 <p>将pc更改为DHCP获取IP方式，就可以自动分配ip地址了</p>
-<p><strong>interface配置方式</strong><br>基于接口的DHCP的配置方式：<br>配置物理接口的ip网关：</p>
-<p>interface 接口号—进入接口<br>ip address IP网关—配置网关</p>
-<p>dhcp enable—开启服务<br>dhcp select interface—选择interface这个配置方式<br>dhcp server dns-list 8.8.8.8-–配置DNS服务</p>
+<p><strong>interface配置方式</strong><br>
+基于接口的DHCP的配置方式：<br>
+配置物理接口的ip网关：</p>
+<p>interface 接口号—进入接口<br>
+ip address IP网关—配置网关</p>
+<p>dhcp enable—开启服务<br>
+dhcp select interface—选择interface这个配置方式<br>
+dhcp server dns-list 8.8.8.8-–配置DNS服务</p>
 <p>注意：这种配置方式分配的ip地址网段，是该接口所在的网段的ip地址，网关就是这个接口的ip地址</p>
 <p><strong>relay（中继）配置方式</strong></p>
-<p>用于在服务器上做配置，路由器进行转发，减少负载量，可以对整个网络体系进行配置<br>首先要实现服务器与个网段互通<br>在服务器的配置：</p>
-<p>服务器物理接口配置ip<br>ip route-static 0.0.0.0 0 下一跳的ip—服务器配置缺省路由保证互通<br>dhcp enable—在服务器开启dhcp功能<br>ip pool 名字—创建ip地址池（需要几个网段就创建几个地址池）<br>network 192.168.1.0 mask 24—创建网段<br>gateway-list 192.168.1.1—创建网关<br>dns-list 8.8.8.8—创建dns<br>interface 物理接口—进入物理接口<br>dhcp select global—选择全局配置模式</p>
-<p><strong>在路由器&#x2F;核心交换机上的配置</strong></p>
-<p>dhcp enable—开启dhcp功能<br>interface 接口号—进入接口 （需要几个网段就分别进入配置）<br>dhcp select relay—开启中继模式<br>dhcp relay server-ip 服务器物理ip—选择中继分配的接口</p>
-<h1 id="基本实验"><a href="#基本实验" class="headerlink" title="基本实验"></a>基本实验</h1><p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/newtu222.png" alt="newtu222"></p>
+<p>用于在服务器上做配置，路由器进行转发，减少负载量，可以对整个网络体系进行配置<br>
+首先要实现服务器与个网段互通<br>
+在服务器的配置：</p>
+<p>服务器物理接口配置ip<br>
+ip route-static 0.0.0.0 0 下一跳的ip—服务器配置缺省路由保证互通<br>
+dhcp enable—在服务器开启dhcp功能<br>
+ip pool 名字—创建ip地址池（需要几个网段就创建几个地址池）<br>
+network 192.168.1.0 mask 24—创建网段<br>
+gateway-list 192.168.1.1—创建网关<br>
+dns-list 8.8.8.8—创建dns<br>
+interface 物理接口—进入物理接口<br>
+dhcp select global—选择全局配置模式</p>
+<p><strong>在路由器/核心交换机上的配置</strong></p>
+<p>dhcp enable—开启dhcp功能<br>
+interface 接口号—进入接口 （需要几个网段就分别进入配置）<br>
+dhcp select relay—开启中继模式<br>
+dhcp relay server-ip 服务器物理ip—选择中继分配的接口</p>
+<h1>基本实验</h1>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/newtu222.png" alt="newtu222"></p>
 <ol>
 <li>R1和R3模拟客户端，作为DHCP Client。</li>
 <li>R2作为DHCP Server为R1和R3分配IP地址。</li>
 </ol>
 <p>动态主机配置协议DHCP（Dynamic Host Configuration Protocol）是一种用于集中对用户IP地址进行动态管理和配置的技术。即使规模较小的网络，通过DHCP也可以使后续增加网络设备变得简单快捷。</p>
-<p>DHCP协议由RFC 2131定义，采用客户端&#x2F;服务器通信模式，由客户端（DHCP Client）向服务器（DHCP Server）提出配置申请，服务器返回为客户端分配的配置信息。</p>
+<p>DHCP协议由RFC 2131定义，采用客户端/服务器通信模式，由客户端（DHCP Client）向服务器（DHCP Server）提出配置申请，服务器返回为客户端分配的配置信息。</p>
 <p>DHCP可以提供两种地址分配机制，网络管理员可以根据网络需求为不同的主机选择不同的分配策略。</p>
 <p>• 动态分配机制：通过DHCP为主机分配一个有使用期限（这个使用期限通常叫做租期）的IP地址。这种分配机制适用于主机需要临时接入网络或者空闲地址数小于网络主机总数且主机不需要永久连接网络的场景。</p>
 <p>• 静态分配机制：网络管理员通过DHCP为指定的主机分配固定的IP地址。相比手工静态配置IP地址，通过DHCP方式静态分配机制避免人工配置发生错误，方便管理员统一维护管理。</p>
 <p>配置R2 ip：略</p>
-<h2 id="开启DHCP功能"><a href="#开启DHCP功能" class="headerlink" title="开启DHCP功能"></a>开启DHCP功能</h2><p>[R1]dhcp enable </p>
+<h2 id="开启DHCP功能">开启DHCP功能</h2>
+<p>[R1]dhcp enable</p>
 <p>Info: The operation may take a few seconds. Please wait for a moment.done.</p>
 <p><strong>dhcp enable</strong>命令是DHCP相关功能的总开关，DHCP Client和DHCP Server等功能都要在执行dhcp enable命令使能DHCP功能后才会生效。</p>
-<p>[R2]dhcp enable </p>
+<p>[R2]dhcp enable</p>
 <p>Info: The operation may take a few seconds. Please wait for a moment.done.</p>
-<p>[R3]dhcp enable </p>
+<p>[R3]dhcp enable</p>
 <p>Info: The operation may take a few seconds. Please wait for a moment.done.</p>
-<h2 id="配置地址池"><a href="#配置地址池" class="headerlink" title="配置地址池"></a>配置地址池</h2><p># 配置R2的GigabitEthernet 0&#x2F;0&#x2F;0的接口地址池，为R1分配IP地址 </p>
-<p>[R2]interface GigabitEthernet 0&#x2F;0&#x2F;0</p>
-<p>[R2-GigabitEthernet0&#x2F;0&#x2F;0]dhcp select interface </p>
+<h2 id="配置地址池">配置地址池</h2>
+<p># 配置R2的GigabitEthernet 0/0/0的接口地址池，为R1分配IP地址</p>
+<p>[R2]interface GigabitEthernet 0/0/0</p>
+<p>[R2-GigabitEthernet0/0/0]dhcp select interface</p>
 <p><strong>dhcp select interface</strong>命令用来开启接口采用接口地址池的DHCP Server功能。若不执行此命令，则无法配置接口地址池的相关参数。</p>
-<p>[R2-GigabitEthernet0&#x2F;0&#x2F;0]dhcp server dns-list 10.0.12.2 </p>
+<p>[R2-GigabitEthernet0/0/0]dhcp server dns-list 10.0.12.2</p>
 <p><strong>dhcp server dns-list</strong>命令用来指定接口地址池下的DNS服务器地址。最多可以配置8个DNS Server的IP地址，用空格分隔。</p>
-<p># 配置全局地址池 </p>
+<p># 配置全局地址池</p>
 <p>[R2]ip pool GlobalPool</p>
 <p>Info: It’s successful to create an IP address pool.</p>
 <p><em>创建名<strong>为</strong>G**lobalPool的地址池</em></p>
-<p>[R2-ip-pool-GlobalPool]network 10.0.23.0 mask 24 </p>
+<p>[R2-ip-pool-GlobalPool]network 10.0.23.0 mask 24</p>
 <p><strong>network</strong>命令用来配置全局地址池下可分配的网段地址。</p>
-<p>[R2-ip-pool-GlobalPool]dns-list 10.0.23.2 </p>
-<p>[R2-ip-pool-GlobalPool]gateway-list 10.0.23.2 </p>
+<p>[R2-ip-pool-GlobalPool]dns-list 10.0.23.2</p>
+<p>[R2-ip-pool-GlobalPool]gateway-list 10.0.23.2</p>
 <p><strong>gateway-list</strong>命令用来为DHCP Client配置出口网关地址。R3在获取地址之后，会生成一条默认路由，下一跳地址为10.0.23.2。</p>
-<p>[R2-ip-pool-GlobalPool]lease day 2 hour 2 </p>
+<p>[R2-ip-pool-GlobalPool]lease day 2 hour 2</p>
 <p><strong>lease</strong>命令用来配置地址池下的地址租期。当租约被设置为<strong>unlimited</strong>时，代表租期无限制。缺省情况下，IP地址租期是1天。</p>
 <p>[R2-ip-pool-GlobalPool]static-bind ip-address 10.0.23.3 mac-address 00e0-fc6f-6d1f</p>
-<p><strong>static-bind</strong>命令用来将DHCP Server全局地址池下的IP地址与MAC地址进行绑定。00e0-fc6f-6d1f为当前实验环境下R3的GigabitEthernet0&#x2F;0&#x2F;0接口的MAC地址，可以在R3上通过命令“display interface GigabitEthernet0&#x2F;0&#x2F;0”来查看接口的MAC地址。配置完这条命令之后，R3会获得固定的IP–10.0.23.3。</p>
+<p><strong>static-bind</strong>命令用来将DHCP Server全局地址池下的IP地址与MAC地址进行绑定。00e0-fc6f-6d1f为当前实验环境下R3的GigabitEthernet0/0/0接口的MAC地址，可以在R3上通过命令“display interface GigabitEthernet0/0/0”来查看接口的MAC地址。配置完这条命令之后，R3会获得固定的IP–10.0.23.3。</p>
 <p>[R2-ip-pool-GlobalPool]quit</p>
-<p>#开启R2 GigabitEthernet 0&#x2F;0&#x2F;1接口的DHCP Server功能，为R3分配IP地址  </p>
-<p>[R2]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
-<p>[R2-GigabitEthernet0&#x2F;0&#x2F;1]dhcp select global</p>
+<p>#开启R2 GigabitEthernet 0/0/1接口的DHCP Server功能，为R3分配IP地址</p>
+<p>[R2]interface GigabitEthernet 0/0/1</p>
+<p>[R2-GigabitEthernet0/0/1]dhcp select global</p>
 <p><strong>dhcp select global</strong>命令用来开启接口采用全局地址池的DHCP Server功能。当接口收到DHCP Client请求之后，会到所有全局地址池中查找对应的地址池，然后分配可用的地址给DHCP Client。</p>
-<h2 id="配置DHCP-Client"><a href="#配置DHCP-Client" class="headerlink" title="配置DHCP Client"></a>配置DHCP Client</h2><p>[R1]interface GigabitEthernet 0&#x2F;0&#x2F;0</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;0] ip address dhcp-alloc</p>
-<p>[R3]interface GigabitEthernet 0&#x2F;0&#x2F;0</p>
-<p>[R3-GigabitEthernet0&#x2F;0&#x2F;0] ip address dhcp-alloc</p>
-<h2 id="结果验证"><a href="#结果验证" class="headerlink" title="结果验证"></a>结果验证</h2><h5 id="查看R1和R3的地址及路由等信息"><a href="#查看R1和R3的地址及路由等信息" class="headerlink" title="查看R1和R3的地址及路由等信息"></a>查看R1和R3的地址及路由等信息</h5><p>[R1]display ip interface brief </p>
-<p>Interface             	IP Address&#x2F;Mask    Physical  	Protocol  </p>
-<p>GigabitEthernet0&#x2F;0&#x2F;0       	<strong>10.0.12.254&#x2F;24</strong>    	up     up     </p>
-<p> <em>仅保留<strong>关键信息，可</strong>以<strong>看到</strong>R1已经<strong>获取到了</strong>IP地址**。</em></p>
-<p>[R1]display dns server </p>
+<h2 id="配置DHCP-Client">配置DHCP Client</h2>
+<p>[R1]interface GigabitEthernet 0/0/0</p>
+<p>[R1-GigabitEthernet0/0/0] ip address dhcp-alloc</p>
+<p>[R3]interface GigabitEthernet 0/0/0</p>
+<p>[R3-GigabitEthernet0/0/0] ip address dhcp-alloc</p>
+<h2 id="结果验证">结果验证</h2>
+<h5 id="查看R1和R3的地址及路由等信息">查看R1和R3的地址及路由等信息</h5>
+<p>[R1]display ip interface brief</p>
+<p>Interface             	IP Address/Mask    Physical  	Protocol</p>
+<p>GigabitEthernet0/0/0       	<strong>10.0.12.254/24</strong>    	up     up</p>
+<p><em>仅保留<strong>关键信息，可</strong>以<strong>看到</strong>R1已经<strong>获取到了</strong>IP地址</em>*。*</p>
+<p>[R1]display dns server</p>
 <p>Type:</p>
 <p>D:Dynamic   S:Static</p>
 <p>No.  Type   IP Address</p>
-<p>1   D   	10.0.12.2 </p>
-<p><em>仅保留<strong>关键信息，可</strong>以<strong>看到</strong>R1已经<strong>获取到了DNS</strong>地址**。</em></p>
-<p>[R1]display ip routing-table </p>
-<p>Destination&#x2F;Mask   Proto  	Pre  Cost  	Flags 	NextHop     Interface</p>
-<p>   0.0.0.0&#x2F;0  		<strong>Unr</strong>   60  0    D  		10.0.12.2    GigabitEthernet0&#x2F;0&#x2F;0</p>
-<p><em>仅保留<strong>关键信息，可</strong>以<strong>看到</strong>R1已经<strong>获取到了</strong>默认路由**。</em></p>
-<p>[R3]display ip interface brief </p>
-<p>Interface            	IP Address&#x2F;Mask    Physical 	Protocol  </p>
-<p>GigabitEthernet0&#x2F;0&#x2F;0       	<strong>10.0.23.3&#x2F;24</strong>     	up    up     </p>
-<p><em>仅保留<strong>关键信息，可</strong>以<strong>看到</strong>R3已经<strong>获取到了</strong>固定<strong>的</strong>IP地址**。</em></p>
-<p>[R3]display dns server </p>
+<p>1   D   	10.0.12.2</p>
+<p><em>仅保留<strong>关键信息，可</strong>以<strong>看到</strong>R1已经<strong>获取到了DNS</strong>地址</em>*。*</p>
+<p>[R1]display ip routing-table</p>
+<p>Destination/Mask   Proto  	Pre  Cost  	Flags 	NextHop     Interface</p>
+<p>0.0.0.0/0  		<strong>Unr</strong>   60  0    D  		10.0.12.2    GigabitEthernet0/0/0</p>
+<p><em>仅保留<strong>关键信息，可</strong>以<strong>看到</strong>R1已经<strong>获取到了</strong>默认路由</em>*。*</p>
+<p>[R3]display ip interface brief</p>
+<p>Interface            	IP Address/Mask    Physical 	Protocol</p>
+<p>GigabitEthernet0/0/0       	<strong>10.0.23.3/24</strong>     	up    up</p>
+<p><em>仅保留<strong>关键信息，可</strong>以<strong>看到</strong>R3已经<strong>获取到了</strong>固定<strong>的</strong>IP地址</em>*。*</p>
+<p>[R3]display dns server</p>
 <p>Type:</p>
 <p>D:Dynamic   S:Static</p>
 <p>No.  Type   IP Address</p>
 <p>1   D    2.23.0.10</p>
-<p><em>仅保留<strong>关键信息，可</strong>以<strong>看到</strong>R<strong>3</strong>已经<strong>获取到了DNS</strong>地址**。</em></p>
-<p>[R3]display ip routing-table </p>
+<p><em>仅保留<strong>关键信息，可</strong>以<strong>看到</strong>R<strong>3</strong>已经<strong>获取到了DNS</strong>地址</em>*。*</p>
+<p>[R3]display ip routing-table</p>
 <p>Route Flags: R - relay, D - download to fib</p>
-<p>-—————————————————————————–</p>
+<p>------------------------------------------------------------------------------</p>
 <p>Routing Tables: Public</p>
-<p>​     Destinations : 8     Routes : 8     </p>
-<p>Destination&#x2F;Mask   Proto  	Pre  Cost  Flags 	NextHop   	Interface</p>
-<p>   0.0.0.0&#x2F;0    Unr   	60  0   D  		10.0.23.2  	GigabitEthernet0&#x2F;0&#x2F;0</p>
-<p><em>仅保留<strong>关键信息，可</strong>以<strong>看到</strong>R3已经<strong>获取到了</strong>默认路由**。</em></p>
-<h5 id="2、查看R2上的地址分配情况"><a href="#2、查看R2上的地址分配情况" class="headerlink" title="2、查看R2上的地址分配情况"></a>2、查看R2上的地址分配情况</h5><p>[R2]display ip pool name GlobalPool </p>
-<p> Pool-name    : GlobalPool</p>
-<p> Pool-No     : 1</p>
-<p> Lease      : <strong>2 Days 2 Hours 0 Minutes</strong></p>
-<p> Domain-name   : -</p>
-<p> DNS-server0   	: 10.0.23.2    </p>
-<p> NBNS-server0  	: -        </p>
-<p> Netbios-type  		: -        </p>
-<p> Position    		: Local      Status      : Unlocked</p>
-<p> Gateway-0    : <strong>10.0.23.2</strong>    </p>
-<p> Mask      	: <strong>255.255.255.0</strong></p>
-<p> VPN instance  		: –</p>
-<p> -—————————————————————————-</p>
+<p>​     Destinations : 8     Routes : 8</p>
+<p>Destination/Mask   Proto  	Pre  Cost  Flags 	NextHop   	Interface</p>
+<p>0.0.0.0/0    Unr   	60  0   D  		10.0.23.2  	GigabitEthernet0/0/0</p>
+<p><em>仅保留<strong>关键信息，可</strong>以<strong>看到</strong>R3已经<strong>获取到了</strong>默认路由</em>*。*</p>
+<h5 id="2、查看R2上的地址分配情况">2、查看R2上的地址分配情况</h5>
+<p>[R2]display ip pool name GlobalPool</p>
+<p>Pool-name    : GlobalPool</p>
+<p>Pool-No     : 1</p>
+<p>Lease      : <strong>2 Days 2 Hours 0 Minutes</strong></p>
+<p>Domain-name   : -</p>
+<p>DNS-server0   	: 10.0.23.2</p>
+<p>NBNS-server0  	: -</p>
+<p>Netbios-type  		: -</p>
+<p>Position    		: Local      Status      : Unlocked</p>
+<p>Gateway-0    : <strong>10.0.23.2</strong></p>
+<p>Mask      	: <strong>255.255.255.0</strong></p>
+<p>VPN instance  		: –</p>
+<p>-----------------------------------------------------------------------------</p>
 <p>​     Start      End   Total  Used  Idle(Expired)  Conflict  Disable</p>
-<p> -—————————————————————————-</p>
+<p>-----------------------------------------------------------------------------</p>
 <p>​    10.0.23.1   10.0.23.254  253   <strong>1</strong>     252(0)     0     0</p>
-<p> -—————————————————————————-</p>
+<p>-----------------------------------------------------------------------------</p>
 <p><strong>display ip pool</strong>命令用来查看已配置的IP地址池信息。包括地址池的名称、租期、锁定状态、地址池中IP地址的状态等。</p>
-<p>[R2]display ip pool interface GigabitEthernet0&#x2F;0&#x2F;1 </p>
-<p> Pool-name    : <strong>GigabitEthernet****0&#x2F;0&#x2F;1</strong></p>
-<p> Pool-No     : 0</p>
-<p> Lease      : <strong>1 Days 0 Hours 0 Minutes</strong></p>
-<p> Domain-name   : -</p>
-<p> DNS-server0   	: <strong>10.0.12.2</strong>    </p>
-<p> NBNS-server0  	: -        </p>
-<p> Netbios-type  		: -        </p>
-<p> Position    	: Interface    Status      : Unlocked</p>
-<p> Gateway-0    : <strong>10.0.12.2</strong>    </p>
-<p> Mask      	: 255.255.255.0</p>
-<p> VPN instance  		: –</p>
-<p> -—————————————————————————-</p>
+<p>[R2]display ip pool interface GigabitEthernet0/0/1</p>
+<p>Pool-name    : <strong>GigabitEthernet****0/0/1</strong></p>
+<p>Pool-No     : 0</p>
+<p>Lease      : <strong>1 Days 0 Hours 0 Minutes</strong></p>
+<p>Domain-name   : -</p>
+<p>DNS-server0   	: <strong>10.0.12.2</strong></p>
+<p>NBNS-server0  	: -</p>
+<p>Netbios-type  		: -</p>
+<p>Position    	: Interface    Status      : Unlocked</p>
+<p>Gateway-0    : <strong>10.0.12.2</strong></p>
+<p>Mask      	: 255.255.255.0</p>
+<p>VPN instance  		: –</p>
+<p>-----------------------------------------------------------------------------</p>
 <p>​     Start  		End   		Total  Used  	Idle(Expired)  Conflict  Disable</p>
-<p> -—————————————————————————-</p>
+<p>-----------------------------------------------------------------------------</p>
 <p>​    10.0.12.1   	10.0.12.254  	253   <strong>1</strong>     252(0)     0     0</p>
-<p> -—————————————————————————-</p>
+<p>-----------------------------------------------------------------------------</p>
 <p>当配置接口地址池时，地址池的名称为接口的名称。分配的网关地址为该接口的IP地址，且无法修改。</p>
-<h1 id="中继实验"><a href="#中继实验" class="headerlink" title="中继实验"></a>中继实验</h1><p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/dhcpzz111.png" alt="dhcpzz111">交换机4上有多个vlan，交换机1模拟dhcp服务器实现为多个vlan分配地址，交换机3作为dhcp终极连接服务器和客户端</p>
-<h2 id="实验步骤"><a href="#实验步骤" class="headerlink" title="实验步骤"></a>实验步骤</h2><h3 id="创建VLAN"><a href="#创建VLAN" class="headerlink" title="创建VLAN"></a>创建VLAN</h3><p>[S1]vlan 40</p>
+<h1>中继实验</h1>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/dhcpzz111.png" alt="dhcpzz111">交换机4上有多个vlan，交换机1模拟dhcp服务器实现为多个vlan分配地址，交换机3作为dhcp终极连接服务器和客户端</p>
+<h2 id="实验步骤">实验步骤</h2>
+<h3 id="创建VLAN">创建VLAN</h3>
+<p>[S1]vlan 40</p>
 <p>[S3]vlan batch 10 20 30 40</p>
 <p>[S4]vlan batch 10 20 30</p>
-<h3 id="配置接口放通相应的VLAN"><a href="#配置接口放通相应的VLAN" class="headerlink" title="配置接口放通相应的VLAN"></a>配置接口放通相应的VLAN</h3><p>[S4]interface GigabitEthernet0&#x2F;0&#x2F;3</p>
-<p>[S4-GigabitEthernet0&#x2F;0&#x2F;3] port link-type trunk</p>
-<p>[S4-GigabitEthernet0&#x2F;0&#x2F;3] port trunk allow-pass vlan 10 20 30</p>
-<p>[S4-GigabitEthernet0&#x2F;0&#x2F;3] quit</p>
-<p>[S3]interface GigabitEthernet0&#x2F;0&#x2F;1</p>
-<p>[S3-GigabitEthernet0&#x2F;0&#x2F;1] port link-type access</p>
-<p>[S3-GigabitEthernet0&#x2F;0&#x2F;1] port default vlan 40</p>
-<p>[S3-GigabitEthernet0&#x2F;0&#x2F;1] quit</p>
-<p>[S3]interface GigabitEthernet0&#x2F;0&#x2F;3</p>
-<p>[S3-GigabitEthernet0&#x2F;0&#x2F;3] port link-type trunk</p>
-<p>[S3-GigabitEthernet0&#x2F;0&#x2F;3] port trunk allow-pass vlan 10 20 30</p>
-<p>[S3-GigabitEthernet0&#x2F;0&#x2F;3] quit</p>
-<p>[S1]interface GigabitEthernet0&#x2F;0&#x2F;12</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12] port link-type access</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12] port default vlan 40</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12] quit</p>
-<p>交换机4和交换机3之间因为放通多个vlan，所以使用trunk口，交换机3和交换机1之间只有一个vlan40，所以配置access口，pvid&#x3D;40</p>
-<h3 id="VLANIF配置"><a href="#VLANIF配置" class="headerlink" title="VLANIF配置"></a>VLANIF配置</h3><p>[S4]interface Vlanif 10</p>
+<h3 id="配置接口放通相应的VLAN">配置接口放通相应的VLAN</h3>
+<p>[S4]interface GigabitEthernet0/0/3</p>
+<p>[S4-GigabitEthernet0/0/3] port link-type trunk</p>
+<p>[S4-GigabitEthernet0/0/3] port trunk allow-pass vlan 10 20 30</p>
+<p>[S4-GigabitEthernet0/0/3] quit</p>
+<p>[S3]interface GigabitEthernet0/0/1</p>
+<p>[S3-GigabitEthernet0/0/1] port link-type access</p>
+<p>[S3-GigabitEthernet0/0/1] port default vlan 40</p>
+<p>[S3-GigabitEthernet0/0/1] quit</p>
+<p>[S3]interface GigabitEthernet0/0/3</p>
+<p>[S3-GigabitEthernet0/0/3] port link-type trunk</p>
+<p>[S3-GigabitEthernet0/0/3] port trunk allow-pass vlan 10 20 30</p>
+<p>[S3-GigabitEthernet0/0/3] quit</p>
+<p>[S1]interface GigabitEthernet0/0/12</p>
+<p>[S1-GigabitEthernet0/0/12] port link-type access</p>
+<p>[S1-GigabitEthernet0/0/12] port default vlan 40</p>
+<p>[S1-GigabitEthernet0/0/12] quit</p>
+<p>交换机4和交换机3之间因为放通多个vlan，所以使用trunk口，交换机3和交换机1之间只有一个vlan40，所以配置access口，pvid=40</p>
+<h3 id="VLANIF配置">VLANIF配置</h3>
+<p>[S4]interface Vlanif 10</p>
 <p>[S4-Vlanif10] quit</p>
 <p>[S4]interface Vlanif 20</p>
 <p>[S4-Vlanif20] quit</p>
@@ -388,38 +436,49 @@ if (true) {
 <p>[S1-Vlanif40] quit</p>
 <p>检查一下交换机3和1之间的连通性</p>
 <p>（开启DHCP服务，配置全局地址池，同时为S4上的VLANIF30分配静态IP地址。）：</p>
-<h3 id="开启DHCP服务"><a href="#开启DHCP服务" class="headerlink" title="开启DHCP服务"></a>开启DHCP服务</h3><p>[S1]dhcp enable</p>
-<h3 id="创建地址池VLAN10，用于给S4的VLANIF10分配地址"><a href="#创建地址池VLAN10，用于给S4的VLANIF10分配地址" class="headerlink" title="创建地址池VLAN10，用于给S4的VLANIF10分配地址"></a>创建地址池VLAN10，用于给S4的VLANIF10分配地址</h3><p>[S1]ip pool vlan10 &#x2F;&#x2F;创建地址池名为vlan10</p>
-<p>[S1-ip-pool-vlan10] gateway-list 10.0.10.3  &#x2F;&#x2F;网关是中继上的vlanif 10</p>
-<p>[S1-ip-pool-vlan10] network 10.0.10.0 mask 255.255.255.0 &#x2F;&#x2F;设置分配ip范围是10.0.10.1-10.0.10.255</p>
+<h3 id="开启DHCP服务">开启DHCP服务</h3>
+<p>[S1]dhcp enable</p>
+<h3 id="创建地址池VLAN10，用于给S4的VLANIF10分配地址">创建地址池VLAN10，用于给S4的VLANIF10分配地址</h3>
+<p>[S1]ip pool vlan10 //创建地址池名为vlan10</p>
+<p>[S1-ip-pool-vlan10] gateway-list 10.0.10.3  //网关是中继上的vlanif 10</p>
+<p>[S1-ip-pool-vlan10] network 10.0.10.0 mask 255.255.255.0 <a href="//xn--ip10-pg9f84x2x2aez8b5zgprxk5n.0.10.1-10.0.10.255">//设置分配ip范围是10.0.10.1-10.0.10.255</a></p>
 <p>[S1-ip-pool-vlan10] dns-list 10.0.10.3</p>
 <p>[S1-ip-pool-vlan10] quit</p>
-<h3 id="创建地址池VLAN20，用于给S4的VLANIF20分配地址"><a href="#创建地址池VLAN20，用于给S4的VLANIF20分配地址" class="headerlink" title="创建地址池VLAN20，用于给S4的VLANIF20分配地址"></a>创建地址池VLAN20，用于给S4的VLANIF20分配地址</h3><p>[S1]ip pool vlan20</p>
+<h3 id="创建地址池VLAN20，用于给S4的VLANIF20分配地址">创建地址池VLAN20，用于给S4的VLANIF20分配地址</h3>
+<p>[S1]ip pool vlan20</p>
 <p>[S1-ip-pool-vlan20] gateway-list 10.0.20.3</p>
 <p>[S1-ip-pool-vlan20] network 10.0.20.0 mask 255.255.255.0</p>
 <p>[S1-ip-pool-vlan20] dns-list 10.0.20.3</p>
 <p>[S1-ip-pool-vlan20] quit</p>
-<h3 id="创建地址池VLAN30，用于给S4的VLANIF30分配地址"><a href="#创建地址池VLAN30，用于给S4的VLANIF30分配地址" class="headerlink" title="创建地址池VLAN30，用于给S4的VLANIF30分配地址"></a>创建地址池VLAN30，用于给S4的VLANIF30分配地址</h3><p>[S1]ip pool vlan30</p>
+<h3 id="创建地址池VLAN30，用于给S4的VLANIF30分配地址">创建地址池VLAN30，用于给S4的VLANIF30分配地址</h3>
+<p>[S1]ip pool vlan30</p>
 <p>[S1-ip-pool-vlan30] gateway-list 10.0.30.3</p>
 <p>[S1-ip-pool-vlan30] network 10.0.30.0 mask 255.255.255.0</p>
 <p>[S1-ip-pool-vlan30] dns-list 10.0.30.3</p>
 <p>[S1-ip-pool-vlan30] quit</p>
-<h3 id="查看s4的vlanif30的mac"><a href="#查看s4的vlanif30的mac" class="headerlink" title="查看s4的vlanif30的mac"></a>查看s4的vlanif30的mac</h3><p>为了实现给s4的vlanif30口静态绑定一个指定的ip地址，我们需要先查看一下mac<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/macsiis30.png" alt="macsiis30"></p>
-<h3 id="在S1上为S4的VLANIF30配置静态地址分配"><a href="#在S1上为S4的VLANIF30配置静态地址分配" class="headerlink" title="在S1上为S4的VLANIF30配置静态地址分配"></a>在S1上为S4的VLANIF30配置静态地址分配</h3><p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/mac0234.png" alt="mac0234"></p>
+<h3 id="查看s4的vlanif30的mac">查看s4的vlanif30的mac</h3>
+<p>为了实现给s4的vlanif30口静态绑定一个指定的ip地址，我们需要先查看一下mac<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/macsiis30.png" alt="macsiis30"></p>
+<h3 id="在S1上为S4的VLANIF30配置静态地址分配">在S1上为S4的VLANIF30配置静态地址分配</h3>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/mac0234.png" alt="mac0234"></p>
 <p>给s4的vlanif口静态分配ip：10.0.30.2</p>
-<h3 id="在VLANIF40接口下使能DHCP-Server"><a href="#在VLANIF40接口下使能DHCP-Server" class="headerlink" title="在VLANIF40接口下使能DHCP Server"></a>在VLANIF40接口下使能DHCP Server</h3><p>[S1]interface Vlanif 40 </p>
-<p>[S1-Vlanif40] dhcp select global &#x2F;&#x2F;全局的使能</p>
-<h3 id="查看IP地址池配置情况"><a href="#查看IP地址池配置情况" class="headerlink" title="查看IP地址池配置情况"></a>查看IP地址池配置情况</h3><p>[S1]display ip pool name vlan30</p>
+<h3 id="在VLANIF40接口下使能DHCP-Server">在VLANIF40接口下使能DHCP Server</h3>
+<p>[S1]interface Vlanif 40</p>
+<p>[S1-Vlanif40] dhcp select global //全局的使能</p>
+<h3 id="查看IP地址池配置情况">查看IP地址池配置情况</h3>
+<p>[S1]display ip pool name vlan30</p>
 <p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/3chakan0.png" alt="3chakan0"></p>
 <p>地址池vlan30已经存在一个“Used”地址，该地址为静态分配的地址。</p>
-<h3 id="配置前往用户网段的路由"><a href="#配置前往用户网段的路由" class="headerlink" title="配置前往用户网段的路由"></a>配置前往用户网段的路由</h3><p>[S1]ip route-static 10.0.10.0 24 10.0.40.3 </p>
+<h3 id="配置前往用户网段的路由">配置前往用户网段的路由</h3>
+<p>[S1]ip route-static 10.0.10.0 24 10.0.40.3</p>
 <p>[S1]ip route-static 10.0.20.0 24 10.0.40.3</p>
 <p>[S1]ip route-static 10.0.30.0 24 10.0.40.3</p>
 <p>（或者配置缺省路由）</p>
 <p>保证连通性</p>
 <p>在S3上完成DHCP Relay相关配置</p>
-<h3 id="开启DHCP服务-1"><a href="#开启DHCP服务-1" class="headerlink" title="开启DHCP服务"></a>开启DHCP服务</h3><p>[S3]dhcp enable</p>
-<h3 id="在接口上配置DHCP-Relay，指定DHCP-Server"><a href="#在接口上配置DHCP-Relay，指定DHCP-Server" class="headerlink" title="在接口上配置DHCP Relay，指定DHCP Server"></a>在接口上配置DHCP Relay，指定DHCP Server</h3><p>[S3]interface Vlanif10</p>
+<h3 id="开启DHCP服务-2">开启DHCP服务</h3>
+<p>[S3]dhcp enable</p>
+<h3 id="在接口上配置DHCP-Relay，指定DHCP-Server">在接口上配置DHCP Relay，指定DHCP Server</h3>
+<p>[S3]interface Vlanif10</p>
 <p>[S3-Vlanif10] dhcp select relay</p>
 <p>[S3-Vlanif10] dhcp relay server-ip 10.0.40.1</p>
 <p>[S3-Vlanif10] quit</p>
@@ -431,10 +490,14 @@ if (true) {
 <p>[S3-Vlanif30] dhcp select relay</p>
 <p>[S3-Vlanif30] dhcp relay server-ip 10.0.40.1</p>
 <p>[S3-Vlanif30] quit</p>
-<h3 id="查看relay配置"><a href="#查看relay配置" class="headerlink" title="查看relay配置"></a>查看relay配置</h3><p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/relayallss7.png" alt="relayallss7"></p>
-<h3 id="DHCP-Client配置"><a href="#DHCP-Client配置" class="headerlink" title="DHCP Client配置"></a>DHCP Client配置</h3><p>在S4上配置VLANIF10、20、30接口通过DHCP获取IP地址</p>
-<h4 id="开启DHCP服务-2"><a href="#开启DHCP服务-2" class="headerlink" title="开启DHCP服务"></a>开启DHCP服务</h4><p>[S4]dhcp enable</p>
-<h4 id="开启接口通过DHCP获取地址"><a href="#开启接口通过DHCP获取地址" class="headerlink" title="开启接口通过DHCP获取地址"></a>开启接口通过DHCP获取地址</h4><p>[S4]interface Vlanif10</p>
+<h3 id="查看relay配置">查看relay配置</h3>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/relayallss7.png" alt="relayallss7"></p>
+<h3 id="DHCP-Client配置">DHCP Client配置</h3>
+<p>在S4上配置VLANIF10、20、30接口通过DHCP获取IP地址</p>
+<h4 id="开启DHCP服务-3">开启DHCP服务</h4>
+<p>[S4]dhcp enable</p>
+<h4 id="开启接口通过DHCP获取地址">开启接口通过DHCP获取地址</h4>
+<p>[S4]interface Vlanif10</p>
 <p>[S4-Vlanif10] ip address dhcp-alloc</p>
 <p>[S4-Vlanif10] quit</p>
 <p>[S4]interface Vlanif20</p>
@@ -443,27 +506,28 @@ if (true) {
 <p>[S4]interface Vlanif30</p>
 <p>[S4-Vlanif30] ip address dhcp-alloc</p>
 <p>[S4-Vlanif30] quit</p>
-<h4 id="查看各个接口IP地址获取情况"><a href="#查看各个接口IP地址获取情况" class="headerlink" title="查看各个接口IP地址获取情况"></a>查看各个接口IP地址获取情况</h4><p><S4>display interface Vlanif 10</S4></p>
+<h4 id="查看各个接口IP地址获取情况">查看各个接口IP地址获取情况</h4>
+<p><S4>display interface Vlanif 10</S4></p>
 <p>Vlanif10 current state : UP</p>
 <p>Line protocol current state : UP</p>
 <p>Last line protocol up time : 2020-06-05 17:37:57 UTC-08:00</p>
 <p>Description:</p>
 <p>Route Port,The Maximum Transmit Unit is 1500</p>
-<p>Internet Address is allocated by DHCP, 10.0.10.254&#x2F;24</p>
+<p>Internet Address is allocated by DHCP, 10.0.10.254/24</p>
 <p>[S4]display interface Vlanif 20</p>
 <p>Vlanif20 current state : UP</p>
 <p>Line protocol current state : UP</p>
 <p>Last line protocol up time : 2020-06-05 17:41:23 UTC-08:00</p>
 <p>Description:</p>
 <p>Route Port,The Maximum Transmit Unit is 1500</p>
-<p>Internet Address is allocated by DHCP, 10.0.20.254&#x2F;24</p>
+<p>Internet Address is allocated by DHCP, 10.0.20.254/24</p>
 <p>[S4]display interface Vlanif 30</p>
 <p>Vlanif30 current state : UP</p>
 <p>Line protocol current state : UP</p>
 <p>Last line protocol up time : 2020-06-05 17:43:22 UTC-08:00</p>
 <p>Description:</p>
 <p>Route Port,The Maximum Transmit Unit is 1500</p>
-<p>Internet Address is allocated by DHCP, 10.0.30.2&#x2F;24</p>
+<p>Internet Address is allocated by DHCP, 10.0.30.2/24</p>
 <p>接口已经通过DHCP获取到IP地址，并且VLANIF30的地址为静态分配的地址：10.0.30.2。</p>
 </article><div class="post-copyright"><div class="copyright-cc-box"><i class="anzhiyufont anzhiyu-icon-copyright"></i></div><div class="post-copyright__author_box"><a class="post-copyright__author_img" href="/" title="头像"><img class="post-copyright__author_img_back" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/toux.jpg" title="头像" alt="头像"><img class="post-copyright__author_img_front" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/toux.jpg" title="头像" alt="头像"></a><div class="post-copyright__author_name">Yang</div><div class="post-copyright__author_desc">相互吹捧，共同进步😍😍😍</div></div><div class="post-copyright__post__info"><a class="post-copyright__original" title="该文章为原创文章，注意版权协议" href="http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/">原创</a><a class="post-copyright-title"><span onclick="rm.copyPageUrl('http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/')">DHCP基础配置</span></a></div><div class="post-tools" id="post-tools"><div class="post-tools-left"><div class="rewardLeftButton"><div class="post-reward" onclick="anzhiyu.addRewardMask()"><div class="reward-button button--animated" title="赞赏作者"><i class="anzhiyufont anzhiyu-icon-hand-heart-fill"></i>打赏作者</div><div class="reward-main"><div class="reward-all"><span class="reward-title">感谢你赐予我前进的力量</span><ul class="reward-group"><li class="reward-item"><a href="/img/weixinfukuan.png" target="_blank"><img class="post-qr-code-img" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/weixinfukuan.png" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/zhifubaofukuan.jpg" target="_blank"><img class="post-qr-code-img" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/zhifubaofukuan.jpg" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul><a class="reward-main-btn" href="/about/#about-reward" target="_blank"><div class="reward-text">赞赏者名单</div><div class="reward-dec">因为你们的支持让我意识到写文章的价值🙏</div></a></div></div></div><div id="quit-box" onclick="anzhiyu.removeRewardMask()" style="display: none"></div></div><div class="shareRight"><div class="share-link mobile"><div class="share-qrcode"><div class="share-button" title="使用手机访问这篇文章"><i class="anzhiyufont anzhiyu-icon-qrcode"></i></div><div class="share-main"><div class="share-main-all"><div id="qrcode" title="http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/"></div><div class="reward-dec">使用手机访问这篇文章</div></div></div></div></div><div class="share-link weibo"><a class="share-button" target="_blank" href="https://service.weibo.com/share/share.php?title=DHCP基础配置&amp;url=http://example.com/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/&amp;pic=" rel="external nofollow noreferrer noopener"><i class="anzhiyufont anzhiyu-icon-weibo"></i></a></div><script>function copyCurrentPageUrl() {
   var currentPageUrl = window.location.href;
@@ -474,7 +538,7 @@ if (true) {
   input.setSelectionRange(0, 99999);
   document.execCommand("copy");
   document.body.removeChild(input);
-}</script><div class="share-link copyurl"><div class="share-button" id="post-share-url" title="复制链接" onclick="copyCurrentPageUrl()"><i class="anzhiyufont anzhiyu-icon-link"></i></div></div></div></div></div><div class="post-copyright__notice"><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://example.com" target="_blank">沃德发</a>！</span></div></div><div class="post-tools-right"><div class="tag_share"><div class="post-meta__box"><div class="post-meta__box__tag-list"><a class="post-meta__box__tags" href="/tags/DHCP-Relay/"><span class="tags-punctuation"> <i class="anzhiyufont anzhiyu-icon-tag"></i></span>DHCP Relay<span class="tagsPageCount">1</span></a><a class="post-meta__box__tags" href="/tags/DHCP/"><span class="tags-punctuation"> <i class="anzhiyufont anzhiyu-icon-tag"></i></span>DHCP<span class="tagsPageCount">1</span></a></div></div></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/"><img class="prev-cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">vlan间通信</div></div></a></div><div class="next-post pull-right"><a href="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/"><img class="next-cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">nat实验</div></div></a></div></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="card-content"><div class="author-info-avatar"><img class="avatar-img" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/toux.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__description"></div><div class="author-info__bottom-group"><a class="author-info__bottom-group-left" href="/"><h1 class="author-info__name">Yang</h1><div class="author-info__desc">相互吹捧，共同进步😍😍😍</div></a><div class="card-info-social-icons is-center"><a class="social-icon faa-parent animated-hover" href="https://github.com/anzhiyu-c" target="_blank" title="Github"><i class="anzhiyufont anzhiyu-icon-github"></i></a></div></div></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-bullhorn anzhiyu-shake"></i><span>公告</span></div><div class="announcement_content">今天也在努力划水。</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-bars"></i><span>文章目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%A6%82%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">概述</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#DHCP%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="toc-number">1.0.1.</span> <span class="toc-text">DHCP服务器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#DHCP%E4%B8%AD%E7%BB%A7"><span class="toc-number">1.0.2.</span> <span class="toc-text">DHCP中继</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9F%BA%E6%9C%AC%E5%91%BD%E4%BB%A4"><span class="toc-number">1.1.</span> <span class="toc-text">基本命令</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9F%BA%E6%9C%AC%E5%AE%9E%E9%AA%8C"><span class="toc-number">2.</span> <span class="toc-text">基本实验</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BC%80%E5%90%AFDHCP%E5%8A%9F%E8%83%BD"><span class="toc-number">2.1.</span> <span class="toc-text">开启DHCP功能</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE%E5%9C%B0%E5%9D%80%E6%B1%A0"><span class="toc-number">2.2.</span> <span class="toc-text">配置地址池</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%85%8D%E7%BD%AEDHCP-Client"><span class="toc-number">2.3.</span> <span class="toc-text">配置DHCP Client</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%93%E6%9E%9C%E9%AA%8C%E8%AF%81"><span class="toc-number">2.4.</span> <span class="toc-text">结果验证</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E6%9F%A5%E7%9C%8BR1%E5%92%8CR3%E7%9A%84%E5%9C%B0%E5%9D%80%E5%8F%8A%E8%B7%AF%E7%94%B1%E7%AD%89%E4%BF%A1%E6%81%AF"><span class="toc-number">2.4.0.0.1.</span> <span class="toc-text">查看R1和R3的地址及路由等信息</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#2%E3%80%81%E6%9F%A5%E7%9C%8BR2%E4%B8%8A%E7%9A%84%E5%9C%B0%E5%9D%80%E5%88%86%E9%85%8D%E6%83%85%E5%86%B5"><span class="toc-number">2.4.0.0.2.</span> <span class="toc-text">2、查看R2上的地址分配情况</span></a></li></ol></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%AD%E7%BB%A7%E5%AE%9E%E9%AA%8C"><span class="toc-number">3.</span> <span class="toc-text">中继实验</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9E%E9%AA%8C%E6%AD%A5%E9%AA%A4"><span class="toc-number">3.1.</span> <span class="toc-text">实验步骤</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9B%E5%BB%BAVLAN"><span class="toc-number">3.1.1.</span> <span class="toc-text">创建VLAN</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE%E6%8E%A5%E5%8F%A3%E6%94%BE%E9%80%9A%E7%9B%B8%E5%BA%94%E7%9A%84VLAN"><span class="toc-number">3.1.2.</span> <span class="toc-text">配置接口放通相应的VLAN</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#VLANIF%E9%85%8D%E7%BD%AE"><span class="toc-number">3.1.3.</span> <span class="toc-text">VLANIF配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%80%E5%90%AFDHCP%E6%9C%8D%E5%8A%A1"><span class="toc-number">3.1.4.</span> <span class="toc-text">开启DHCP服务</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E5%9C%B0%E5%9D%80%E6%B1%A0VLAN10%EF%BC%8C%E7%94%A8%E4%BA%8E%E7%BB%99S4%E7%9A%84VLANIF10%E5%88%86%E9%85%8D%E5%9C%B0%E5%9D%80"><span class="toc-number">3.1.5.</span> <span class="toc-text">创建地址池VLAN10，用于给S4的VLANIF10分配地址</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E5%9C%B0%E5%9D%80%E6%B1%A0VLAN20%EF%BC%8C%E7%94%A8%E4%BA%8E%E7%BB%99S4%E7%9A%84VLANIF20%E5%88%86%E9%85%8D%E5%9C%B0%E5%9D%80"><span class="toc-number">3.1.6.</span> <span class="toc-text">创建地址池VLAN20，用于给S4的VLANIF20分配地址</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E5%9C%B0%E5%9D%80%E6%B1%A0VLAN30%EF%BC%8C%E7%94%A8%E4%BA%8E%E7%BB%99S4%E7%9A%84VLANIF30%E5%88%86%E9%85%8D%E5%9C%B0%E5%9D%80"><span class="toc-number">3.1.7.</span> <span class="toc-text">创建地址池VLAN30，用于给S4的VLANIF30分配地址</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9F%A5%E7%9C%8Bs4%E7%9A%84vlanif30%E7%9A%84mac"><span class="toc-number">3.1.8.</span> <span class="toc-text">查看s4的vlanif30的mac</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9C%A8S1%E4%B8%8A%E4%B8%BAS4%E7%9A%84VLANIF30%E9%85%8D%E7%BD%AE%E9%9D%99%E6%80%81%E5%9C%B0%E5%9D%80%E5%88%86%E9%85%8D"><span class="toc-number">3.1.9.</span> <span class="toc-text">在S1上为S4的VLANIF30配置静态地址分配</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9C%A8VLANIF40%E6%8E%A5%E5%8F%A3%E4%B8%8B%E4%BD%BF%E8%83%BDDHCP-Server"><span class="toc-number">3.1.10.</span> <span class="toc-text">在VLANIF40接口下使能DHCP Server</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9F%A5%E7%9C%8BIP%E5%9C%B0%E5%9D%80%E6%B1%A0%E9%85%8D%E7%BD%AE%E6%83%85%E5%86%B5"><span class="toc-number">3.1.11.</span> <span class="toc-text">查看IP地址池配置情况</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE%E5%89%8D%E5%BE%80%E7%94%A8%E6%88%B7%E7%BD%91%E6%AE%B5%E7%9A%84%E8%B7%AF%E7%94%B1"><span class="toc-number">3.1.12.</span> <span class="toc-text">配置前往用户网段的路由</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%80%E5%90%AFDHCP%E6%9C%8D%E5%8A%A1-1"><span class="toc-number">3.1.13.</span> <span class="toc-text">开启DHCP服务</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9C%A8%E6%8E%A5%E5%8F%A3%E4%B8%8A%E9%85%8D%E7%BD%AEDHCP-Relay%EF%BC%8C%E6%8C%87%E5%AE%9ADHCP-Server"><span class="toc-number">3.1.14.</span> <span class="toc-text">在接口上配置DHCP Relay，指定DHCP Server</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9F%A5%E7%9C%8Brelay%E9%85%8D%E7%BD%AE"><span class="toc-number">3.1.15.</span> <span class="toc-text">查看relay配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#DHCP-Client%E9%85%8D%E7%BD%AE"><span class="toc-number">3.1.16.</span> <span class="toc-text">DHCP Client配置</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%BC%80%E5%90%AFDHCP%E6%9C%8D%E5%8A%A1-2"><span class="toc-number">3.1.16.1.</span> <span class="toc-text">开启DHCP服务</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%BC%80%E5%90%AF%E6%8E%A5%E5%8F%A3%E9%80%9A%E8%BF%87DHCP%E8%8E%B7%E5%8F%96%E5%9C%B0%E5%9D%80"><span class="toc-number">3.1.16.2.</span> <span class="toc-text">开启接口通过DHCP获取地址</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%9F%A5%E7%9C%8B%E5%90%84%E4%B8%AA%E6%8E%A5%E5%8F%A3IP%E5%9C%B0%E5%9D%80%E8%8E%B7%E5%8F%96%E6%83%85%E5%86%B5"><span class="toc-number">3.1.16.3.</span> <span class="toc-text">查看各个接口IP地址获取情况</span></a></li></ol></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-history"></i><span>最近发布</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/12/08/USG5500%E9%98%B2%E7%81%AB%E5%A2%99%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/" title="USG5500防火墙基础实验">USG5500防火墙基础实验</a><time datetime="2023-12-08T09:52:30.000Z" title="发表于 2023-12-08 17:52:30">2023-12-08</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/12/07/rstp%E5%92%8Cmstp/" title="rstp和mstp">rstp和mstp</a><time datetime="2023-12-07T10:08:51.000Z" title="发表于 2023-12-07 18:08:51">2023-12-07</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/" title="链路聚合">链路聚合</a><time datetime="2023-12-07T07:56:27.000Z" title="发表于 2023-12-07 15:56:27">2023-12-07</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/12/05/mpls%E5%AE%9E%E9%AA%8C/" title="mpls实验">mpls实验</a><time datetime="2023-12-05T09:53:41.000Z" title="发表于 2023-12-05 17:53:41">2023-12-05</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/" title="Hybrid接口">Hybrid接口</a><time datetime="2023-12-05T05:30:11.000Z" title="发表于 2023-12-05 13:30:11">2023-12-05</time></div></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"></div><div id="footer-bar"><div class="footer-bar-links"><div class="footer-bar-left"><div id="footer-bar-tips"><div class="copyright">&copy;2020 - 2023 By <a class="footer-bar-link" href="/" title="Yang" target="_blank">Yang</a></div></div><div id="footer-type-tips"></div><div class="js-pjax"><script>function subtitleType () {
+}</script><div class="share-link copyurl"><div class="share-button" id="post-share-url" title="复制链接" onclick="copyCurrentPageUrl()"><i class="anzhiyufont anzhiyu-icon-link"></i></div></div></div></div></div><div class="post-copyright__notice"><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://example.com" target="_blank">沃德发</a>！</span></div></div><div class="post-tools-right"><div class="tag_share"><div class="post-meta__box"><div class="post-meta__box__tag-list"><a class="post-meta__box__tags" href="/tags/DHCP-Relay/"><span class="tags-punctuation"> <i class="anzhiyufont anzhiyu-icon-tag"></i></span>DHCP Relay<span class="tagsPageCount">1</span></a><a class="post-meta__box__tags" href="/tags/DHCP/"><span class="tags-punctuation"> <i class="anzhiyufont anzhiyu-icon-tag"></i></span>DHCP<span class="tagsPageCount">1</span></a></div></div></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/"><img class="prev-cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">vlan间通信</div></div></a></div><div class="next-post pull-right"><a href="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/"><img class="next-cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">nat实验</div></div></a></div></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="card-content"><div class="author-info-avatar"><img class="avatar-img" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/toux.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__description"></div><div class="author-info__bottom-group"><a class="author-info__bottom-group-left" href="/"><h1 class="author-info__name">Yang</h1><div class="author-info__desc">相互吹捧，共同进步😍😍😍</div></a><div class="card-info-social-icons is-center"><a class="social-icon faa-parent animated-hover" href="https://github.com/anzhiyu-c" target="_blank" title="Github"><i class="anzhiyufont anzhiyu-icon-github"></i></a></div></div></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-bullhorn anzhiyu-shake"></i><span>公告</span></div><div class="announcement_content">今天也在努力划水。</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-bars"></i><span>文章目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">概述</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#DHCP%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="toc-number">1.0.1.</span> <span class="toc-text">DHCP服务器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#DHCP%E4%B8%AD%E7%BB%A7"><span class="toc-number">1.0.2.</span> <span class="toc-text">DHCP中继</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9F%BA%E6%9C%AC%E5%91%BD%E4%BB%A4"><span class="toc-number">1.1.</span> <span class="toc-text">基本命令</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">基本实验</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BC%80%E5%90%AFDHCP%E5%8A%9F%E8%83%BD"><span class="toc-number">2.1.</span> <span class="toc-text">开启DHCP功能</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE%E5%9C%B0%E5%9D%80%E6%B1%A0"><span class="toc-number">2.2.</span> <span class="toc-text">配置地址池</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%85%8D%E7%BD%AEDHCP-Client"><span class="toc-number">2.3.</span> <span class="toc-text">配置DHCP Client</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%93%E6%9E%9C%E9%AA%8C%E8%AF%81"><span class="toc-number">2.4.</span> <span class="toc-text">结果验证</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E6%9F%A5%E7%9C%8BR1%E5%92%8CR3%E7%9A%84%E5%9C%B0%E5%9D%80%E5%8F%8A%E8%B7%AF%E7%94%B1%E7%AD%89%E4%BF%A1%E6%81%AF"><span class="toc-number">2.4.0.0.1.</span> <span class="toc-text">查看R1和R3的地址及路由等信息</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#2%E3%80%81%E6%9F%A5%E7%9C%8BR2%E4%B8%8A%E7%9A%84%E5%9C%B0%E5%9D%80%E5%88%86%E9%85%8D%E6%83%85%E5%86%B5"><span class="toc-number">2.4.0.0.2.</span> <span class="toc-text">2、查看R2上的地址分配情况</span></a></li></ol></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">中继实验</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9E%E9%AA%8C%E6%AD%A5%E9%AA%A4"><span class="toc-number">3.1.</span> <span class="toc-text">实验步骤</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9B%E5%BB%BAVLAN"><span class="toc-number">3.1.1.</span> <span class="toc-text">创建VLAN</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE%E6%8E%A5%E5%8F%A3%E6%94%BE%E9%80%9A%E7%9B%B8%E5%BA%94%E7%9A%84VLAN"><span class="toc-number">3.1.2.</span> <span class="toc-text">配置接口放通相应的VLAN</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#VLANIF%E9%85%8D%E7%BD%AE"><span class="toc-number">3.1.3.</span> <span class="toc-text">VLANIF配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%80%E5%90%AFDHCP%E6%9C%8D%E5%8A%A1"><span class="toc-number">3.1.4.</span> <span class="toc-text">开启DHCP服务</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E5%9C%B0%E5%9D%80%E6%B1%A0VLAN10%EF%BC%8C%E7%94%A8%E4%BA%8E%E7%BB%99S4%E7%9A%84VLANIF10%E5%88%86%E9%85%8D%E5%9C%B0%E5%9D%80"><span class="toc-number">3.1.5.</span> <span class="toc-text">创建地址池VLAN10，用于给S4的VLANIF10分配地址</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E5%9C%B0%E5%9D%80%E6%B1%A0VLAN20%EF%BC%8C%E7%94%A8%E4%BA%8E%E7%BB%99S4%E7%9A%84VLANIF20%E5%88%86%E9%85%8D%E5%9C%B0%E5%9D%80"><span class="toc-number">3.1.6.</span> <span class="toc-text">创建地址池VLAN20，用于给S4的VLANIF20分配地址</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E5%9C%B0%E5%9D%80%E6%B1%A0VLAN30%EF%BC%8C%E7%94%A8%E4%BA%8E%E7%BB%99S4%E7%9A%84VLANIF30%E5%88%86%E9%85%8D%E5%9C%B0%E5%9D%80"><span class="toc-number">3.1.7.</span> <span class="toc-text">创建地址池VLAN30，用于给S4的VLANIF30分配地址</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9F%A5%E7%9C%8Bs4%E7%9A%84vlanif30%E7%9A%84mac"><span class="toc-number">3.1.8.</span> <span class="toc-text">查看s4的vlanif30的mac</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9C%A8S1%E4%B8%8A%E4%B8%BAS4%E7%9A%84VLANIF30%E9%85%8D%E7%BD%AE%E9%9D%99%E6%80%81%E5%9C%B0%E5%9D%80%E5%88%86%E9%85%8D"><span class="toc-number">3.1.9.</span> <span class="toc-text">在S1上为S4的VLANIF30配置静态地址分配</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9C%A8VLANIF40%E6%8E%A5%E5%8F%A3%E4%B8%8B%E4%BD%BF%E8%83%BDDHCP-Server"><span class="toc-number">3.1.10.</span> <span class="toc-text">在VLANIF40接口下使能DHCP Server</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9F%A5%E7%9C%8BIP%E5%9C%B0%E5%9D%80%E6%B1%A0%E9%85%8D%E7%BD%AE%E6%83%85%E5%86%B5"><span class="toc-number">3.1.11.</span> <span class="toc-text">查看IP地址池配置情况</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE%E5%89%8D%E5%BE%80%E7%94%A8%E6%88%B7%E7%BD%91%E6%AE%B5%E7%9A%84%E8%B7%AF%E7%94%B1"><span class="toc-number">3.1.12.</span> <span class="toc-text">配置前往用户网段的路由</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%80%E5%90%AFDHCP%E6%9C%8D%E5%8A%A1-2"><span class="toc-number">3.1.13.</span> <span class="toc-text">开启DHCP服务</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9C%A8%E6%8E%A5%E5%8F%A3%E4%B8%8A%E9%85%8D%E7%BD%AEDHCP-Relay%EF%BC%8C%E6%8C%87%E5%AE%9ADHCP-Server"><span class="toc-number">3.1.14.</span> <span class="toc-text">在接口上配置DHCP Relay，指定DHCP Server</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9F%A5%E7%9C%8Brelay%E9%85%8D%E7%BD%AE"><span class="toc-number">3.1.15.</span> <span class="toc-text">查看relay配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#DHCP-Client%E9%85%8D%E7%BD%AE"><span class="toc-number">3.1.16.</span> <span class="toc-text">DHCP Client配置</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%BC%80%E5%90%AFDHCP%E6%9C%8D%E5%8A%A1-3"><span class="toc-number">3.1.16.1.</span> <span class="toc-text">开启DHCP服务</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%BC%80%E5%90%AF%E6%8E%A5%E5%8F%A3%E9%80%9A%E8%BF%87DHCP%E8%8E%B7%E5%8F%96%E5%9C%B0%E5%9D%80"><span class="toc-number">3.1.16.2.</span> <span class="toc-text">开启接口通过DHCP获取地址</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%9F%A5%E7%9C%8B%E5%90%84%E4%B8%AA%E6%8E%A5%E5%8F%A3IP%E5%9C%B0%E5%9D%80%E8%8E%B7%E5%8F%96%E6%83%85%E5%86%B5"><span class="toc-number">3.1.16.3.</span> <span class="toc-text">查看各个接口IP地址获取情况</span></a></li></ol></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-history"></i><span>最近发布</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/12/08/USG5500%E9%98%B2%E7%81%AB%E5%A2%99%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/" title="USG5500防火墙基础实验">USG5500防火墙基础实验</a><time datetime="2023-12-08T09:52:30.000Z" title="发表于 2023-12-08 17:52:30">2023-12-08</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/12/07/rstp%E5%92%8Cmstp/" title="rstp和mstp">rstp和mstp</a><time datetime="2023-12-07T10:08:51.000Z" title="发表于 2023-12-07 18:08:51">2023-12-07</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/" title="链路聚合">链路聚合</a><time datetime="2023-12-07T07:56:27.000Z" title="发表于 2023-12-07 15:56:27">2023-12-07</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/12/05/mpls%E5%AE%9E%E9%AA%8C/" title="mpls实验">mpls实验</a><time datetime="2023-12-05T09:53:41.000Z" title="发表于 2023-12-05 17:53:41">2023-12-05</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/" title="Hybrid接口">Hybrid接口</a><time datetime="2023-12-05T05:30:11.000Z" title="发表于 2023-12-05 13:30:11">2023-12-05</time></div></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"></div><div id="footer-bar"><div class="footer-bar-links"><div class="footer-bar-left"><div id="footer-bar-tips"><div class="copyright">&copy;2020 - 2023 By <a class="footer-bar-link" href="/" title="Yang" target="_blank">Yang</a></div></div><div id="footer-type-tips"></div><div class="js-pjax"><script>function subtitleType () {
   fetch('https://v1.hitokoto.cn')
     .then(response => response.json())
     .then(data => {
