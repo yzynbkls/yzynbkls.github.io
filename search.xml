@@ -841,112 +841,6 @@
       </tags>
   </entry>
   <entry>
-    <title>USG5500防火墙基础实验</title>
-    <url>/2023/12/08/USG5500%E9%98%B2%E7%81%AB%E5%A2%99%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/</url>
-    <content><![CDATA[<h1 id="基础配置"><a href="#基础配置" class="headerlink" title="基础配置"></a>基础配置</h1><p><img src="/2023/12/08/USG5500%E9%98%B2%E7%81%AB%E5%A2%99%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/usg5500tuopi11.png" alt="usg5500tuopi11"></p>
-<p>1、本实验中的防火墙为USG5500系列防火墙； </p>
-<p>2、 防火墙三个接口的IP地址按照上图所示进行配置；将这三个接口划入相应的安全域； </p>
-<p>3、配置防火墙的域间包过滤策略，使得PC1能够主动访问PC2，但是PC2无法主动访问PC1；PC2能够主动访问WebServer的WEB服务。</p>
-<p>防火墙配置：</p>
-<p>[FW] interface GigabitEthernet0&#x2F;0&#x2F;1 </p>
-<p>[FW-GigabitEthernet0&#x2F;0&#x2F;1] ip address 192.168.1.254 24 </p>
-<p>[FW] interface GigabitEthernet0&#x2F;0&#x2F;2 </p>
-<p>[FW-GigabitEthernet0&#x2F;0&#x2F;2] ip address 172.16.1.254 24 </p>
-<p>[FW] interface GigabitEthernet0&#x2F;0&#x2F;3 </p>
-<p>[FW-GigabitEthernet0&#x2F;0&#x2F;3] ip address 10.1.1.254 24 </p>
-<p>将接口添加到相应的安全区域：</p>
-<p>[FW] firewall zone trust </p>
-<p>[FW-zone-trust] add interface GigabitEthernet0&#x2F;0&#x2F;1 </p>
-<p>[FW] firewall zone dmz </p>
-<p>[FW-zone-dmz] add interface GigabitEthernet0&#x2F;0&#x2F;2 </p>
-<p>[FW] firewall zone untrust </p>
-<p>[FW-zone-untrust] add interface GigabitEthernet0&#x2F;0&#x2F;3 </p>
-<p>配置域间策略，使得trust域的192.168.1.0&#x2F;24网段用户能够访问untrust区域的10.1.1.0&#x2F;24网段</p>
-<p>[FW] policy interzone trust untrust outbound </p>
-<p>[FW-policy-interzone-trust-untrust-outbound] policy 10 </p>
-<p>[FW-policy-interzone-trust-untrust-outbound-10] policy destination 10.1.1.0 </p>
-<p>0.0.0.255 </p>
-<p>[FW-policy-interzone-trust-untrust-outbound-10] policy source 192.168.1.0 </p>
-<p>0.0.0.255 </p>
-<p>[FW-policy-interzone-trust-untrust-outbound-10] action permit </p>
-<p>配置域间策略，使得untrust可以访问server</p>
-<p>[FW] policy interzone dmz untrust inbound </p>
-<p>[FW-policy-interzone-dmz-untrust-inbound] policy 10 </p>
-<p>[FW-policy-interzone-dmz-untrust-inbound-10] policy source 10.1.1.0 0.0.0.255 </p>
-<p>[FW-policy-interzone-dmz-untrust-inbound-10] policy destination 172.16.1.1 0 </p>
-<p>[FW-policy-interzone-dmz-untrust-inbound-10] policy service service-set http </p>
-<p>[FW-policy-interzone-dmz-untrust-inbound-10] action permit </p>
-<p>完成上述配置后，PC1即可主动发起访问PC2，而PC2无法主动访问PC1；另外，PC2能够访问WebServer的HTTP服务</p>
-<p>（ping不同，需要再配置一条允许icmp协议通过）</p>
-<p>通过命令display zone，可以查看防火墙的安全区域、安全等级，以及每个安全区域下的接口.</p>
-<p>使用<strong>display firewall packet-filter default</strong> 命令，能查看防火墙的缺省安全策略。当数据包经过防火墙且从一个安全域试图访问另一个安全域时，防火墙会根据数据包的流向首先检查用户定义的policy interzone，如果没有自定义的policy interone，则会看根据防火墙的缺省安全策略进行处理。例如从上面的显示中，我们可以看到local-trust的inbound及outbound都是permit，因此即使我们没有显式的配置local及trust安全区域的区域间策略，但是由于默认的策略就是放行，所以 trust区域的用户可以直接ping通防火墙的接口。</p>
-<p>如果要让防火墙默认放行所有域间的流量，可以使用：firewall packet-filter default permit all命令，值得注意的是，在网络正式投入现网使用之前，此命令必须关闭（firewall packet-filter default deny all），针对需要放行的流量，需通过policy interzone的配置来放行，而不能鲁莽地将所有流量统统放行。</p>
-<p>使用display policy命令，能查看我们定义的区域间安全策略，例如： </p>
-<p>[FW] display policy interzone trust untrust outbound </p>
-<h1 id="USG5500-nat实验"><a href="#USG5500-nat实验" class="headerlink" title="USG5500 nat实验"></a>USG5500 nat实验</h1><p><img src="/2023/12/08/USG5500%E9%98%B2%E7%81%AB%E5%A2%99%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/usg5500naty.png" alt="usg5500naty"></p>
-<p>防火墙FW的配置如下：</p>
-<p>[FW] interface GigabitEthernet0&#x2F;0&#x2F;1 </p>
-<p>[FW-GigabitEthernet0&#x2F;0&#x2F;1] ip address 192.168.1.254 24 </p>
-<p>[FW] interface GigabitEthernet0&#x2F;0&#x2F;2 </p>
-<p>[FW-GigabitEthernet0&#x2F;0&#x2F;2] ip address 172.16.1.254 24 </p>
-<p>[FW] interface GigabitEthernet0&#x2F;0&#x2F;3 </p>
-<p>[FW-GigabitEthernet0&#x2F;0&#x2F;3] ip address 200.1.1.1 24 </p>
-<p>向安全域中添加接口</p>
-<p>[FW] firewall zone trust </p>
-<p>[FW-zone-trust] add interface GigabitEthernet0&#x2F;0&#x2F;1 </p>
-<p>[FW] firewall zone dmz </p>
-<p>[FW-zone-dmz] add interface GigabitEthernet0&#x2F;0&#x2F;2 </p>
-<p>[FW] firewall zone untrust </p>
-<p>[FW-zone-untrust] add interface GigabitEthernet0&#x2F;0&#x2F;3</p>
-<p>配置域间包过滤策略，使得trust区域的192.168.1.0&#x2F;24网段用户能够访问Internet：</p>
-<p>[FW] policy interzone trust untrust outbound </p>
-<p>[FW-policy-interzone-trust-untrust-outbound] policy 10 </p>
-<p>[FW-policy-interzone-trust-untrust-outbound-10] policy source 192.168.1.0 </p>
-<p>0.0.0.255 </p>
-<p>[FW-policy-interzone-trust-untrust-outbound-10] action permit </p>
-<p>上述配置虽然放通了192.168.1.0&#x2F;24访问Internet的流量，但是由于192.168.1.0&#x2F;24是私有IP地址，不能直接进入公网，因此为了让这部分用户能够访问公网，还必须部署NAT源地址转换</p>
-<p>[FW] nat address-group 1 200.1.1.10 200.1.1.20 </p>
-<p>定义NAT地址池，该地址池使用的公网地址区间是200.1.1.10到200.1.1.20</p>
-<p>[FW] nat-policy interzone trust untrust outbound </p>
-<p>配置NAT策略</p>
-<p>[FW-nat-policy-interzone-trust-untrust-outbound] policy 10 </p>
-<p>[FW-nat-policy-interzone-trust-untrust-outbound-10] policy source 192.168.1.0  0.0.0.255 </p>
-<p>[FW-nat-policy-interzone-trust-untrust-outbound-10] action source-nat &#x2F;&#x2F;对匹配的流量执行源地址转换</p>
-<p>[FW-nat-policy-interzone-trust-untrust-outbound-10] address-group 1 &#x2F;&#x2F;关联nat地址池1</p>
-<p>完成上述配置后，内网用户PC1即可访问公网用户PC2。接下来继续配置防火墙，使得公网用户PC2能够访问WebServer。 </p>
-<p>配置域间包过滤策略，使得untrust区域的Internet用户能够访问DMZ区域的web服务</p>
-<p>[FW] policy interzone dmz untrust inbound </p>
-<p>[FW-policy-interzone-dmz-untrust-inbound] policy 10 </p>
-<p>[FW-policy-interzone-dmz-untrust-inbound-10] policy destination 172.16.1.1 0 </p>
-<p>[FW-policy-interzone-dmz-untrust-inbound-10] policy service service-set http </p>
-<p>[FW-policy-interzone-dmz-untrust-inbound-10] action permit </p>
-<p>[FW-policy-interzone-dmz-untrust-inbound-10] quit </p>
-<p>[FW-policy-interzone-dmz-untrust-inbound] quit </p>
-<p>完成上述配置后，Internet用户是依然无法访问WebServer的，因为WebServer是私有IP地址，因此还需要配置NAT server，将DMZ域内的WebServer映射到公网。</p>
-<p>下面的命令，将内部IP地址172.16.1.1的80端口映射到了公网地址200.1.1.21的80端口，这样一来，当公网用户访问200.1.1.21的80端口服务时，实际上访问的就是内部服务器172.16.1.1的80端口。</p>
-<p>[FW] nat server zone untrust protocol tcp global 200.1.1.21 80 inside 172.16.1.1 </p>
-<p>80 </p>
-<p>完成上述配置后，PC2即可使用目的地址200.1.1.21来访问WebServer。 </p>
-<p>当PC1 ping PC2时，能够在FW上能看到如下会话： </p>
-<p><FW>display firewall session table </FW></p>
-<p>Current Total Sessions : 5 </p>
-<p>icmp VPN:public –&gt; public 192.168.1.1:40373[<strong>200.1.1.15:2048</strong>]–&gt;200.1.1.2:2048 </p>
-<p>icmp VPN:public –&gt; public 192.168.1.1:40885[200.1.1.15:2049]–&gt;200.1.1.2:2048</p>
-<p>留意到中括号内的IP地址，便是被NAT转换后的IP地址。 </p>
-<p>当PC2访问Server的WEB服务时，在FW上能看到如下会话： </p>
-<p>[FW]display firewall session table </p>
-<p>Current Total Sessions : 1 </p>
-<p>http VPN:public –&gt; public 200.1.1.2:2055–&gt;200.1.1.21:80[<strong>172.16.1.1:80</strong>] </p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>USG5500</tag>
-        <tag>防火墙nat</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>VRRP基础实验</title>
     <url>/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/</url>
     <content><![CDATA[<p>设备连接方式如图所示，网络中存在VLAN10、20，每个VLAN中部署一组VRRP，使用与VLAN ID相同的数值作为VRID，将S1配置为VLAN10的VRRP Master，将S2配置为VLAN20的VRRP Master。</p>
@@ -1103,6 +997,159 @@
       <tags>
         <tag>VRRP</tag>
         <tag>BFD</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>USG5500防火墙基础实验</title>
+    <url>/2023/12/08/USG5500%E9%98%B2%E7%81%AB%E5%A2%99%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/</url>
+    <content><![CDATA[<h1 id="基础配置"><a href="#基础配置" class="headerlink" title="基础配置"></a>基础配置</h1><p><img src="/2023/12/08/USG5500%E9%98%B2%E7%81%AB%E5%A2%99%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/usg5500tuopi11.png" alt="usg5500tuopi11"></p>
+<p>1、本实验中的防火墙为USG5500系列防火墙； </p>
+<p>2、 防火墙三个接口的IP地址按照上图所示进行配置；将这三个接口划入相应的安全域； </p>
+<p>3、配置防火墙的域间包过滤策略，使得PC1能够主动访问PC2，但是PC2无法主动访问PC1；PC2能够主动访问WebServer的WEB服务。</p>
+<p>防火墙配置：</p>
+<p>[FW] interface GigabitEthernet0&#x2F;0&#x2F;1 </p>
+<p>[FW-GigabitEthernet0&#x2F;0&#x2F;1] ip address 192.168.1.254 24 </p>
+<p>[FW] interface GigabitEthernet0&#x2F;0&#x2F;2 </p>
+<p>[FW-GigabitEthernet0&#x2F;0&#x2F;2] ip address 172.16.1.254 24 </p>
+<p>[FW] interface GigabitEthernet0&#x2F;0&#x2F;3 </p>
+<p>[FW-GigabitEthernet0&#x2F;0&#x2F;3] ip address 10.1.1.254 24 </p>
+<p>将接口添加到相应的安全区域：</p>
+<p>[FW] firewall zone trust </p>
+<p>[FW-zone-trust] add interface GigabitEthernet0&#x2F;0&#x2F;1 </p>
+<p>[FW] firewall zone dmz </p>
+<p>[FW-zone-dmz] add interface GigabitEthernet0&#x2F;0&#x2F;2 </p>
+<p>[FW] firewall zone untrust </p>
+<p>[FW-zone-untrust] add interface GigabitEthernet0&#x2F;0&#x2F;3 </p>
+<p>配置域间策略，使得trust域的192.168.1.0&#x2F;24网段用户能够访问untrust区域的10.1.1.0&#x2F;24网段</p>
+<p>[FW] policy interzone trust untrust outbound </p>
+<p>[FW-policy-interzone-trust-untrust-outbound] policy 10 </p>
+<p>[FW-policy-interzone-trust-untrust-outbound-10] policy destination 10.1.1.0 </p>
+<p>0.0.0.255 </p>
+<p>[FW-policy-interzone-trust-untrust-outbound-10] policy source 192.168.1.0 </p>
+<p>0.0.0.255 </p>
+<p>[FW-policy-interzone-trust-untrust-outbound-10] action permit </p>
+<p>配置域间策略，使得untrust可以访问server</p>
+<p>[FW] policy interzone dmz untrust inbound </p>
+<p>[FW-policy-interzone-dmz-untrust-inbound] policy 10 </p>
+<p>[FW-policy-interzone-dmz-untrust-inbound-10] policy source 10.1.1.0 0.0.0.255 </p>
+<p>[FW-policy-interzone-dmz-untrust-inbound-10] policy destination 172.16.1.1 0 </p>
+<p>[FW-policy-interzone-dmz-untrust-inbound-10] policy service service-set http </p>
+<p>[FW-policy-interzone-dmz-untrust-inbound-10] action permit </p>
+<p>完成上述配置后，PC1即可主动发起访问PC2，而PC2无法主动访问PC1；另外，PC2能够访问WebServer的HTTP服务</p>
+<p>（ping不同，需要再配置一条允许icmp协议通过）</p>
+<p>通过命令display zone，可以查看防火墙的安全区域、安全等级，以及每个安全区域下的接口.</p>
+<p>使用<strong>display firewall packet-filter default</strong> 命令，能查看防火墙的缺省安全策略。当数据包经过防火墙且从一个安全域试图访问另一个安全域时，防火墙会根据数据包的流向首先检查用户定义的policy interzone，如果没有自定义的policy interone，则会看根据防火墙的缺省安全策略进行处理。例如从上面的显示中，我们可以看到local-trust的inbound及outbound都是permit，因此即使我们没有显式的配置local及trust安全区域的区域间策略，但是由于默认的策略就是放行，所以 trust区域的用户可以直接ping通防火墙的接口。</p>
+<p>如果要让防火墙默认放行所有域间的流量，可以使用：firewall packet-filter default permit all命令，值得注意的是，在网络正式投入现网使用之前，此命令必须关闭（firewall packet-filter default deny all），针对需要放行的流量，需通过policy interzone的配置来放行，而不能鲁莽地将所有流量统统放行。</p>
+<p>使用display policy命令，能查看我们定义的区域间安全策略，例如： </p>
+<p>[FW] display policy interzone trust untrust outbound </p>
+<h1 id="USG5500-nat实验"><a href="#USG5500-nat实验" class="headerlink" title="USG5500 nat实验"></a>USG5500 nat实验</h1><p><img src="/2023/12/08/USG5500%E9%98%B2%E7%81%AB%E5%A2%99%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/usg5500naty.png" alt="usg5500naty"></p>
+<p>防火墙FW的配置如下：</p>
+<p>[FW] interface GigabitEthernet0&#x2F;0&#x2F;1 </p>
+<p>[FW-GigabitEthernet0&#x2F;0&#x2F;1] ip address 192.168.1.254 24 </p>
+<p>[FW] interface GigabitEthernet0&#x2F;0&#x2F;2 </p>
+<p>[FW-GigabitEthernet0&#x2F;0&#x2F;2] ip address 172.16.1.254 24 </p>
+<p>[FW] interface GigabitEthernet0&#x2F;0&#x2F;3 </p>
+<p>[FW-GigabitEthernet0&#x2F;0&#x2F;3] ip address 200.1.1.1 24 </p>
+<p>向安全域中添加接口</p>
+<p>[FW] firewall zone trust </p>
+<p>[FW-zone-trust] add interface GigabitEthernet0&#x2F;0&#x2F;1 </p>
+<p>[FW] firewall zone dmz </p>
+<p>[FW-zone-dmz] add interface GigabitEthernet0&#x2F;0&#x2F;2 </p>
+<p>[FW] firewall zone untrust </p>
+<p>[FW-zone-untrust] add interface GigabitEthernet0&#x2F;0&#x2F;3</p>
+<p>配置域间包过滤策略，使得trust区域的192.168.1.0&#x2F;24网段用户能够访问Internet：</p>
+<p>[FW] policy interzone trust untrust outbound </p>
+<p>[FW-policy-interzone-trust-untrust-outbound] policy 10 </p>
+<p>[FW-policy-interzone-trust-untrust-outbound-10] policy source 192.168.1.0 </p>
+<p>0.0.0.255 </p>
+<p>[FW-policy-interzone-trust-untrust-outbound-10] action permit </p>
+<p>上述配置虽然放通了192.168.1.0&#x2F;24访问Internet的流量，但是由于192.168.1.0&#x2F;24是私有IP地址，不能直接进入公网，因此为了让这部分用户能够访问公网，还必须部署NAT源地址转换</p>
+<p>[FW] nat address-group 1 200.1.1.10 200.1.1.20 </p>
+<p>定义NAT地址池，该地址池使用的公网地址区间是200.1.1.10到200.1.1.20</p>
+<p>[FW] nat-policy interzone trust untrust outbound </p>
+<p>配置NAT策略</p>
+<p>[FW-nat-policy-interzone-trust-untrust-outbound] policy 10 </p>
+<p>[FW-nat-policy-interzone-trust-untrust-outbound-10] policy source 192.168.1.0  0.0.0.255 </p>
+<p>[FW-nat-policy-interzone-trust-untrust-outbound-10] action source-nat &#x2F;&#x2F;对匹配的流量执行源地址转换</p>
+<p>[FW-nat-policy-interzone-trust-untrust-outbound-10] address-group 1 &#x2F;&#x2F;关联nat地址池1</p>
+<p>完成上述配置后，内网用户PC1即可访问公网用户PC2。接下来继续配置防火墙，使得公网用户PC2能够访问WebServer。 </p>
+<p>配置域间包过滤策略，使得untrust区域的Internet用户能够访问DMZ区域的web服务</p>
+<p>[FW] policy interzone dmz untrust inbound </p>
+<p>[FW-policy-interzone-dmz-untrust-inbound] policy 10 </p>
+<p>[FW-policy-interzone-dmz-untrust-inbound-10] policy destination 172.16.1.1 0 </p>
+<p>[FW-policy-interzone-dmz-untrust-inbound-10] policy service service-set http </p>
+<p>[FW-policy-interzone-dmz-untrust-inbound-10] action permit </p>
+<p>[FW-policy-interzone-dmz-untrust-inbound-10] quit </p>
+<p>[FW-policy-interzone-dmz-untrust-inbound] quit </p>
+<p>完成上述配置后，Internet用户是依然无法访问WebServer的，因为WebServer是私有IP地址，因此还需要配置NAT server，将DMZ域内的WebServer映射到公网。</p>
+<p>下面的命令，将内部IP地址172.16.1.1的80端口映射到了公网地址200.1.1.21的80端口，这样一来，当公网用户访问200.1.1.21的80端口服务时，实际上访问的就是内部服务器172.16.1.1的80端口。</p>
+<p>[FW] nat server zone untrust protocol tcp global 200.1.1.21 80 inside 172.16.1.1 </p>
+<p>80 </p>
+<p>完成上述配置后，PC2即可使用目的地址200.1.1.21来访问WebServer。 </p>
+<p>当PC1 ping PC2时，能够在FW上能看到如下会话： </p>
+<p><FW>display firewall session table </FW></p>
+<p>Current Total Sessions : 5 </p>
+<p>icmp VPN:public –&gt; public 192.168.1.1:40373[<strong>200.1.1.15:2048</strong>]–&gt;200.1.1.2:2048 </p>
+<p>icmp VPN:public –&gt; public 192.168.1.1:40885[200.1.1.15:2049]–&gt;200.1.1.2:2048</p>
+<p>留意到中括号内的IP地址，便是被NAT转换后的IP地址。 </p>
+<p>当PC2访问Server的WEB服务时，在FW上能看到如下会话： </p>
+<p>[FW]display firewall session table </p>
+<p>Current Total Sessions : 1 </p>
+<p>http VPN:public –&gt; public 200.1.1.2:2055–&gt;200.1.1.21:80[<strong>172.16.1.1:80</strong>] </p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>USG5500</tag>
+        <tag>防火墙nat</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WLAN基础配置（ap上线）</title>
+    <url>/2023/12/20/WLAN%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE%EF%BC%88ap%E4%B8%8A%E7%BA%BF%EF%BC%89/</url>
+    <content><![CDATA[<h1 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h1><h2 id="CAPWAP协议"><a href="#CAPWAP协议" class="headerlink" title="CAPWAP协议"></a>CAPWAP协议</h2><p>CAPWAP是基于UDP进行传输的应用层协议，CAPWAP协议在传输层运输两种类型的消息：</p>
+<ul>
+<li>业务数据流量，封装转发无线数据帧 。——通过CAPWAP数据隧道。</li>
+<li>管理流量，管理AP和AC之间交换的管理消息 。——通过CAPWAP控制隧道。</li>
+</ul>
+<p>CAPWAP数据和控制报文基于不同的UDP端口发送：</p>
+<ul>
+<li>管理流量端口为UDP端口5246。</li>
+<li>业务数据流量端口为UDP端口5247。</li>
+</ul>
+<h2 id="AC连接方式"><a href="#AC连接方式" class="headerlink" title="AC连接方式"></a>AC连接方式</h2><p>直连模式下AC部署在用户的转发路径上，采用这种组网方式，对AC的吞吐量以及处理数据能力要求比较高，否则AC会是整个无线网络带宽的瓶颈。但用此种组网，组网架构清晰，组网实施起来简单</p>
+<p>在旁挂式组网中，AC只承载对AP的管理功能，管理流封装在CAPWAP隧道中传输。数据业务流可以通过CAPWAP数据隧道经AC转发，也可以不经过AC转发直接转发，后者无线用户业务流经汇聚交换机由汇聚交换机传输至上层网络。</p>
+<h2 id="WLAN的基本概念"><a href="#WLAN的基本概念" class="headerlink" title="WLAN的基本概念"></a>WLAN的基本概念</h2><ol>
+<li><p>BSS：一个AP所覆盖的范围，在一个BSS的服务区域内，STA可以相互通信。</p>
+</li>
+<li><p>BSSID：是无线网络的一个身份标识，用AP的MAC地址表示。</p>
+</li>
+<li><p>SSID：表示无线网络的标识，用来区分不同的无线网络。例如，当我们在笔记本电脑上搜索可接入无线网络时，显示出来的网络名称就是SSID。</p>
+</li>
+<li><p>VAP<br>早期的AP只支持1个BSS，如果要在同一空间内部署多个BSS，则需要安放多个AP，这不但增加了成本，还占用了信道资源。为了改善这种状况，现在的AP通常支持创建出多个虚拟AP (Virtual Access Point, VAP)。如图16-13所示，它相当于交换机中的VLAN</p>
+</li>
+<li><p>ESS</p>
+</li>
+</ol>
+<p>为了满足实际业务的需求，需要对BSS的覆盖范围进行扩展。同时用户从一个BSS移动到另一个BSS时，不能感知到SSID的变化，则可以通过扩展服务集ESS (Extend Service Set)实现。如图6-14所示，这是由多个使用相同SSID的BSS组成，是采用相同的SSID的多个BSS组成的更大规模的虚拟BSS。</p>
+<h1 id="实验"><a href="#实验" class="headerlink" title="实验"></a>实验</h1><p><img src="/2023/12/20/WLAN%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE%EF%BC%88ap%E4%B8%8A%E7%BA%BF%EF%BC%89/tuopoa182409.png" alt="tuopoa182409"></p>
+<ol>
+<li>实验步骤</li>
+<li>步骤1：基本配置<br>LSW2的配置<br><Huawei>system-view<br>[Huawei]undo info-center enable<br>[Huawei]sysname LSW2<br>[LSW2]vlan 100<br>[LSW2-vlan100]quit<br>[LSW2]interface e0&#x2F;0&#x2F;1<br>[LSW2-Ethernet0&#x2F;0&#x2F;1]port link-type trunk<br>[LSW2-Ethernet0&#x2F;0&#x2F;1]port trunk allow-pass vlan 100<br>[LSW2-Ethernet0&#x2F;0&#x2F;1]port trunk pvid vlan 100<br>[LSW2-Ethernet0&#x2F;0&#x2F;1]quit<br>[LSW2]interface e0&#x2F;0&#x2F;2<br>[LSW2-Ethernet0&#x2F;0&#x2F;2]port link-type trunk<br>[LSW2-Ethernet0&#x2F;0&#x2F;2]port trunk allow-pass vlan 100<br>[LSW2-Ethernet0&#x2F;0&#x2F;2]port trunk pvid vlan 100<br>[LSW2-Ethernet0&#x2F;0&#x2F;2]quit<br>[LSW2]interface e0&#x2F;0&#x2F;3<br>[LSW2-Ethernet0&#x2F;0&#x2F;3]port link-type trunk<br>[LSW2-Ethernet0&#x2F;0&#x2F;3]port trunk allow-pass vlan 100<br>[LSW2-Ethernet0&#x2F;0&#x2F;3]quit<br>【思考1】：为什么LSW2只创建VLAN100，不用创建VLAN101？<br>解析：因为我们用的是隧道转发，数据到达AC1后，才会打上101标记然后发给LSW1<br>【思考2】：为什么连接AP的接口要打port trunk pvid vlan 100?<br>解析：交换机收到AP的数据帧打上100的tag发送<br>把带上100tag的数据帧去掉然后发给AP<br>LSW1的配置<br><Huawei>system-view<br>[Huawei]undo info-center enable<br>[Huawei]sysname LSW1<br>[LSW1]vlan batch 100 101<br>[LSW1]interface g0&#x2F;0&#x2F;1<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;1]port link-type trunk<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;1]port trunk allow-pass vlan 100<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;1]quit<br>[LSW1]interface g0&#x2F;0&#x2F;3<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;3]port link-type trunk<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;3]port trunk allow-pass vlan 100 101<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;3]quit<br>[LSW1]interface g0&#x2F;0&#x2F;2<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;2]port link-type access<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;2]port default vlan 101<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;2]quit<br>[LSW1]interface Vlanif 101<br>[LSW1-Vlanif101]ip address 192.168.101.1 24<br>[LSW1-Vlanif101]undo shutdown<br>[LSW1-Vlanif101]quit<br>AC1的配置<br><AC6005>system-view<br>[AC6005]undo info-center enable<br>[AC6005]sysname AC1<br>[AC1]vlan batch 100 101<br>[AC1]interface g0&#x2F;0&#x2F;1<br>[AC1-GigabitEthernet0&#x2F;0&#x2F;1]port link-type trunk<br>[AC1-GigabitEthernet0&#x2F;0&#x2F;1]port trunk allow-pass vlan 100 101<br>[AC1-GigabitEthernet0&#x2F;0&#x2F;1]quit<br>[AC1]interface Vlanif 100<br>[AC1-Vlanif100]ip address 192.168.100.1 24<br>[AC1-Vlanif100]undo shutdown<br>[AC1-Vlanif100]quit<br>R1的配置<br><Huawei>system-view<br>[Huawei]undo info-center enable<br>[Huawei]sysname R1<br>[R1]interface g0&#x2F;0&#x2F;0<br>[R1-GigabitEthernet0&#x2F;0&#x2F;0]ip address 192.168.101.2 24<br>[R1-GigabitEthernet0&#x2F;0&#x2F;0]undo shutdown<br>[R1-GigabitEthernet0&#x2F;0&#x2F;0]quit</Huawei></AC6005></Huawei></Huawei></li>
+<li>步骤2：设置DHCP<br>创建VLAN设置TRUNK<br>业务DHCP-让STA获得IP地址<br>[LSW1]dhcp enable<br>[LSW1]interface Vlanif 101<br>[LSW1-Vlanif101]dhcp select interface<br>[LSW1-Vlanif101]quit<br>管理DHCP-让AP获得IP地址<br><AC1>system-view<br>[AC1]dhcp enable<br>[AC1]interface Vlanif 100<br>[AC1-Vlanif100]dhcp select interface<br>[AC1-Vlanif100]quit</AC1></li>
+<li>步骤3：AC的配置</li>
+<li>AP上线<br>第一步：创建AP组<br><AC1>system-view<br>[AC1]wlan<br>[AC1-wlan-view]ap-group name x &#x2F;&#x2F;创建AP组名字叫x<br>[AC1-wlan-ap-group-x]quit<br>第二步：创建域管理模板并关联到AP组<br>[AC1]wlan<br>[AC1-wlan-view]regulatory-domain-profile name x1 &#x2F;&#x2F;创建域管理模板，名字叫x1<br>[AC1-wlan-regulate-domain-x1]country-code cn &#x2F;&#x2F;国家代码选择中国<br>[AC1-wlan-regulate-domain-x1]quit<br>[AC1-wlan-view]ap-group name x<br>[AC1-wlan-ap-group-x]regulatory-domain-profile x1 &#x2F;&#x2F;AP组的域管理模板是x1<br>Warning: Modifying the country code will clear channel, power and antenna gain c<br>onfigurations of the radio and reset the AP. Continue?[Y&#x2F;N]:y<br>[AC1-wlan-ap-group-x]quit<br>第三步：配置AC的接口源地址<br>[AC1]capwap source interface Vlanif 100 &#x2F;&#x2F;AC的接口源地址为VLAN100<br>第四步：离线导入AP<br>[AC1]wlan<br>[AC1-wlan-view]ap auth-mode mac-auth &#x2F;&#x2F;AP的认证模式为MAC认证<br>[AC1-wlan-view]ap-id 1 ap-mac 00e0-fcd5-1c70 &#x2F;&#x2F;AP的编号和MAC地址<br>[AC1-wlan-ap-1]ap-name ds &#x2F;&#x2F;AP的名字为ds<br>[AC1-wlan-ap-1]ap-group x &#x2F;&#x2F;AP属于AP组x<br>[AC1-wlan-view]ap-id 2 ap-mac 00e0-fc1e-3670 &#x2F;&#x2F;AP的编号和MAC地址<br>[AC1-wlan-ap-2]ap-name xs &#x2F;&#x2F;Ap的名字<br>[AC1-wlan-ap-2]ap-group x &#x2F;&#x2F;AP属于AP组x<br>Warning: This operation may cause AP reset. If the country code changes, it will<br>clear channel, power and antenna gain configurations of the radio, Whether to c<br>ontinue? [Y&#x2F;N]:y<br>思考：AP的MAC地址是怎么知道的？<br>读者可以通过在ap上使用命令“display interface Vlanif 1”查看当前ap的mac地址，然后再将mac地址进行绑定。<br>查看命令：<br>[AC1]display ap all<br>Info: This operation may take a few seconds. Please wait for a moment.done.<br>Total AP information:<br>nor : normal [2]<br>-—————————————————————————————–<br>ID MAC Name Group IP Type State STA Uptime<br>-—————————————————————————————–<br>1 00e0-fcd5-1c70 ds x 192.168.100.137 AP2050DN nor 0 11M:2S<br>2 00e0-fc1e-3670 xs x 192.168.100.42 AP2050DN nor 0 54S<br>-—————————————————————————————–<br>可以看到两个AP都获取了IP地址，<br>思考：以上过程一共几包？<br>AP获取IP地址4个包：discovery、offer、request、ack<br>CAPWAP的建立2个包：discovery request(udp 目的端口5246广播找AC) discovery response(单播回应AP)<br>AP接入控制2个包：join request(udp 5246端口 单播) join response<br>隧道维持2个包：数据隧道：keepalive(udp 5247) 控制隧道：echo(udp 5246)</AC1></li>
+<li>配置VLAN业务参数<br>第一步：创建安全模板<br>[AC1]wlan<br>[AC1-wlan-view]security-profile name y1 &#x2F;&#x2F;安全模板的名字叫y1<br>[AC1-wlan-sec-prof-y1]security wpa-wpa2 psk pass-phrase huawei@123 aes &#x2F;&#x2F;密码是huawei@123，用AES加密。<br>[AC1-wlan-sec-prof-y1]quit<br>第二步：创建SSID模板<br>[AC1]wlan<br>[AC1-wlan-view]ssid-profile name y2 &#x2F;&#x2F;ssid的模板名字叫y2<br>[AC1-wlan-ssid-prof-y2]ssid hcia &#x2F;&#x2F;ssid的名称叫hcia<br>[AC1-wlan-ssid-prof-y2]quit<br>[AC1-wlan-view]quit<br>第三步：创建VAP模板<br>[AC1]wlan<br>[AC1-wlan-view]vap-profile name y &#x2F;&#x2F;vap模板的名字叫y<br>[AC1-wlan-vap-prof-y]forward-mode tunnel &#x2F;&#x2F;转发模式为隧道<br>[AC1-wlan-vap-prof-y]service-vlan vlan-id 101 &#x2F;&#x2F;服务的VLAN为101<br>[AC1-wlan-vap-prof-y]security-profile y1 &#x2F;&#x2F;调用安全模板y1<br>[AC1-wlan-vap-prof-y]ssid-profile y2 &#x2F;&#x2F;调用SSID模板y2<br>[AC1-wlan-vap-prof-y]quit<br>第四步：在AP组里面调用VAP模板<br>[AC1-wlan-view]ap-group name x<br>[AC1-wlan-ap-group-x]vap-profile y wlan 1 radio 0 &#x2F;&#x2F;调用VAP模板y<br>[AC1-wlan-ap-group-x]vap-profile y wlan 1 radio 1 &#x2F;&#x2F;<br>思考：radio0 1 2 是什么意思？<br>思考：这相过程要几个包？<br>WLAN业务配置下发2个包：Configuration Update Request Configuration Update Response</li>
+<li>STA接入，可以看到有两个ssid为hcia的无线网络，在之前的配置中配置了radio 0 、1就是为了释放两个不同的射频信号，选择其中一个，输入之前创建的密码huawei@123</li>
+</ol>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>ap上线</tag>
+        <tag>wlan</tag>
       </tags>
   </entry>
   <entry>
@@ -1543,22 +1590,6 @@
       </tags>
   </entry>
   <entry>
-    <title>telnet</title>
-    <url>/2023/12/02/telnet/</url>
-    <content><![CDATA[<h1 id="两种配置方法"><a href="#两种配置方法" class="headerlink" title="两种配置方法"></a>两种配置方法</h1><h2 id="1-仅密码登录验证"><a href="#1-仅密码登录验证" class="headerlink" title="1.仅密码登录验证"></a>1.仅密码登录验证</h2><p>代码如下（示例）：<br><Quidway>system-view —–进入配置模式<br>[Quidway]interface vlan 1 —–进入管理vlan<br>[Quidway-Vlanif1]ip address 192.168.28.49 255.255.255.0 —–配置管理ip地址<br>[Quidway-Vlanif1]quit —–退出<br>[Quidway]telnet server enable —–打开telnet服务 （一般默认开启）<br>[Quidway]user-interface vty 0 4 —–用户指定虚拟用户终端接口<br>[Quidway-ui-vty0-4]authentication-mode password —–配置用户终端接口认证方式 密码验证<br>[Quidway-ui-vty0-4]set authentication password cipher huawei123 —–设置接口验证密码,密码为huawei123<br>[Quidway-ui-vty0-4]user privilege level 15 —–设置用户优先级 （可选）<br>[Quidway-ui-vty0-4]idle-timeout 1 —–设置登陆超时为一分钟 （可选）<br>[Quidway-ui-vty0-4]return —–返回用户视图<br><Quidway>save —–保存</Quidway></Quidway></p>
-<h2 id="2-配置AAA登录"><a href="#2-配置AAA登录" class="headerlink" title="2.配置AAA登录"></a>2.配置AAA登录</h2><p>代码如下（示例）：<br><Quidway>system-view —–进入配置模式<br>[Quidway]interface vlan 1 —–进入管理vlan<br>[Quidway-Vlanif1]ip address 192.168.28.49 255.255.255.0 —–配置管理ip地址<br>[Quidway-Vlanif1]quit —–退出<br>[Quidway]telnet server enable —–打开telnet服务 （一般默认开启）<br>[Quidway]user-interface vty 0 4 —–用户指定虚拟用户终端接口<br>[Quidway-ui-vty0-4]authentication-mode aaa —–配置用户终端接口认证方式 aaa验证<br>[Quidway-ui-vty0-4]user privilege level 15 —–设置用户优先级<br>[Quidway-ui-vty0-4]idle-timeout 1 —–设置登陆超时为一分钟<br>[Quidway-ui-vty0-4]quit —–退出<br>[Quidway]aaa —–进入aaa<br>[Quidway-aaa]local-user huawei password cipher huawei123 —–创建用户名huawei 密码huawei123<br>[Quidway-aaa]local-user huawei privilege level 15 —–设置用户优先级<br>[Quidway-aaa]local-user huawei service-type telnet —–授权用户使用telnet<br>[Quidway-ui-vty0-4]return —–返回用户视图<br><Quidway>save —–保存</Quidway></Quidway></p>
-<h2 id="user-interface-vty-0-4-详解"><a href="#user-interface-vty-0-4-详解" class="headerlink" title="user-interface vty 0 4 详解"></a>user-interface vty 0 4 详解</h2><p>Quidway]user-interface vty 0 4                    ；进入虚拟终端<br>[S3026-ui-vty0-4]authentication-mode password           ；设置口令模式<br>[S3026-ui-vty0-4]set authentication-mode password simple 222 ；设置口令<br>[S3026-ui-vty0-4]user privilege level 3 </p>
-<p>一、第一句的意思是：进入到vty 终端，在华为的交换机里，vty就是人家用telnet远程进入到你交换机的界面，最多有五个，所以说你可以vty 0  vty 1 vty… vty 4交换机最多可以允许五个人同时在线进到交换机里去配置命令的。vty0 4 就是说把这五个界面一起配置了，这五个界面进去的话，都是使用以下的配置。<br>二、用的认证模式是密码认证，可以使用scheme模式来，也可以用password来，用password的话，是要密码的，就是说你telnet的话，要输入密码才能登陆到包交换机里去的。<br>二、设置密码为明文密码，密码是123 ，如果是密文的话，就是cipher<br>四、用户等级为3，也就是最高的，华为的命令级别很多，分为四级，0 1 2 3 ，0是参观级，只能看，1比0要高，可以使用一些命令，2 是可以配置了，3可以备份与删除IOS啦，呵呵，这个命令就是说用这个123密码，进来就是最高级别的，不用换级别。</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>telnet</tag>
-        <tag>aaa</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>vlan间通信</title>
     <url>/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/</url>
     <content><![CDATA[<h1 id="VLAN间通信"><a href="#VLAN间通信" class="headerlink" title="VLAN间通信"></a>VLAN间通信</h1><h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>划分VLAN后，不同VLAN的用户间不能二层互访，这样能起到隔离广播的作用。但实际应用中，不同VLAN的用户又常有互访的需求，此时就需要实现不同VLAN的用户互访，简称VLAN间互访。</p>
@@ -1696,6 +1727,22 @@
         <tag>vlan间通信</tag>
         <tag>dot1q</tag>
         <tag>vlanif</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>telnet</title>
+    <url>/2023/12/02/telnet/</url>
+    <content><![CDATA[<h1 id="两种配置方法"><a href="#两种配置方法" class="headerlink" title="两种配置方法"></a>两种配置方法</h1><h2 id="1-仅密码登录验证"><a href="#1-仅密码登录验证" class="headerlink" title="1.仅密码登录验证"></a>1.仅密码登录验证</h2><p>代码如下（示例）：<br><Quidway>system-view —–进入配置模式<br>[Quidway]interface vlan 1 —–进入管理vlan<br>[Quidway-Vlanif1]ip address 192.168.28.49 255.255.255.0 —–配置管理ip地址<br>[Quidway-Vlanif1]quit —–退出<br>[Quidway]telnet server enable —–打开telnet服务 （一般默认开启）<br>[Quidway]user-interface vty 0 4 —–用户指定虚拟用户终端接口<br>[Quidway-ui-vty0-4]authentication-mode password —–配置用户终端接口认证方式 密码验证<br>[Quidway-ui-vty0-4]set authentication password cipher huawei123 —–设置接口验证密码,密码为huawei123<br>[Quidway-ui-vty0-4]user privilege level 15 —–设置用户优先级 （可选）<br>[Quidway-ui-vty0-4]idle-timeout 1 —–设置登陆超时为一分钟 （可选）<br>[Quidway-ui-vty0-4]return —–返回用户视图<br><Quidway>save —–保存</Quidway></Quidway></p>
+<h2 id="2-配置AAA登录"><a href="#2-配置AAA登录" class="headerlink" title="2.配置AAA登录"></a>2.配置AAA登录</h2><p>代码如下（示例）：<br><Quidway>system-view —–进入配置模式<br>[Quidway]interface vlan 1 —–进入管理vlan<br>[Quidway-Vlanif1]ip address 192.168.28.49 255.255.255.0 —–配置管理ip地址<br>[Quidway-Vlanif1]quit —–退出<br>[Quidway]telnet server enable —–打开telnet服务 （一般默认开启）<br>[Quidway]user-interface vty 0 4 —–用户指定虚拟用户终端接口<br>[Quidway-ui-vty0-4]authentication-mode aaa —–配置用户终端接口认证方式 aaa验证<br>[Quidway-ui-vty0-4]user privilege level 15 —–设置用户优先级<br>[Quidway-ui-vty0-4]idle-timeout 1 —–设置登陆超时为一分钟<br>[Quidway-ui-vty0-4]quit —–退出<br>[Quidway]aaa —–进入aaa<br>[Quidway-aaa]local-user huawei password cipher huawei123 —–创建用户名huawei 密码huawei123<br>[Quidway-aaa]local-user huawei privilege level 15 —–设置用户优先级<br>[Quidway-aaa]local-user huawei service-type telnet —–授权用户使用telnet<br>[Quidway-ui-vty0-4]return —–返回用户视图<br><Quidway>save —–保存</Quidway></Quidway></p>
+<h2 id="user-interface-vty-0-4-详解"><a href="#user-interface-vty-0-4-详解" class="headerlink" title="user-interface vty 0 4 详解"></a>user-interface vty 0 4 详解</h2><p>Quidway]user-interface vty 0 4                    ；进入虚拟终端<br>[S3026-ui-vty0-4]authentication-mode password           ；设置口令模式<br>[S3026-ui-vty0-4]set authentication-mode password simple 222 ；设置口令<br>[S3026-ui-vty0-4]user privilege level 3 </p>
+<p>一、第一句的意思是：进入到vty 终端，在华为的交换机里，vty就是人家用telnet远程进入到你交换机的界面，最多有五个，所以说你可以vty 0  vty 1 vty… vty 4交换机最多可以允许五个人同时在线进到交换机里去配置命令的。vty0 4 就是说把这五个界面一起配置了，这五个界面进去的话，都是使用以下的配置。<br>二、用的认证模式是密码认证，可以使用scheme模式来，也可以用password来，用password的话，是要密码的，就是说你telnet的话，要输入密码才能登陆到包交换机里去的。<br>二、设置密码为明文密码，密码是123 ，如果是密文的话，就是cipher<br>四、用户等级为3，也就是最高的，华为的命令级别很多，分为四级，0 1 2 3 ，0是参观级，只能看，1比0要高，可以使用一些命令，2 是可以配置了，3可以备份与删除IOS啦，呵呵，这个命令就是说用这个123密码，进来就是最高级别的，不用换级别。</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>telnet</tag>
+        <tag>aaa</tag>
       </tags>
   </entry>
   <entry>
