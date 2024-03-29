@@ -172,6 +172,95 @@
       </tags>
   </entry>
   <entry>
+    <title>BGP路由反射器</title>
+    <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/</url>
+    <content><![CDATA[<h1 id="BGP路由反射器"><a href="#BGP路由反射器" class="headerlink" title="BGP路由反射器"></a>BGP路由反射器</h1><p>由于水平分割的原因，为了保证AS内所有的BGP路由器都能学习到完整的BGP路由，就必须在AS内实现IBGP全互联。</p>
+<p>然而实现IBGP全互联存在诸多短板：</p>
+<p> 路由器需维护大量的TCP及BGP连接，尤其在路由器数量较多时。</p>
+<p> AS内BGP网络的可扩展性较差，因为通过纯手工配置命令。</p>
+<p>为了解决该问题，可应用到RR路由反射器技术。</p>
+<p>1、Client：RR客户端，在RR设备上通过手动指定。</p>
+<blockquote>
+<p>指定命令：peer 邻居 reflect-client</p>
+</blockquote>
+<p>2、除了指定的设备为客户端，其它设备均为非客户端。</p>
+<p>实验：</p>
+<p>R1、R2、R3、R4都属于AS64511，其连接方式、互联接口地址如图所示。每台设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号。R1、R2上的Loopback1地址分别为10.1.1.1&#x2F;24、10.2.2.2&#x2F;24，用于模拟用户网段。</p>
+<span id="more"></span>
+
+<p>所有设备都使用Loopback0地址作为BGP Router ID，R1与R2、R2与R3、R3与R4、R4与R2之间基于直连接口建立IBGP对等体关系，其中R1为R2的路由反射器客户端，R2为R3的路由反射器客户端，R3为R4的路由反射器客户端。</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/bgpluy8165208.png" alt="bgpluy8165208"></p>
+<p>配置ip地址：略</p>
+<p>建立ibgp对等体：略</p>
+<h1 id="配置路由反射器"><a href="#配置路由反射器" class="headerlink" title="配置路由反射器"></a>配置路由反射器</h1><p>#R2上将R1配置为路由反射器客户端</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] peer 10.0.1.1 reflect-client</p>
+<p>#R3上将R2配置为路由反射器客户端</p>
+<p>[R3]bgp 64511</p>
+<p>[R3-bgp] peer 10.0.2.2 reflect-client</p>
+<p>#R4上将R3配置为路由反射器客户端</p>
+<p>[R4]bgp 64511</p>
+<p>[R4-bgp] peer 10.0.3.3 reflect-client</p>
+<h1 id="验证Orginator-ID实现路由防环"><a href="#验证Orginator-ID实现路由防环" class="headerlink" title="验证Orginator_ID实现路由防环"></a>验证Orginator_ID实现路由防环</h1><p>在本步骤中，我们将在R2上发布BGP路由10.2.2.0&#x2F;24，并观察该路由依次经路由反射器R3、R4反射后，被通告回R2从而引发潜在路由环路风险的情况。</p>
+<p>缺省情况下，R2发布BGP路由后，该路由将被R2直接通告给R4，另一方面也会通过R3反射给R4，此时R4将优选R2直接通告过来的路由，从而不会再将R3反射过来的路由再反射回给R2。为此，我们需要在R2上部署路由策略，使R2不直接向R4通告10.2.2.0&#x2F;24路由。</p>
+<p>#配置路由策略</p>
+<p>[R2]acl number 2000</p>
+<p>[R2-acl-basic-2000] rule 5 permit</p>
+<p>[R2-acl-basic-2000] quit</p>
+<p>[R2]route-policy bgp deny node 10</p>
+<p>[R2-route-policy] if-match acl 2000</p>
+<p>#在BGP中调用路由策略</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] peer 10.0.24.4 route-policy bgp export</p>
+<p>#在R2上发布路由</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] network 10.2.2.0 24</p>
+<p>#R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/chakan102224728.png" alt="chakan102224728"></p>
+<p>R2将该条路由通告给了R3、R1，但是并未通告给R4。</p>
+<p>#R3上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r174808.png" alt="r174808"></p>
+<p>R3将来自反射器客户端的BGP路由10.2.2.0&#x2F;24反射给了10.0.34.4（R4）。同时该BGP路由的nexthop为10.0.23.2。</p>
+<p># R4上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r4chakan80119.png" alt="r4chakan80119"></p>
+<p>该条路由来自反射器客户端R3，原始路由经由R3反射，路由的nexthop地址并未改变，同时R3为其添加了Orginator_ID属性，值为10.0.2.2。同时R4将该条路由反射给了R2。</p>
+<p>#再次在R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zacifa80349.png" alt="zacifa80349"></p>
+<p>依旧只存在本地通告的BGP路由，没有R4通告的BGP路由。</p>
+<p>#在R2上查看BGP对等体10.0.4.4的详细信息</p>
+<p>display bgp peer 10.0.4.4 verbose</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/safhaofbsh1128180629.png" alt="safhaofbsh1128180629"></p>
+<p>从输出信息可以看到R2从R4收到了1个Update报文，未向R4发送Update报文（路由策略限制），但是本地BGP路由表中不存在由R4通告的BGP路由10.2.2.0&#x2F;24。</p>
+<p>R4通告的BGP路由Orginator_ID属性值与本地的Router ID一致，R2忽略了该路由通告。</p>
+<h1 id="验证Cluster-List实现路由防环"><a href="#验证Cluster-List实现路由防环" class="headerlink" title="验证Cluster_List实现路由防环"></a>验证Cluster_List实现路由防环</h1><p>为了方便观察现象，取消R2上的BGP路由发布，在R1上将Loopback1接口路由发布到BGP，观察Cluster_List如何防止环路。</p>
+<p>#取消R2上的BGP路由发布</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] undo network 10.2.2.0 255.255.255.0</p>
+<p>#在R1上将Loopback1接口路由发布到BGP</p>
+<p>[R1]bgp 64511</p>
+<p>[R1-bgp] network 10.1.1.0 24</p>
+<p>#依次在R1、R2、R3、R4上查看BGP路由10.1.1.0 &#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/xinfuaiell181000.png" alt="xinfuaiell181000"></p>
+<p>R1为BGP路由10.1.1.0&#x2F;24的始发者，R1将路由通告给了R2</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/2xinfahol128181116.png" alt="2xinfahol128181116"></p>
+<p>来自路由反射器客户端R1的BGP路由10.1.1.0&#x2F;24，R2将其反射给了R3</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/3xinmbxmcx1128181206.png" alt="3xinmbxmcx1128181206"></p>
+<p>来自路由反射器客户端R2的BGP路由10.1.1.0&#x2F;24，R2反射时添加了Cluster_List属性，值为10.0.2.2，R3将该条路由反射给了R4</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/44xinm1334.png" alt="44xinm1334"></p>
+<p>来自路由反射器客户端R3的BGP路由10.1.1.0&#x2F;24，R3反射时添加了Cluster_List属性的值，当前值为10.0.3.3，10.0.2.2，R4将该条路由反射给了R2</p>
+<p>#再次查看R2的BGP路由表</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zaizaici661435.png" alt="zaizaici661435"></p>
+<p>R2的BGP路由表中依旧只有一条来自r1的BGP路由10.1.1.0&#x2F;24。</p>
+<p>4通告的BGP路由其Cluster_List属性值中包含了R2的Cluster-ID，R2忽略了该路由通告。</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>BGP路由反射器</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>BGP路由优选</title>
     <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/</url>
     <content><![CDATA[<h1 id="BGP路由优选"><a href="#BGP路由优选" class="headerlink" title="BGP路由优选"></a>BGP路由优选</h1><h2 id="实验背景"><a href="#实验背景" class="headerlink" title="实验背景"></a>实验背景</h2><p>你是公司的网络管理员。公司的网络采用了BGP协议接入了两个服务运营商。公司自己采用了私有的AS号64512，ISP1的AS号为100，ISP2的AS号为200。通过AS100、AS200都可以到达相同的网络，你通过改变BGP的各种属性达到了调整路由走向的目的。</p>
@@ -282,95 +371,6 @@
       </categories>
       <tags>
         <tag>BGP路由优选</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>BGP路由反射器</title>
-    <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/</url>
-    <content><![CDATA[<h1 id="BGP路由反射器"><a href="#BGP路由反射器" class="headerlink" title="BGP路由反射器"></a>BGP路由反射器</h1><p>由于水平分割的原因，为了保证AS内所有的BGP路由器都能学习到完整的BGP路由，就必须在AS内实现IBGP全互联。</p>
-<p>然而实现IBGP全互联存在诸多短板：</p>
-<p> 路由器需维护大量的TCP及BGP连接，尤其在路由器数量较多时。</p>
-<p> AS内BGP网络的可扩展性较差，因为通过纯手工配置命令。</p>
-<p>为了解决该问题，可应用到RR路由反射器技术。</p>
-<p>1、Client：RR客户端，在RR设备上通过手动指定。</p>
-<blockquote>
-<p>指定命令：peer 邻居 reflect-client</p>
-</blockquote>
-<p>2、除了指定的设备为客户端，其它设备均为非客户端。</p>
-<p>实验：</p>
-<p>R1、R2、R3、R4都属于AS64511，其连接方式、互联接口地址如图所示。每台设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号。R1、R2上的Loopback1地址分别为10.1.1.1&#x2F;24、10.2.2.2&#x2F;24，用于模拟用户网段。</p>
-<span id="more"></span>
-
-<p>所有设备都使用Loopback0地址作为BGP Router ID，R1与R2、R2与R3、R3与R4、R4与R2之间基于直连接口建立IBGP对等体关系，其中R1为R2的路由反射器客户端，R2为R3的路由反射器客户端，R3为R4的路由反射器客户端。</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/bgpluy8165208.png" alt="bgpluy8165208"></p>
-<p>配置ip地址：略</p>
-<p>建立ibgp对等体：略</p>
-<h1 id="配置路由反射器"><a href="#配置路由反射器" class="headerlink" title="配置路由反射器"></a>配置路由反射器</h1><p>#R2上将R1配置为路由反射器客户端</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] peer 10.0.1.1 reflect-client</p>
-<p>#R3上将R2配置为路由反射器客户端</p>
-<p>[R3]bgp 64511</p>
-<p>[R3-bgp] peer 10.0.2.2 reflect-client</p>
-<p>#R4上将R3配置为路由反射器客户端</p>
-<p>[R4]bgp 64511</p>
-<p>[R4-bgp] peer 10.0.3.3 reflect-client</p>
-<h1 id="验证Orginator-ID实现路由防环"><a href="#验证Orginator-ID实现路由防环" class="headerlink" title="验证Orginator_ID实现路由防环"></a>验证Orginator_ID实现路由防环</h1><p>在本步骤中，我们将在R2上发布BGP路由10.2.2.0&#x2F;24，并观察该路由依次经路由反射器R3、R4反射后，被通告回R2从而引发潜在路由环路风险的情况。</p>
-<p>缺省情况下，R2发布BGP路由后，该路由将被R2直接通告给R4，另一方面也会通过R3反射给R4，此时R4将优选R2直接通告过来的路由，从而不会再将R3反射过来的路由再反射回给R2。为此，我们需要在R2上部署路由策略，使R2不直接向R4通告10.2.2.0&#x2F;24路由。</p>
-<p>#配置路由策略</p>
-<p>[R2]acl number 2000</p>
-<p>[R2-acl-basic-2000] rule 5 permit</p>
-<p>[R2-acl-basic-2000] quit</p>
-<p>[R2]route-policy bgp deny node 10</p>
-<p>[R2-route-policy] if-match acl 2000</p>
-<p>#在BGP中调用路由策略</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] peer 10.0.24.4 route-policy bgp export</p>
-<p>#在R2上发布路由</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] network 10.2.2.0 24</p>
-<p>#R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/chakan102224728.png" alt="chakan102224728"></p>
-<p>R2将该条路由通告给了R3、R1，但是并未通告给R4。</p>
-<p>#R3上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r174808.png" alt="r174808"></p>
-<p>R3将来自反射器客户端的BGP路由10.2.2.0&#x2F;24反射给了10.0.34.4（R4）。同时该BGP路由的nexthop为10.0.23.2。</p>
-<p># R4上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r4chakan80119.png" alt="r4chakan80119"></p>
-<p>该条路由来自反射器客户端R3，原始路由经由R3反射，路由的nexthop地址并未改变，同时R3为其添加了Orginator_ID属性，值为10.0.2.2。同时R4将该条路由反射给了R2。</p>
-<p>#再次在R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zacifa80349.png" alt="zacifa80349"></p>
-<p>依旧只存在本地通告的BGP路由，没有R4通告的BGP路由。</p>
-<p>#在R2上查看BGP对等体10.0.4.4的详细信息</p>
-<p>display bgp peer 10.0.4.4 verbose</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/safhaofbsh1128180629.png" alt="safhaofbsh1128180629"></p>
-<p>从输出信息可以看到R2从R4收到了1个Update报文，未向R4发送Update报文（路由策略限制），但是本地BGP路由表中不存在由R4通告的BGP路由10.2.2.0&#x2F;24。</p>
-<p>R4通告的BGP路由Orginator_ID属性值与本地的Router ID一致，R2忽略了该路由通告。</p>
-<h1 id="验证Cluster-List实现路由防环"><a href="#验证Cluster-List实现路由防环" class="headerlink" title="验证Cluster_List实现路由防环"></a>验证Cluster_List实现路由防环</h1><p>为了方便观察现象，取消R2上的BGP路由发布，在R1上将Loopback1接口路由发布到BGP，观察Cluster_List如何防止环路。</p>
-<p>#取消R2上的BGP路由发布</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] undo network 10.2.2.0 255.255.255.0</p>
-<p>#在R1上将Loopback1接口路由发布到BGP</p>
-<p>[R1]bgp 64511</p>
-<p>[R1-bgp] network 10.1.1.0 24</p>
-<p>#依次在R1、R2、R3、R4上查看BGP路由10.1.1.0 &#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/xinfuaiell181000.png" alt="xinfuaiell181000"></p>
-<p>R1为BGP路由10.1.1.0&#x2F;24的始发者，R1将路由通告给了R2</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/2xinfahol128181116.png" alt="2xinfahol128181116"></p>
-<p>来自路由反射器客户端R1的BGP路由10.1.1.0&#x2F;24，R2将其反射给了R3</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/3xinmbxmcx1128181206.png" alt="3xinmbxmcx1128181206"></p>
-<p>来自路由反射器客户端R2的BGP路由10.1.1.0&#x2F;24，R2反射时添加了Cluster_List属性，值为10.0.2.2，R3将该条路由反射给了R4</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/44xinm1334.png" alt="44xinm1334"></p>
-<p>来自路由反射器客户端R3的BGP路由10.1.1.0&#x2F;24，R3反射时添加了Cluster_List属性的值，当前值为10.0.3.3，10.0.2.2，R4将该条路由反射给了R2</p>
-<p>#再次查看R2的BGP路由表</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zaizaici661435.png" alt="zaizaici661435"></p>
-<p>R2的BGP路由表中依旧只有一条来自r1的BGP路由10.1.1.0&#x2F;24。</p>
-<p>4通告的BGP路由其Cluster_List属性值中包含了R2的Cluster-ID，R2忽略了该路由通告。</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>BGP路由反射器</tag>
       </tags>
   </entry>
   <entry>
@@ -810,6 +810,37 @@
       </tags>
   </entry>
   <entry>
+    <title>Hybrid接口</title>
+    <url>/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/</url>
+    <content><![CDATA[<h1 id="接口属性"><a href="#接口属性" class="headerlink" title="接口属性"></a>接口属性</h1><p>​	交换机接口的类型，可以是Access、Trunk和Hybrid。Access类型的接口仅属于一个VLAN,,,,只能接收、转发相应VLAN的帧；而Trunk类型接口则默认属于所有VLAN任何Tagged帧都能经过Trunk接收和转发； Hybrid类型接口则介于二者之间，可自主定义端口上能接收和转发那些VLAN Tag帧，并可决定VLAN Tag是否继续携带或者剥离。。Access和Trunk类型接口是Hybrid类型接口的两个特例，，，一个仅支持一个VLAN传递，，一个默认支持所有VLAN的传递，而Access类型和Trunk类型的接口能做到的，Hybrid接口都能做到。</p>
+<p>​    hybrid属性具有trunk和access两种端口属性的特点，tag类似trunk，untag类似access，但是又不同，因为hybrid端口可以接收某个或者多个vlan的数据。</p>
+<p>在开始研究之前强调几点：</p>
+<p>1、在hybrid端口中，所有端口都默认属于vlan1，除非配置undo port hybrid vlan 1 才能将该hybrid剔除出vlan1，可以使用display vlan 查看端口所属的vlan</p>
+<p>2、在hybrid端口中，无论是tag还是untag后面配置的vlan-id就是该hybrid端口所能够收到vlan数据的vlan-id，换句话说就是这些vlan中发出的数据该端口都能收到，可以使用display vlan查看（这里注意虽然可以收到这些vlan的数据但是严格意义上讲hybrid端口并不属于任何一个vlan）</p>
+<p>3、所有类型端口的默认pvid都是vlan1，而pvid这个属性只！针对！进入！该端口的！没有标签的！普通数据包有效，作用是将没有标签的普通数据包打上pvid中配置的标签号</p>
+<p>4、hybrid属性中，tag是针对于端口的接收方向的（从该端口进来的流量允许带有这些vlan标签的通过），untag是针对端口的发送方向的（从该端口出去的流量去除这些vlan标签）</p>
+<p>5、加入一个hybrid端口配置tag vlan 2 3和untag vlan 4 5 ，那么默认情况下这个hybrid属于vlan1、2、3、4、5，在display vlan中可以查看到，只有端口属于了某个vlan，那么该端口才能收到某个vlan的数据包，这一点是理解下列两种配置和hybrid端口属性的关键！！！</p>
+<h1 id="收发过程"><a href="#收发过程" class="headerlink" title="收发过程"></a>收发过程</h1><p>在数据发送时untag列表的原理，如下图<br>1.带有vlan 3标签的数据从F0&#x2F;0接口出去，通过时查看untag列表，发现有对应的标签，将标签脱掉发送出去<br>2.带有vlan 8标签的数据从F0&#x2F;1接口出去，通过时查看untag列表，发现没有对应的标签，继续查看tag表，发现有对应标签，所以直接带有vlan 8标签的数据发送出去<br>3.带有vlan 5标签的数据从F0&#x2F;2接口出去，通过时查看untag列表，发现没有对应的标签 ，继续查看tag列表，发现也没有对应的标签，所以数据直接被丢弃<br><img src="/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/shoufa6505133622.png" alt="shoufa6505133622"></p>
+<p>tag列表处理数据帧的接收和发送的原理，如下图<br>1.没有标签的数据进入F0&#x2F;0接口，接口查看到数据没有标签，根据接口PVID&#x3D;3，将vlan 3标签打入数据<br>2.带有vlan 9标签的数据进入接口F0&#x2F;1，接口查看到数据带有标签，接着查看tag列表，发现列表中存在对应标签，放通数据<br>3.带有vlan 5标签的数据从接口F0&#x2F;2出去，接口查看到数据带有标签，查看untag列表，发现列表中没有对应vlan 5标签，继续查看tag列表，发现列表中存在对应标签vlan 5，放通数据出去<br>4.带有vlan 3标签的数据从F0&#x2F;2接口出去，查看untag列表，发现列表中存在对应vlan 3标签，将标签脱掉，放通数据出去<br>5.带有vlan 9标签的数据从F0&#x2F;2接口出去，查看untag表，发现列表中不存在对应vlan 9标签，继续查看tag列表，发现列表中不存在vlan 9标签，将数据丢弃</p>
+<p><img src="/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/fataf2133722.png" alt="fataf2133722"></p>
+<h1 id="实例分析"><a href="#实例分析" class="headerlink" title="实例分析"></a>实例分析</h1><p><img src="/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/tuo2205133307.png" alt="tuo2205133307"></p>
+<p>1、为了让我们更加简洁的理解hydrid的属性，首先在所有的端口上移除了vlan1这个默认有的vlan，假设为所有端口初始不属于任何vlan，都不能相互之间通信</p>
+<p>2、pvid是当普通的主机数据帧进入交换机端口后被打上的vlan-tag的属性，在途中可以看出PC1、PC2、PC3的流量在进入交换机的时候分别会被打上vlan2、vlan3、vlan99的vlan标签</p>
+<p>3、untag后面的vlan就是该端口属于的vlan，那么不难看出LSW1的G0&#x2F;0&#x2F;1属于vlan2、3，G0&#x2F;0&#x2F;2属于vlan2、10，G0&#x2F;0&#x2F;3属于vlan3、10，而untag的动作是在流量出端口去往主机的时候把vlan-tag全部去除，那么不难看出LSW1的G0&#x2F;0&#x2F;1将去除vlan2、3的标签，G0&#x2F;0&#x2F;2去除vlan2、10的标签，G0&#x2F;0&#x2F;3去除vlan3、10的标签（还原成普通帧）</p>
+<p>LSW2的G0&#x2F;0&#x2F;1属于vlan99，G0&#x2F;0&#x2F;2属于vlan99，在流量出端口的时候会去除vlan99的标签（还原成普通帧）</p>
+<p>那么PC1与PC2的通信现在分析如下：当PC1发送arp去请求PC2的MAC地址的时候，PC1会将数据包广播发往LSW1的G0&#x2F;0&#x2F;2接口，LSW1收到后发现是个普通的不带标签的数据帧，于是根据接口的pvid给该帧打上vlan2的tag，然后往vlan2中进行泛红，无奈G0&#x2F;0&#x2F;3端口只属于vlan3、10所以无法收到vlan2中的泛红，故PC1与PC2通信失败。</p>
+<p>下面再来分析PC1与PC3通信：前面已经分析了PC1要去请求PC3的MAC，被LSW1的G0&#x2F;0&#x2F;2收到，并且打上vlan2的tag，然后在vlan2中泛红，那么在vlan2中的端口就都能收到该泛红了，所以在配置了untag vlan 2 3的G0&#x2F;0&#x2F;1端口自然也能收到vlan2和vlan3的泛红并转发出去，但是LSW1发现G0&#x2F;0&#x2F;1配置untag vlan2 3，所以将从该端口发送出去的所有带有vlan2和vlan3的数据包的tag全部去除（还原成普通帧），然后这个普通的帧就会发往LSW2被G0&#x2F;0&#x2F;1端口接收到，LSW2发现了一个普通的帧，那么就会用到pvid了不是，所以LSW2收到这个帧后打上vlan99的tag进行泛红，那么PC3所在的hybrid因为配置有untag vlan99必然能够收到vlan99的数据包了，然后在G0&#x2F;0&#x2F;2发给PC3的时候将vlan99的tag去除掉，PC3收到的就是一个不带任何tag的普通包（PC3完全不知道在它个PC1之间还有SW这种东西存在），好了PC3收到了PC1发来的arp请求，那么作为有礼貌的人应该回复自己的MAC地址了，与回一个arp响应给PC1，</p>
+<p>下面PC3的回包分析：PC3使用PC1的MAC和ip封装好数据包后从网卡发送出去，LSW2的G0&#x2F;0&#x2F;2端口收到了，发现是一个普通帧，OK来pvid打上vlan99的tag，然后查看mac地址表发现PC1的MAC地址在G0&#x2F;0&#x2F;1口，在查看vlan信息，发现G0&#x2F;0&#x2F;1口可以接收vlan99的数据（untag vlan99），两个转发条件都满足了，那么久把数据包发给G0&#x2F;0&#x2F;1转发，G0&#x2F;0&#x2F;1转发的时候根据untag vlan99把数据包vlan-id去除还原成普通帧，被LSW1的G0&#x2F;0&#x2F;1收到，按照pvid的惯例，普通帧被打上了pvid vlan10的tag（用vlan10举例，也可以是任意vlan），然后LSW1根据MAC地址表找到PC1在自己的G0&#x2F;0&#x2F;2口，再查看vlan信息发现G0&#x2F;0&#x2F;2接口配置了untag vlan2 10，可以接收vlan10的数据包，于是就把这个被打上vlan10的PC3发来的arp响应通过G0&#x2F;0&#x2F;2发送给了PC1，当然在从G0&#x2F;0&#x2F;2接口出去的时候根据untag vlan2 10的配置将vlan10的tag去除还原成一个普通的帧，PC1收到的是一个普通的帧，完全不知道它和PC3之间还有交换机这个东西。好了，这就是一次通信过程，PC2与PC3的通信原理也是一样的，于是就实现了PC3与PC1、PC2互通，PC1与PC2之间不通的效果。</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>hybrid</tag>
+        <tag>tag</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>USG5500防火墙基础实验</title>
     <url>/2023/12/08/USG5500%E9%98%B2%E7%81%AB%E5%A2%99%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/</url>
     <content><![CDATA[<h1 id="基础配置"><a href="#基础配置" class="headerlink" title="基础配置"></a>基础配置</h1><p><img src="/2023/12/08/USG5500%E9%98%B2%E7%81%AB%E5%A2%99%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/usg5500tuopi11.png" alt="usg5500tuopi11"></p>
@@ -913,37 +944,6 @@
       <tags>
         <tag>USG5500</tag>
         <tag>防火墙nat</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Hybrid接口</title>
-    <url>/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/</url>
-    <content><![CDATA[<h1 id="接口属性"><a href="#接口属性" class="headerlink" title="接口属性"></a>接口属性</h1><p>​	交换机接口的类型，可以是Access、Trunk和Hybrid。Access类型的接口仅属于一个VLAN,,,,只能接收、转发相应VLAN的帧；而Trunk类型接口则默认属于所有VLAN任何Tagged帧都能经过Trunk接收和转发； Hybrid类型接口则介于二者之间，可自主定义端口上能接收和转发那些VLAN Tag帧，并可决定VLAN Tag是否继续携带或者剥离。。Access和Trunk类型接口是Hybrid类型接口的两个特例，，，一个仅支持一个VLAN传递，，一个默认支持所有VLAN的传递，而Access类型和Trunk类型的接口能做到的，Hybrid接口都能做到。</p>
-<p>​    hybrid属性具有trunk和access两种端口属性的特点，tag类似trunk，untag类似access，但是又不同，因为hybrid端口可以接收某个或者多个vlan的数据。</p>
-<p>在开始研究之前强调几点：</p>
-<p>1、在hybrid端口中，所有端口都默认属于vlan1，除非配置undo port hybrid vlan 1 才能将该hybrid剔除出vlan1，可以使用display vlan 查看端口所属的vlan</p>
-<p>2、在hybrid端口中，无论是tag还是untag后面配置的vlan-id就是该hybrid端口所能够收到vlan数据的vlan-id，换句话说就是这些vlan中发出的数据该端口都能收到，可以使用display vlan查看（这里注意虽然可以收到这些vlan的数据但是严格意义上讲hybrid端口并不属于任何一个vlan）</p>
-<p>3、所有类型端口的默认pvid都是vlan1，而pvid这个属性只！针对！进入！该端口的！没有标签的！普通数据包有效，作用是将没有标签的普通数据包打上pvid中配置的标签号</p>
-<p>4、hybrid属性中，tag是针对于端口的接收方向的（从该端口进来的流量允许带有这些vlan标签的通过），untag是针对端口的发送方向的（从该端口出去的流量去除这些vlan标签）</p>
-<p>5、加入一个hybrid端口配置tag vlan 2 3和untag vlan 4 5 ，那么默认情况下这个hybrid属于vlan1、2、3、4、5，在display vlan中可以查看到，只有端口属于了某个vlan，那么该端口才能收到某个vlan的数据包，这一点是理解下列两种配置和hybrid端口属性的关键！！！</p>
-<h1 id="收发过程"><a href="#收发过程" class="headerlink" title="收发过程"></a>收发过程</h1><p>在数据发送时untag列表的原理，如下图<br>1.带有vlan 3标签的数据从F0&#x2F;0接口出去，通过时查看untag列表，发现有对应的标签，将标签脱掉发送出去<br>2.带有vlan 8标签的数据从F0&#x2F;1接口出去，通过时查看untag列表，发现没有对应的标签，继续查看tag表，发现有对应标签，所以直接带有vlan 8标签的数据发送出去<br>3.带有vlan 5标签的数据从F0&#x2F;2接口出去，通过时查看untag列表，发现没有对应的标签 ，继续查看tag列表，发现也没有对应的标签，所以数据直接被丢弃<br><img src="/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/shoufa6505133622.png" alt="shoufa6505133622"></p>
-<p>tag列表处理数据帧的接收和发送的原理，如下图<br>1.没有标签的数据进入F0&#x2F;0接口，接口查看到数据没有标签，根据接口PVID&#x3D;3，将vlan 3标签打入数据<br>2.带有vlan 9标签的数据进入接口F0&#x2F;1，接口查看到数据带有标签，接着查看tag列表，发现列表中存在对应标签，放通数据<br>3.带有vlan 5标签的数据从接口F0&#x2F;2出去，接口查看到数据带有标签，查看untag列表，发现列表中没有对应vlan 5标签，继续查看tag列表，发现列表中存在对应标签vlan 5，放通数据出去<br>4.带有vlan 3标签的数据从F0&#x2F;2接口出去，查看untag列表，发现列表中存在对应vlan 3标签，将标签脱掉，放通数据出去<br>5.带有vlan 9标签的数据从F0&#x2F;2接口出去，查看untag表，发现列表中不存在对应vlan 9标签，继续查看tag列表，发现列表中不存在vlan 9标签，将数据丢弃</p>
-<p><img src="/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/fataf2133722.png" alt="fataf2133722"></p>
-<h1 id="实例分析"><a href="#实例分析" class="headerlink" title="实例分析"></a>实例分析</h1><p><img src="/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/tuo2205133307.png" alt="tuo2205133307"></p>
-<p>1、为了让我们更加简洁的理解hydrid的属性，首先在所有的端口上移除了vlan1这个默认有的vlan，假设为所有端口初始不属于任何vlan，都不能相互之间通信</p>
-<p>2、pvid是当普通的主机数据帧进入交换机端口后被打上的vlan-tag的属性，在途中可以看出PC1、PC2、PC3的流量在进入交换机的时候分别会被打上vlan2、vlan3、vlan99的vlan标签</p>
-<p>3、untag后面的vlan就是该端口属于的vlan，那么不难看出LSW1的G0&#x2F;0&#x2F;1属于vlan2、3，G0&#x2F;0&#x2F;2属于vlan2、10，G0&#x2F;0&#x2F;3属于vlan3、10，而untag的动作是在流量出端口去往主机的时候把vlan-tag全部去除，那么不难看出LSW1的G0&#x2F;0&#x2F;1将去除vlan2、3的标签，G0&#x2F;0&#x2F;2去除vlan2、10的标签，G0&#x2F;0&#x2F;3去除vlan3、10的标签（还原成普通帧）</p>
-<p>LSW2的G0&#x2F;0&#x2F;1属于vlan99，G0&#x2F;0&#x2F;2属于vlan99，在流量出端口的时候会去除vlan99的标签（还原成普通帧）</p>
-<p>那么PC1与PC2的通信现在分析如下：当PC1发送arp去请求PC2的MAC地址的时候，PC1会将数据包广播发往LSW1的G0&#x2F;0&#x2F;2接口，LSW1收到后发现是个普通的不带标签的数据帧，于是根据接口的pvid给该帧打上vlan2的tag，然后往vlan2中进行泛红，无奈G0&#x2F;0&#x2F;3端口只属于vlan3、10所以无法收到vlan2中的泛红，故PC1与PC2通信失败。</p>
-<p>下面再来分析PC1与PC3通信：前面已经分析了PC1要去请求PC3的MAC，被LSW1的G0&#x2F;0&#x2F;2收到，并且打上vlan2的tag，然后在vlan2中泛红，那么在vlan2中的端口就都能收到该泛红了，所以在配置了untag vlan 2 3的G0&#x2F;0&#x2F;1端口自然也能收到vlan2和vlan3的泛红并转发出去，但是LSW1发现G0&#x2F;0&#x2F;1配置untag vlan2 3，所以将从该端口发送出去的所有带有vlan2和vlan3的数据包的tag全部去除（还原成普通帧），然后这个普通的帧就会发往LSW2被G0&#x2F;0&#x2F;1端口接收到，LSW2发现了一个普通的帧，那么就会用到pvid了不是，所以LSW2收到这个帧后打上vlan99的tag进行泛红，那么PC3所在的hybrid因为配置有untag vlan99必然能够收到vlan99的数据包了，然后在G0&#x2F;0&#x2F;2发给PC3的时候将vlan99的tag去除掉，PC3收到的就是一个不带任何tag的普通包（PC3完全不知道在它个PC1之间还有SW这种东西存在），好了PC3收到了PC1发来的arp请求，那么作为有礼貌的人应该回复自己的MAC地址了，与回一个arp响应给PC1，</p>
-<p>下面PC3的回包分析：PC3使用PC1的MAC和ip封装好数据包后从网卡发送出去，LSW2的G0&#x2F;0&#x2F;2端口收到了，发现是一个普通帧，OK来pvid打上vlan99的tag，然后查看mac地址表发现PC1的MAC地址在G0&#x2F;0&#x2F;1口，在查看vlan信息，发现G0&#x2F;0&#x2F;1口可以接收vlan99的数据（untag vlan99），两个转发条件都满足了，那么久把数据包发给G0&#x2F;0&#x2F;1转发，G0&#x2F;0&#x2F;1转发的时候根据untag vlan99把数据包vlan-id去除还原成普通帧，被LSW1的G0&#x2F;0&#x2F;1收到，按照pvid的惯例，普通帧被打上了pvid vlan10的tag（用vlan10举例，也可以是任意vlan），然后LSW1根据MAC地址表找到PC1在自己的G0&#x2F;0&#x2F;2口，再查看vlan信息发现G0&#x2F;0&#x2F;2接口配置了untag vlan2 10，可以接收vlan10的数据包，于是就把这个被打上vlan10的PC3发来的arp响应通过G0&#x2F;0&#x2F;2发送给了PC1，当然在从G0&#x2F;0&#x2F;2接口出去的时候根据untag vlan2 10的配置将vlan10的tag去除还原成一个普通的帧，PC1收到的是一个普通的帧，完全不知道它和PC3之间还有交换机这个东西。好了，这就是一次通信过程，PC2与PC3的通信原理也是一样的，于是就实现了PC3与PC1、PC2互通，PC1与PC2之间不通的效果。</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>hybrid</tag>
-        <tag>tag</tag>
       </tags>
   </entry>
   <entry>
@@ -1103,6 +1103,53 @@
       <tags>
         <tag>VRRP</tag>
         <tag>BFD</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WLAN基础配置（ap上线）</title>
+    <url>/2023/12/20/WLAN%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE%EF%BC%88ap%E4%B8%8A%E7%BA%BF%EF%BC%89/</url>
+    <content><![CDATA[<h1 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h1><h2 id="CAPWAP协议"><a href="#CAPWAP协议" class="headerlink" title="CAPWAP协议"></a>CAPWAP协议</h2><p>CAPWAP是基于UDP进行传输的应用层协议，CAPWAP协议在传输层运输两种类型的消息：</p>
+<ul>
+<li>业务数据流量，封装转发无线数据帧 。——通过CAPWAP数据隧道。</li>
+<li>管理流量，管理AP和AC之间交换的管理消息 。——通过CAPWAP控制隧道。</li>
+</ul>
+<p>CAPWAP数据和控制报文基于不同的UDP端口发送：</p>
+<ul>
+<li>管理流量端口为UDP端口5246。</li>
+<li>业务数据流量端口为UDP端口5247。</li>
+</ul>
+<h2 id="AC连接方式"><a href="#AC连接方式" class="headerlink" title="AC连接方式"></a>AC连接方式</h2><p>直连模式下AC部署在用户的转发路径上，采用这种组网方式，对AC的吞吐量以及处理数据能力要求比较高，否则AC会是整个无线网络带宽的瓶颈。但用此种组网，组网架构清晰，组网实施起来简单</p>
+<p>在旁挂式组网中，AC只承载对AP的管理功能，管理流封装在CAPWAP隧道中传输。数据业务流可以通过CAPWAP数据隧道经AC转发，也可以不经过AC转发直接转发，后者无线用户业务流经汇聚交换机由汇聚交换机传输至上层网络。</p>
+<h2 id="WLAN的基本概念"><a href="#WLAN的基本概念" class="headerlink" title="WLAN的基本概念"></a>WLAN的基本概念</h2><ol>
+<li><p>BSS：一个AP所覆盖的范围，在一个BSS的服务区域内，STA可以相互通信。</p>
+</li>
+<li><p>BSSID：是无线网络的一个身份标识，用AP的MAC地址表示。</p>
+</li>
+<li><p>SSID：表示无线网络的标识，用来区分不同的无线网络。例如，当我们在笔记本电脑上搜索可接入无线网络时，显示出来的网络名称就是SSID。</p>
+</li>
+<li><p>VAP<br>早期的AP只支持1个BSS，如果要在同一空间内部署多个BSS，则需要安放多个AP，这不但增加了成本，还占用了信道资源。为了改善这种状况，现在的AP通常支持创建出多个虚拟AP (Virtual Access Point, VAP)。如图16-13所示，它相当于交换机中的VLAN</p>
+</li>
+<li><p>ESS</p>
+</li>
+</ol>
+<p>为了满足实际业务的需求，需要对BSS的覆盖范围进行扩展。同时用户从一个BSS移动到另一个BSS时，不能感知到SSID的变化，则可以通过扩展服务集ESS (Extend Service Set)实现。如图6-14所示，这是由多个使用相同SSID的BSS组成，是采用相同的SSID的多个BSS组成的更大规模的虚拟BSS。</p>
+<h1 id="实验"><a href="#实验" class="headerlink" title="实验"></a>实验</h1><p><img src="/2023/12/20/WLAN%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE%EF%BC%88ap%E4%B8%8A%E7%BA%BF%EF%BC%89/tuopoa182409.png" alt="tuopoa182409"></p>
+<ol>
+<li>实验步骤</li>
+<li>步骤1：基本配置<br>LSW2的配置<br><Huawei>system-view<br>[Huawei]undo info-center enable<br>[Huawei]sysname LSW2<br>[LSW2]vlan 100<br>[LSW2-vlan100]quit<br>[LSW2]interface e0&#x2F;0&#x2F;1<br>[LSW2-Ethernet0&#x2F;0&#x2F;1]port link-type trunk<br>[LSW2-Ethernet0&#x2F;0&#x2F;1]port trunk allow-pass vlan 100<br>[LSW2-Ethernet0&#x2F;0&#x2F;1]port trunk pvid vlan 100<br>[LSW2-Ethernet0&#x2F;0&#x2F;1]quit<br>[LSW2]interface e0&#x2F;0&#x2F;2<br>[LSW2-Ethernet0&#x2F;0&#x2F;2]port link-type trunk<br>[LSW2-Ethernet0&#x2F;0&#x2F;2]port trunk allow-pass vlan 100<br>[LSW2-Ethernet0&#x2F;0&#x2F;2]port trunk pvid vlan 100<br>[LSW2-Ethernet0&#x2F;0&#x2F;2]quit<br>[LSW2]interface e0&#x2F;0&#x2F;3<br>[LSW2-Ethernet0&#x2F;0&#x2F;3]port link-type trunk<br>[LSW2-Ethernet0&#x2F;0&#x2F;3]port trunk allow-pass vlan 100<br>[LSW2-Ethernet0&#x2F;0&#x2F;3]quit<br>【思考1】：为什么LSW2只创建VLAN100，不用创建VLAN101？<br>解析：因为我们用的是隧道转发，数据到达AC1后，才会打上101标记然后发给LSW1<br>【思考2】：为什么连接AP的接口要打port trunk pvid vlan 100?<br>解析：交换机收到AP的数据帧打上100的tag发送<br>把带上100tag的数据帧去掉然后发给AP<br>LSW1的配置<br><Huawei>system-view<br>[Huawei]undo info-center enable<br>[Huawei]sysname LSW1<br>[LSW1]vlan batch 100 101<br>[LSW1]interface g0&#x2F;0&#x2F;1<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;1]port link-type trunk<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;1]port trunk allow-pass vlan 100<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;1]quit<br>[LSW1]interface g0&#x2F;0&#x2F;3<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;3]port link-type trunk<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;3]port trunk allow-pass vlan 100 101<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;3]quit<br>[LSW1]interface g0&#x2F;0&#x2F;2<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;2]port link-type access<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;2]port default vlan 101<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;2]quit<br>[LSW1]interface Vlanif 101<br>[LSW1-Vlanif101]ip address 192.168.101.1 24<br>[LSW1-Vlanif101]undo shutdown<br>[LSW1-Vlanif101]quit<br>AC1的配置<br><AC6005>system-view<br>[AC6005]undo info-center enable<br>[AC6005]sysname AC1<br>[AC1]vlan batch 100 101<br>[AC1]interface g0&#x2F;0&#x2F;1<br>[AC1-GigabitEthernet0&#x2F;0&#x2F;1]port link-type trunk<br>[AC1-GigabitEthernet0&#x2F;0&#x2F;1]port trunk allow-pass vlan 100 101<br>[AC1-GigabitEthernet0&#x2F;0&#x2F;1]quit<br>[AC1]interface Vlanif 100<br>[AC1-Vlanif100]ip address 192.168.100.1 24<br>[AC1-Vlanif100]undo shutdown<br>[AC1-Vlanif100]quit<br>R1的配置<br><Huawei>system-view<br>[Huawei]undo info-center enable<br>[Huawei]sysname R1<br>[R1]interface g0&#x2F;0&#x2F;0<br>[R1-GigabitEthernet0&#x2F;0&#x2F;0]ip address 192.168.101.2 24<br>[R1-GigabitEthernet0&#x2F;0&#x2F;0]undo shutdown<br>[R1-GigabitEthernet0&#x2F;0&#x2F;0]quit</Huawei></AC6005></Huawei></Huawei></li>
+<li>步骤2：设置DHCP<br>创建VLAN设置TRUNK<br>业务DHCP-让STA获得IP地址<br>[LSW1]dhcp enable<br>[LSW1]interface Vlanif 101<br>[LSW1-Vlanif101]dhcp select interface<br>[LSW1-Vlanif101]quit<br>管理DHCP-让AP获得IP地址<br><AC1>system-view<br>[AC1]dhcp enable<br>[AC1]interface Vlanif 100<br>[AC1-Vlanif100]dhcp select interface<br>[AC1-Vlanif100]quit</AC1></li>
+<li>步骤3：AC的配置</li>
+<li>AP上线<br>第一步：创建AP组<br><AC1>system-view<br>[AC1]wlan<br>[AC1-wlan-view]ap-group name x &#x2F;&#x2F;创建AP组名字叫x<br>[AC1-wlan-ap-group-x]quit<br>第二步：创建域管理模板并关联到AP组<br>[AC1]wlan<br>[AC1-wlan-view]regulatory-domain-profile name x1 &#x2F;&#x2F;创建域管理模板，名字叫x1<br>[AC1-wlan-regulate-domain-x1]country-code cn &#x2F;&#x2F;国家代码选择中国<br>[AC1-wlan-regulate-domain-x1]quit<br>[AC1-wlan-view]ap-group name x<br>[AC1-wlan-ap-group-x]regulatory-domain-profile x1 &#x2F;&#x2F;AP组的域管理模板是x1<br>Warning: Modifying the country code will clear channel, power and antenna gain c<br>onfigurations of the radio and reset the AP. Continue?[Y&#x2F;N]:y<br>[AC1-wlan-ap-group-x]quit<br>第三步：配置AC的接口源地址<br>[AC1]capwap source interface Vlanif 100 &#x2F;&#x2F;AC的接口源地址为VLAN100<br>第四步：离线导入AP<br>[AC1]wlan<br>[AC1-wlan-view]ap auth-mode mac-auth &#x2F;&#x2F;AP的认证模式为MAC认证<br>[AC1-wlan-view]ap-id 1 ap-mac 00e0-fcd5-1c70 &#x2F;&#x2F;AP的编号和MAC地址<br>[AC1-wlan-ap-1]ap-name ds &#x2F;&#x2F;AP的名字为ds<br>[AC1-wlan-ap-1]ap-group x &#x2F;&#x2F;AP属于AP组x<br>[AC1-wlan-view]ap-id 2 ap-mac 00e0-fc1e-3670 &#x2F;&#x2F;AP的编号和MAC地址<br>[AC1-wlan-ap-2]ap-name xs &#x2F;&#x2F;Ap的名字<br>[AC1-wlan-ap-2]ap-group x &#x2F;&#x2F;AP属于AP组x<br>Warning: This operation may cause AP reset. If the country code changes, it will<br>clear channel, power and antenna gain configurations of the radio, Whether to c<br>ontinue? [Y&#x2F;N]:y<br>思考：AP的MAC地址是怎么知道的？<br>读者可以通过在ap上使用命令“display interface Vlanif 1”查看当前ap的mac地址，然后再将mac地址进行绑定。<br>查看命令：<br>[AC1]display ap all<br>Info: This operation may take a few seconds. Please wait for a moment.done.<br>Total AP information:<br>nor : normal [2]<br>-—————————————————————————————–<br>ID MAC Name Group IP Type State STA Uptime<br>-—————————————————————————————–<br>1 00e0-fcd5-1c70 ds x 192.168.100.137 AP2050DN nor 0 11M:2S<br>2 00e0-fc1e-3670 xs x 192.168.100.42 AP2050DN nor 0 54S<br>-—————————————————————————————–<br>可以看到两个AP都获取了IP地址，<br>思考：以上过程一共几包？<br>AP获取IP地址4个包：discovery、offer、request、ack<br>CAPWAP的建立2个包：discovery request(udp 目的端口5246广播找AC) discovery response(单播回应AP)<br>AP接入控制2个包：join request(udp 5246端口 单播) join response<br>隧道维持2个包：数据隧道：keepalive(udp 5247) 控制隧道：echo(udp 5246)</AC1></li>
+<li>配置VLAN业务参数<br>第一步：创建安全模板<br>[AC1]wlan<br>[AC1-wlan-view]security-profile name y1 &#x2F;&#x2F;安全模板的名字叫y1<br>[AC1-wlan-sec-prof-y1]security wpa-wpa2 psk pass-phrase huawei@123 aes &#x2F;&#x2F;密码是huawei@123，用AES加密。<br>[AC1-wlan-sec-prof-y1]quit<br>第二步：创建SSID模板<br>[AC1]wlan<br>[AC1-wlan-view]ssid-profile name y2 &#x2F;&#x2F;ssid的模板名字叫y2<br>[AC1-wlan-ssid-prof-y2]ssid hcia &#x2F;&#x2F;ssid的名称叫hcia<br>[AC1-wlan-ssid-prof-y2]quit<br>[AC1-wlan-view]quit<br>第三步：创建VAP模板<br>[AC1]wlan<br>[AC1-wlan-view]vap-profile name y &#x2F;&#x2F;vap模板的名字叫y<br>[AC1-wlan-vap-prof-y]forward-mode tunnel &#x2F;&#x2F;转发模式为隧道<br>[AC1-wlan-vap-prof-y]service-vlan vlan-id 101 &#x2F;&#x2F;服务的VLAN为101<br>[AC1-wlan-vap-prof-y]security-profile y1 &#x2F;&#x2F;调用安全模板y1<br>[AC1-wlan-vap-prof-y]ssid-profile y2 &#x2F;&#x2F;调用SSID模板y2<br>[AC1-wlan-vap-prof-y]quit<br>第四步：在AP组里面调用VAP模板<br>[AC1-wlan-view]ap-group name x<br>[AC1-wlan-ap-group-x]vap-profile y wlan 1 radio 0 &#x2F;&#x2F;调用VAP模板y<br>[AC1-wlan-ap-group-x]vap-profile y wlan 1 radio 1 &#x2F;&#x2F;<br>思考：radio0 1 2 是什么意思？<br>思考：这相过程要几个包？<br>WLAN业务配置下发2个包：Configuration Update Request Configuration Update Response</li>
+<li>STA接入，可以看到有两个ssid为hcia的无线网络，在之前的配置中配置了radio 0 、1就是为了释放两个不同的射频信号，选择其中一个，输入之前创建的密码huawei@123</li>
+</ol>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>ap上线</tag>
+        <tag>wlan</tag>
       </tags>
   </entry>
   <entry>
@@ -1326,53 +1373,6 @@
       </tags>
   </entry>
   <entry>
-    <title>WLAN基础配置（ap上线）</title>
-    <url>/2023/12/20/WLAN%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE%EF%BC%88ap%E4%B8%8A%E7%BA%BF%EF%BC%89/</url>
-    <content><![CDATA[<h1 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h1><h2 id="CAPWAP协议"><a href="#CAPWAP协议" class="headerlink" title="CAPWAP协议"></a>CAPWAP协议</h2><p>CAPWAP是基于UDP进行传输的应用层协议，CAPWAP协议在传输层运输两种类型的消息：</p>
-<ul>
-<li>业务数据流量，封装转发无线数据帧 。——通过CAPWAP数据隧道。</li>
-<li>管理流量，管理AP和AC之间交换的管理消息 。——通过CAPWAP控制隧道。</li>
-</ul>
-<p>CAPWAP数据和控制报文基于不同的UDP端口发送：</p>
-<ul>
-<li>管理流量端口为UDP端口5246。</li>
-<li>业务数据流量端口为UDP端口5247。</li>
-</ul>
-<h2 id="AC连接方式"><a href="#AC连接方式" class="headerlink" title="AC连接方式"></a>AC连接方式</h2><p>直连模式下AC部署在用户的转发路径上，采用这种组网方式，对AC的吞吐量以及处理数据能力要求比较高，否则AC会是整个无线网络带宽的瓶颈。但用此种组网，组网架构清晰，组网实施起来简单</p>
-<p>在旁挂式组网中，AC只承载对AP的管理功能，管理流封装在CAPWAP隧道中传输。数据业务流可以通过CAPWAP数据隧道经AC转发，也可以不经过AC转发直接转发，后者无线用户业务流经汇聚交换机由汇聚交换机传输至上层网络。</p>
-<h2 id="WLAN的基本概念"><a href="#WLAN的基本概念" class="headerlink" title="WLAN的基本概念"></a>WLAN的基本概念</h2><ol>
-<li><p>BSS：一个AP所覆盖的范围，在一个BSS的服务区域内，STA可以相互通信。</p>
-</li>
-<li><p>BSSID：是无线网络的一个身份标识，用AP的MAC地址表示。</p>
-</li>
-<li><p>SSID：表示无线网络的标识，用来区分不同的无线网络。例如，当我们在笔记本电脑上搜索可接入无线网络时，显示出来的网络名称就是SSID。</p>
-</li>
-<li><p>VAP<br>早期的AP只支持1个BSS，如果要在同一空间内部署多个BSS，则需要安放多个AP，这不但增加了成本，还占用了信道资源。为了改善这种状况，现在的AP通常支持创建出多个虚拟AP (Virtual Access Point, VAP)。如图16-13所示，它相当于交换机中的VLAN</p>
-</li>
-<li><p>ESS</p>
-</li>
-</ol>
-<p>为了满足实际业务的需求，需要对BSS的覆盖范围进行扩展。同时用户从一个BSS移动到另一个BSS时，不能感知到SSID的变化，则可以通过扩展服务集ESS (Extend Service Set)实现。如图6-14所示，这是由多个使用相同SSID的BSS组成，是采用相同的SSID的多个BSS组成的更大规模的虚拟BSS。</p>
-<h1 id="实验"><a href="#实验" class="headerlink" title="实验"></a>实验</h1><p><img src="/2023/12/20/WLAN%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE%EF%BC%88ap%E4%B8%8A%E7%BA%BF%EF%BC%89/tuopoa182409.png" alt="tuopoa182409"></p>
-<ol>
-<li>实验步骤</li>
-<li>步骤1：基本配置<br>LSW2的配置<br><Huawei>system-view<br>[Huawei]undo info-center enable<br>[Huawei]sysname LSW2<br>[LSW2]vlan 100<br>[LSW2-vlan100]quit<br>[LSW2]interface e0&#x2F;0&#x2F;1<br>[LSW2-Ethernet0&#x2F;0&#x2F;1]port link-type trunk<br>[LSW2-Ethernet0&#x2F;0&#x2F;1]port trunk allow-pass vlan 100<br>[LSW2-Ethernet0&#x2F;0&#x2F;1]port trunk pvid vlan 100<br>[LSW2-Ethernet0&#x2F;0&#x2F;1]quit<br>[LSW2]interface e0&#x2F;0&#x2F;2<br>[LSW2-Ethernet0&#x2F;0&#x2F;2]port link-type trunk<br>[LSW2-Ethernet0&#x2F;0&#x2F;2]port trunk allow-pass vlan 100<br>[LSW2-Ethernet0&#x2F;0&#x2F;2]port trunk pvid vlan 100<br>[LSW2-Ethernet0&#x2F;0&#x2F;2]quit<br>[LSW2]interface e0&#x2F;0&#x2F;3<br>[LSW2-Ethernet0&#x2F;0&#x2F;3]port link-type trunk<br>[LSW2-Ethernet0&#x2F;0&#x2F;3]port trunk allow-pass vlan 100<br>[LSW2-Ethernet0&#x2F;0&#x2F;3]quit<br>【思考1】：为什么LSW2只创建VLAN100，不用创建VLAN101？<br>解析：因为我们用的是隧道转发，数据到达AC1后，才会打上101标记然后发给LSW1<br>【思考2】：为什么连接AP的接口要打port trunk pvid vlan 100?<br>解析：交换机收到AP的数据帧打上100的tag发送<br>把带上100tag的数据帧去掉然后发给AP<br>LSW1的配置<br><Huawei>system-view<br>[Huawei]undo info-center enable<br>[Huawei]sysname LSW1<br>[LSW1]vlan batch 100 101<br>[LSW1]interface g0&#x2F;0&#x2F;1<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;1]port link-type trunk<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;1]port trunk allow-pass vlan 100<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;1]quit<br>[LSW1]interface g0&#x2F;0&#x2F;3<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;3]port link-type trunk<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;3]port trunk allow-pass vlan 100 101<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;3]quit<br>[LSW1]interface g0&#x2F;0&#x2F;2<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;2]port link-type access<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;2]port default vlan 101<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;2]quit<br>[LSW1]interface Vlanif 101<br>[LSW1-Vlanif101]ip address 192.168.101.1 24<br>[LSW1-Vlanif101]undo shutdown<br>[LSW1-Vlanif101]quit<br>AC1的配置<br><AC6005>system-view<br>[AC6005]undo info-center enable<br>[AC6005]sysname AC1<br>[AC1]vlan batch 100 101<br>[AC1]interface g0&#x2F;0&#x2F;1<br>[AC1-GigabitEthernet0&#x2F;0&#x2F;1]port link-type trunk<br>[AC1-GigabitEthernet0&#x2F;0&#x2F;1]port trunk allow-pass vlan 100 101<br>[AC1-GigabitEthernet0&#x2F;0&#x2F;1]quit<br>[AC1]interface Vlanif 100<br>[AC1-Vlanif100]ip address 192.168.100.1 24<br>[AC1-Vlanif100]undo shutdown<br>[AC1-Vlanif100]quit<br>R1的配置<br><Huawei>system-view<br>[Huawei]undo info-center enable<br>[Huawei]sysname R1<br>[R1]interface g0&#x2F;0&#x2F;0<br>[R1-GigabitEthernet0&#x2F;0&#x2F;0]ip address 192.168.101.2 24<br>[R1-GigabitEthernet0&#x2F;0&#x2F;0]undo shutdown<br>[R1-GigabitEthernet0&#x2F;0&#x2F;0]quit</Huawei></AC6005></Huawei></Huawei></li>
-<li>步骤2：设置DHCP<br>创建VLAN设置TRUNK<br>业务DHCP-让STA获得IP地址<br>[LSW1]dhcp enable<br>[LSW1]interface Vlanif 101<br>[LSW1-Vlanif101]dhcp select interface<br>[LSW1-Vlanif101]quit<br>管理DHCP-让AP获得IP地址<br><AC1>system-view<br>[AC1]dhcp enable<br>[AC1]interface Vlanif 100<br>[AC1-Vlanif100]dhcp select interface<br>[AC1-Vlanif100]quit</AC1></li>
-<li>步骤3：AC的配置</li>
-<li>AP上线<br>第一步：创建AP组<br><AC1>system-view<br>[AC1]wlan<br>[AC1-wlan-view]ap-group name x &#x2F;&#x2F;创建AP组名字叫x<br>[AC1-wlan-ap-group-x]quit<br>第二步：创建域管理模板并关联到AP组<br>[AC1]wlan<br>[AC1-wlan-view]regulatory-domain-profile name x1 &#x2F;&#x2F;创建域管理模板，名字叫x1<br>[AC1-wlan-regulate-domain-x1]country-code cn &#x2F;&#x2F;国家代码选择中国<br>[AC1-wlan-regulate-domain-x1]quit<br>[AC1-wlan-view]ap-group name x<br>[AC1-wlan-ap-group-x]regulatory-domain-profile x1 &#x2F;&#x2F;AP组的域管理模板是x1<br>Warning: Modifying the country code will clear channel, power and antenna gain c<br>onfigurations of the radio and reset the AP. Continue?[Y&#x2F;N]:y<br>[AC1-wlan-ap-group-x]quit<br>第三步：配置AC的接口源地址<br>[AC1]capwap source interface Vlanif 100 &#x2F;&#x2F;AC的接口源地址为VLAN100<br>第四步：离线导入AP<br>[AC1]wlan<br>[AC1-wlan-view]ap auth-mode mac-auth &#x2F;&#x2F;AP的认证模式为MAC认证<br>[AC1-wlan-view]ap-id 1 ap-mac 00e0-fcd5-1c70 &#x2F;&#x2F;AP的编号和MAC地址<br>[AC1-wlan-ap-1]ap-name ds &#x2F;&#x2F;AP的名字为ds<br>[AC1-wlan-ap-1]ap-group x &#x2F;&#x2F;AP属于AP组x<br>[AC1-wlan-view]ap-id 2 ap-mac 00e0-fc1e-3670 &#x2F;&#x2F;AP的编号和MAC地址<br>[AC1-wlan-ap-2]ap-name xs &#x2F;&#x2F;Ap的名字<br>[AC1-wlan-ap-2]ap-group x &#x2F;&#x2F;AP属于AP组x<br>Warning: This operation may cause AP reset. If the country code changes, it will<br>clear channel, power and antenna gain configurations of the radio, Whether to c<br>ontinue? [Y&#x2F;N]:y<br>思考：AP的MAC地址是怎么知道的？<br>读者可以通过在ap上使用命令“display interface Vlanif 1”查看当前ap的mac地址，然后再将mac地址进行绑定。<br>查看命令：<br>[AC1]display ap all<br>Info: This operation may take a few seconds. Please wait for a moment.done.<br>Total AP information:<br>nor : normal [2]<br>-—————————————————————————————–<br>ID MAC Name Group IP Type State STA Uptime<br>-—————————————————————————————–<br>1 00e0-fcd5-1c70 ds x 192.168.100.137 AP2050DN nor 0 11M:2S<br>2 00e0-fc1e-3670 xs x 192.168.100.42 AP2050DN nor 0 54S<br>-—————————————————————————————–<br>可以看到两个AP都获取了IP地址，<br>思考：以上过程一共几包？<br>AP获取IP地址4个包：discovery、offer、request、ack<br>CAPWAP的建立2个包：discovery request(udp 目的端口5246广播找AC) discovery response(单播回应AP)<br>AP接入控制2个包：join request(udp 5246端口 单播) join response<br>隧道维持2个包：数据隧道：keepalive(udp 5247) 控制隧道：echo(udp 5246)</AC1></li>
-<li>配置VLAN业务参数<br>第一步：创建安全模板<br>[AC1]wlan<br>[AC1-wlan-view]security-profile name y1 &#x2F;&#x2F;安全模板的名字叫y1<br>[AC1-wlan-sec-prof-y1]security wpa-wpa2 psk pass-phrase huawei@123 aes &#x2F;&#x2F;密码是huawei@123，用AES加密。<br>[AC1-wlan-sec-prof-y1]quit<br>第二步：创建SSID模板<br>[AC1]wlan<br>[AC1-wlan-view]ssid-profile name y2 &#x2F;&#x2F;ssid的模板名字叫y2<br>[AC1-wlan-ssid-prof-y2]ssid hcia &#x2F;&#x2F;ssid的名称叫hcia<br>[AC1-wlan-ssid-prof-y2]quit<br>[AC1-wlan-view]quit<br>第三步：创建VAP模板<br>[AC1]wlan<br>[AC1-wlan-view]vap-profile name y &#x2F;&#x2F;vap模板的名字叫y<br>[AC1-wlan-vap-prof-y]forward-mode tunnel &#x2F;&#x2F;转发模式为隧道<br>[AC1-wlan-vap-prof-y]service-vlan vlan-id 101 &#x2F;&#x2F;服务的VLAN为101<br>[AC1-wlan-vap-prof-y]security-profile y1 &#x2F;&#x2F;调用安全模板y1<br>[AC1-wlan-vap-prof-y]ssid-profile y2 &#x2F;&#x2F;调用SSID模板y2<br>[AC1-wlan-vap-prof-y]quit<br>第四步：在AP组里面调用VAP模板<br>[AC1-wlan-view]ap-group name x<br>[AC1-wlan-ap-group-x]vap-profile y wlan 1 radio 0 &#x2F;&#x2F;调用VAP模板y<br>[AC1-wlan-ap-group-x]vap-profile y wlan 1 radio 1 &#x2F;&#x2F;<br>思考：radio0 1 2 是什么意思？<br>思考：这相过程要几个包？<br>WLAN业务配置下发2个包：Configuration Update Request Configuration Update Response</li>
-<li>STA接入，可以看到有两个ssid为hcia的无线网络，在之前的配置中配置了radio 0 、1就是为了释放两个不同的射频信号，选择其中一个，输入之前创建的密码huawei@123</li>
-</ol>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>ap上线</tag>
-        <tag>wlan</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>nat实验</title>
     <url>/2023/11/25/nat%E5%AE%9E%E9%AA%8C/</url>
     <content><![CDATA[<h1 id="静态nat"><a href="#静态nat" class="headerlink" title="静态nat"></a>静态nat</h1><p>静态NAT实现了私有地址和公有地址的一对一映射。如果希望一台主机优先使用某个关联地址，或者想要外部网络使用一个指定的公网地址访问内部服务器时，可以使用静态NAT。但是在大型网络中，这种一对一的IP地址映射无法缓解公用地址短缺的问题。</p>
@@ -1435,146 +1435,6 @@
       </categories>
       <tags>
         <tag>nat</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>vlan间通信</title>
-    <url>/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/</url>
-    <content><![CDATA[<h1 id="VLAN间通信"><a href="#VLAN间通信" class="headerlink" title="VLAN间通信"></a>VLAN间通信</h1><h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>划分VLAN后，不同VLAN的用户间不能二层互访，这样能起到隔离广播的作用。但实际应用中，不同VLAN的用户又常有互访的需求，此时就需要实现不同VLAN的用户互访，简称VLAN间互访。</p>
-<span id="more"></span>
-
-<h2 id="实验拓扑"><a href="#实验拓扑" class="headerlink" title="实验拓扑"></a>实验拓扑</h2><p><img src="/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/vlantx001.png" alt="vlantx001"></p>
-<p>详解：R2划入vlan2，R3划入vlan3，与交换机之间采用access口，由于交换机g0&#x2F;0&#x2F;1需要通过多个vlan，所以配成trunk口。R2和R3相当于主机，发送和接受的数据都不带标签，交换机g0&#x2F;0&#x2F;2收到R2发送的数据，打上标签vlan2，然后发出去；交换机g0&#x2F;0&#x2F;1收到数据后，发现vlan的标签允许通过，则数据带着vlan2的标签通过；然后交换机g0&#x2F;0&#x2F;3口转发数据时，发现自己的pvid是vlan3，和vlan2不一样，所以不接受，则vlan2和vlan3不能通信。</p>
-<p>在某些场景下，需要特定vlan之间通信</p>
-<p>方法一：dot1q接口</p>
-<p>在r1上配置两个dot1q接口，g0&#x2F;0&#x2F;1.1和g0&#x2F;0&#x2F;1.2，分别对应vlan2和vlan3，作用就是可以终结vlan标签（剥离），vlan2的标签到r1后，被剥离掉vlan2的标签，然后转发时又被g0&#x2F;0&#x2F;1.2打上vlan3的标签，交换机g0&#x2F;0&#x2F;1通过，到g0&#x2F;0&#x2F;3，access口发现和自己的pvid一样，然后剥离掉标签，转发数据帧给r3.</p>
-<p>方法二：vlanif接口：交换机上配置vlanif2和vlanif3，ip地址配成192.168.2.254和192.168.3.254</p>
-<p>其实就是相当于两个不同网段的网关，然后实现三层的转发</p>
-<h2 id="Access接口"><a href="#Access接口" class="headerlink" title="Access接口"></a>Access接口</h2><p>交换机上常用来连接用户PC、服务器等终端设备的接口。Access接口所连接的这些设备的网卡往往只收发无标记帧。Access接口只能加入一个VLAN。只能允许一个VLAN通过。</p>
-<p><strong>转发原则</strong></p>
-<p>接收原则：</p>
-<p>①收到不带标签的数据帧，打上标签，vlan id&#x3D;端口的PVID</p>
-<p>②收到带标签的数据帧，检查数据帧vlan id是否和端口的PVID相同，相同直接接收；不同拒绝接收</p>
-<p>发送原则：</p>
-<p>①数据帧vlan id和端口PVID 相同，剥离标签发送；</p>
-<p>②数据帧vlan id和端口PVID 不同，禁止发送。</p>
-<h2 id="Trunk接口"><a href="#Trunk接口" class="headerlink" title="Trunk接口"></a>Trunk接口</h2><p>Trunk接口允许多个VLAN的数据帧通过，这些数据帧通过802.1Q Tag实现区分。Trunk接口常用于交换机之间的互联，也用于连接路由器、防火墙等设备的</p>
-<p>子接口</p>
-<p><strong>转发原则</strong></p>
-<p>接收原则：</p>
-<p>①收到不带标签的数据帧，打上标签，vlan id&#x3D;端口的PVID，然后查看该vlanid是否在允许列表中，是–接收，不是–拒绝</p>
-<p>②收到带标签的数据帧，查看该vlan id是否在允许列表中，是–接收，不是–拒绝</p>
-<p>发送原则：</p>
-<p>查看vlan id是否在允许列表中，I:不是–拒绝发送；II：是，查看接口的PVID和vlan id是否相同，相同–剥标签发送；不同–直接发送。</p>
-<h2 id="Hybrid接口"><a href="#Hybrid接口" class="headerlink" title="Hybrid接口"></a>Hybrid接口</h2><p>Hybrid接口与Trunk接口类似，也允许多个VLAN的数据帧通过，这些数据帧通过802.1Q Tag实现区分。用户可以灵活指定Hybrid接口在发送某个（或某些）VLAN的数据帧时是否携带Tag</p>
-<p><strong>转发原则</strong></p>
-<p>接收原则：</p>
-<p>①收到不带标签的数据帧，打上标签，vlan id&#x3D;端口的PVID，然后查看该vlanid是否在允许列表中，是–接收，不是–拒绝</p>
-<p>②收到带标签的数据帧，查看该vlan id是否在允许列表中，是–接收，不是–拒绝发送原则：查看vlan id是否在允许列表中，I:不是–拒绝发送；II：是，是否带标签发送取决于接口的配置。</p>
-<h2 id="PVID"><a href="#PVID" class="headerlink" title="PVID"></a>PVID</h2><p>可以手工修改，默认是1，access口的就是本身的vlan号，trunk可以有一个主vlan和多个副vlan，收到的数据和主vlan相同就剥离转发，收到和主vlan不一样的标签，查表，看看是不是在允许通过的列表，如果有，就带着原来的转发，要是没有，就不让过去啦。</p>
-<h2 id="实验配置过程"><a href="#实验配置过程" class="headerlink" title="实验配置过程"></a>实验配置过程</h2><p># R2和R3的IP地址及网关配置</p>
-<p><R2> system-view</R2></p>
-<p>Enter system view, return user view with Ctrl+Z.</p>
-<p>[R2]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
-<p>[R2-GigabitEthernet0&#x2F;0&#x2F;1]ip address 192.168.2.1 24</p>
-<p>[R2-GigabitEthernet0&#x2F;0&#x2F;1]quit	</p>
-<p>[R2]ip route-static 0.0.0.0 0 192.168.2.254</p>
-<p>配置默认路由，相当于给设备配置了网关。</p>
-<p><R3>system-view </R3></p>
-<p>Enter system view, return user view with Ctrl+Z.</p>
-<p>[R3]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
-<p>[R3-GigabitEthernet0&#x2F;0&#x2F;1]ip address 192.168.3.1 24</p>
-<p>[R3-GigabitEthernet0&#x2F;0&#x2F;1]quit</p>
-<p>[R3]ip route-static 0.0.0.0 0 192.168.3.254</p>
-<p># 在S1上对R2和R3进行VLAN划分</p>
-<p>[S1]vlan batch 2 3</p>
-<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
-<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;2</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;2]port link-type access </p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;2]port default vlan 2</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;2]quit</p>
-<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;3</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;3]port link-type access </p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;3]port default vlan 3</p>
-<p>步骤 1 通过Dot1q终结子接口实现VLAN间互访 </p>
-<p># 配置S1上的Trunk接口</p>
-<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;1]port trunk allow-pass vlan 2 3</p>
-<p><em>因为VLAN间<strong>互访数据要</strong>由R1来终结VLAN<strong>，</strong>所以S1和R1之间<strong>的链路要允许</strong>VLAN2和VLAN3通过**。</em></p>
-<p># 在R1上创建并配置Dot1q终结子接口</p>
-<p>[R1]interface GigabitEthernet 0&#x2F;0&#x2F;1.2 </p>
-<p>创建并进入子接口视图。2代表子接口的编号，一般建议子接口编号与VLAN ID相同，方便记忆。</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.2]dot1q termination vid 2 </p>
-<p><strong>dot1q termination vid</strong> <em>vlan-id</em>命令用来配置子接口Dot1q终结的VLAN ID。</p>
-<p>以此配置为例：当GigabitEthernet0&#x2F;0&#x2F;1接口收到带有VLAN 2标签的数据之后，会交由2号子接口进行VLAN终结操作并做后续处理。从2号子接口发出的数据也会带上VLAN 2的标签。</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.2]arp broadcast enable </p>
-<p>终结子接口不能转发广播报文，在收到广播报文后它们直接把该报文丢弃。为了允许终结子接口能转发广播报文，可以通过在子接口上执行命令<strong>arp broadcast enable</strong>使能终结子接口的ARP广播功能。部分设备默认使能该功能，此命令的配置根据设备而定。</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.2]ip address 192.168.2.254 24 </p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.2]quit</p>
-<p>[R1]interface GigabitEthernet 0&#x2F;0&#x2F;1.3</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.3]dot1q termination vid 3</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.3]arp broadcast enable</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.3]ip address 192.168.3.254 24</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.3]quit</p>
-<p># 检测VLAN间互访联通性 </p>
-<p><R2>ping 192.168.3.1</R2></p>
-<p> PING 192.168.3.1: 56  data bytes, press CTRL_C to break</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;1 ttl&#x3D;254 time&#x3D;60 ms</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;2 ttl&#x3D;254 time&#x3D;40 ms</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;3 ttl&#x3D;254 time&#x3D;110 ms</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;4 ttl&#x3D;254 time&#x3D;70 ms</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;5 ttl&#x3D;254 time&#x3D;100 ms</p>
-<p> — 192.168.3.1 ping statistics —</p>
-<p>  5 packet(s) transmitted</p>
-<p>  5 packet(s) received</p>
-<p>  0.00% packet loss</p>
-<p>  round-trip min&#x2F;avg&#x2F;max &#x3D; 40&#x2F;76&#x2F;110 ms</p>
-<p><R2>tracert 192.168.3.1 </R2></p>
-<p> traceroute to  192.168.3.1(192.168.3.1), max hops: 30 ,packet length: 40,press CTRL_C to break </p>
-<p> 1 192.168.2.254 30 ms  50 ms  50 ms </p>
-<p> 2 192.168.3.1 70 ms  60 ms  60 ms </p>
-<p>此时VLAN2和VLAN3之间已经可以正常的互访。</p>
-<p>步骤 2 通过VLANIF接口实现VLAN间互访</p>
-<p># 清除上一步配置</p>
-<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;1]undo port trunk allow-pass vlan 2 3</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;1]undo port link-type</p>
-<p>[R1]undo interface GigabitEthernet 0&#x2F;0&#x2F;1.2 </p>
-<p>[R1]undo interface GigabitEthernet 0&#x2F;0&#x2F;1.3</p>
-<p># 在S1上创建相应的VLANIF接口 </p>
-<p>[S1]interface Vlanif 2</p>
-<p><strong>interface vlanif</strong> <em>vlan-id</em>命令用来创建VLANIF接口并进入VLANIF接口视图。只有先通过命令创建VLAN后，才能执行interface vlanif命令创建VLANIF接口。</p>
-<p>[S1-Vlanif2]ip address 192.168.2.254 24</p>
-<p>[S1-Vlanif2]quit</p>
-<p>[S1]interface Vlanif 3</p>
-<p>[S1-Vlanif3]ip address 192.168.3.254 24 </p>
-<p>[S1-Vlanif3]quit</p>
-<p># 检测VLAN间互访联通性</p>
-<p><R2>ping 192.168.3.1 </R2></p>
-<p> PING 192.168.3.1: 56  data bytes, press CTRL_C to break</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;1 ttl&#x3D;254 time&#x3D;100 ms</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;2 ttl&#x3D;254 time&#x3D;50 ms</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;3 ttl&#x3D;254 time&#x3D;50 ms</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;4 ttl&#x3D;254 time&#x3D;60 ms</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;5 ttl&#x3D;254 time&#x3D;70 ms</p>
-<p> — 192.168.3.1 ping statistics —</p>
-<p>  5 packet(s) transmitted</p>
-<p>  5 packet(s) received</p>
-<p>  0.00% packet loss</p>
-<p>  round-trip min&#x2F;avg&#x2F;max &#x3D; 50&#x2F;66&#x2F;100 ms</p>
-<p><R2>tracert 192.168.3.1 </R2></p>
-<p> traceroute to  192.168.3.1(192.168.3.1), max hops: 30 ,packet length: 40,press CTRL_C to break </p>
-<p> 1 192.168.2.254 40 ms  30 ms  20 ms </p>
-<p> 2 192.168.3.1 40 ms  30 ms  40 ms</p>
-<p>此时VLAN2和VLAN3之间已经可以正常的互访。</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>vlan间通信</tag>
-        <tag>dot1q</tag>
-        <tag>vlanif</tag>
       </tags>
   </entry>
   <entry>
@@ -1743,6 +1603,166 @@
       <tags>
         <tag>telnet</tag>
         <tag>aaa</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>vlan间通信</title>
+    <url>/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/</url>
+    <content><![CDATA[<h1 id="VLAN间通信"><a href="#VLAN间通信" class="headerlink" title="VLAN间通信"></a>VLAN间通信</h1><h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>划分VLAN后，不同VLAN的用户间不能二层互访，这样能起到隔离广播的作用。但实际应用中，不同VLAN的用户又常有互访的需求，此时就需要实现不同VLAN的用户互访，简称VLAN间互访。</p>
+<span id="more"></span>
+
+<h2 id="实验拓扑"><a href="#实验拓扑" class="headerlink" title="实验拓扑"></a>实验拓扑</h2><p><img src="/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/vlantx001.png" alt="vlantx001"></p>
+<p>详解：R2划入vlan2，R3划入vlan3，与交换机之间采用access口，由于交换机g0&#x2F;0&#x2F;1需要通过多个vlan，所以配成trunk口。R2和R3相当于主机，发送和接受的数据都不带标签，交换机g0&#x2F;0&#x2F;2收到R2发送的数据，打上标签vlan2，然后发出去；交换机g0&#x2F;0&#x2F;1收到数据后，发现vlan的标签允许通过，则数据带着vlan2的标签通过；然后交换机g0&#x2F;0&#x2F;3口转发数据时，发现自己的pvid是vlan3，和vlan2不一样，所以不接受，则vlan2和vlan3不能通信。</p>
+<p>在某些场景下，需要特定vlan之间通信</p>
+<p>方法一：dot1q接口</p>
+<p>在r1上配置两个dot1q接口，g0&#x2F;0&#x2F;1.1和g0&#x2F;0&#x2F;1.2，分别对应vlan2和vlan3，作用就是可以终结vlan标签（剥离），vlan2的标签到r1后，被剥离掉vlan2的标签，然后转发时又被g0&#x2F;0&#x2F;1.2打上vlan3的标签，交换机g0&#x2F;0&#x2F;1通过，到g0&#x2F;0&#x2F;3，access口发现和自己的pvid一样，然后剥离掉标签，转发数据帧给r3.</p>
+<p>方法二：vlanif接口：交换机上配置vlanif2和vlanif3，ip地址配成192.168.2.254和192.168.3.254</p>
+<p>其实就是相当于两个不同网段的网关，然后实现三层的转发</p>
+<h2 id="Access接口"><a href="#Access接口" class="headerlink" title="Access接口"></a>Access接口</h2><p>交换机上常用来连接用户PC、服务器等终端设备的接口。Access接口所连接的这些设备的网卡往往只收发无标记帧。Access接口只能加入一个VLAN。只能允许一个VLAN通过。</p>
+<p><strong>转发原则</strong></p>
+<p>接收原则：</p>
+<p>①收到不带标签的数据帧，打上标签，vlan id&#x3D;端口的PVID</p>
+<p>②收到带标签的数据帧，检查数据帧vlan id是否和端口的PVID相同，相同直接接收；不同拒绝接收</p>
+<p>发送原则：</p>
+<p>①数据帧vlan id和端口PVID 相同，剥离标签发送；</p>
+<p>②数据帧vlan id和端口PVID 不同，禁止发送。</p>
+<h2 id="Trunk接口"><a href="#Trunk接口" class="headerlink" title="Trunk接口"></a>Trunk接口</h2><p>Trunk接口允许多个VLAN的数据帧通过，这些数据帧通过802.1Q Tag实现区分。Trunk接口常用于交换机之间的互联，也用于连接路由器、防火墙等设备的</p>
+<p>子接口</p>
+<p><strong>转发原则</strong></p>
+<p>接收原则：</p>
+<p>①收到不带标签的数据帧，打上标签，vlan id&#x3D;端口的PVID，然后查看该vlanid是否在允许列表中，是–接收，不是–拒绝</p>
+<p>②收到带标签的数据帧，查看该vlan id是否在允许列表中，是–接收，不是–拒绝</p>
+<p>发送原则：</p>
+<p>查看vlan id是否在允许列表中，I:不是–拒绝发送；II：是，查看接口的PVID和vlan id是否相同，相同–剥标签发送；不同–直接发送。</p>
+<h2 id="Hybrid接口"><a href="#Hybrid接口" class="headerlink" title="Hybrid接口"></a>Hybrid接口</h2><p>Hybrid接口与Trunk接口类似，也允许多个VLAN的数据帧通过，这些数据帧通过802.1Q Tag实现区分。用户可以灵活指定Hybrid接口在发送某个（或某些）VLAN的数据帧时是否携带Tag</p>
+<p><strong>转发原则</strong></p>
+<p>接收原则：</p>
+<p>①收到不带标签的数据帧，打上标签，vlan id&#x3D;端口的PVID，然后查看该vlanid是否在允许列表中，是–接收，不是–拒绝</p>
+<p>②收到带标签的数据帧，查看该vlan id是否在允许列表中，是–接收，不是–拒绝发送原则：查看vlan id是否在允许列表中，I:不是–拒绝发送；II：是，是否带标签发送取决于接口的配置。</p>
+<h2 id="PVID"><a href="#PVID" class="headerlink" title="PVID"></a>PVID</h2><p>可以手工修改，默认是1，access口的就是本身的vlan号，trunk可以有一个主vlan和多个副vlan，收到的数据和主vlan相同就剥离转发，收到和主vlan不一样的标签，查表，看看是不是在允许通过的列表，如果有，就带着原来的转发，要是没有，就不让过去啦。</p>
+<h2 id="实验配置过程"><a href="#实验配置过程" class="headerlink" title="实验配置过程"></a>实验配置过程</h2><p># R2和R3的IP地址及网关配置</p>
+<p><R2> system-view</R2></p>
+<p>Enter system view, return user view with Ctrl+Z.</p>
+<p>[R2]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;1]ip address 192.168.2.1 24</p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;1]quit	</p>
+<p>[R2]ip route-static 0.0.0.0 0 192.168.2.254</p>
+<p>配置默认路由，相当于给设备配置了网关。</p>
+<p><R3>system-view </R3></p>
+<p>Enter system view, return user view with Ctrl+Z.</p>
+<p>[R3]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
+<p>[R3-GigabitEthernet0&#x2F;0&#x2F;1]ip address 192.168.3.1 24</p>
+<p>[R3-GigabitEthernet0&#x2F;0&#x2F;1]quit</p>
+<p>[R3]ip route-static 0.0.0.0 0 192.168.3.254</p>
+<p># 在S1上对R2和R3进行VLAN划分</p>
+<p>[S1]vlan batch 2 3</p>
+<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;2</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;2]port link-type access </p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;2]port default vlan 2</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;2]quit</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;3</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;3]port link-type access </p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;3]port default vlan 3</p>
+<p>步骤 1 通过Dot1q终结子接口实现VLAN间互访 </p>
+<p># 配置S1上的Trunk接口</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;1]port trunk allow-pass vlan 2 3</p>
+<p><em>因为VLAN间<strong>互访数据要</strong>由R1来终结VLAN<strong>，</strong>所以S1和R1之间<strong>的链路要允许</strong>VLAN2和VLAN3通过**。</em></p>
+<p># 在R1上创建并配置Dot1q终结子接口</p>
+<p>[R1]interface GigabitEthernet 0&#x2F;0&#x2F;1.2 </p>
+<p>创建并进入子接口视图。2代表子接口的编号，一般建议子接口编号与VLAN ID相同，方便记忆。</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.2]dot1q termination vid 2 </p>
+<p><strong>dot1q termination vid</strong> <em>vlan-id</em>命令用来配置子接口Dot1q终结的VLAN ID。</p>
+<p>以此配置为例：当GigabitEthernet0&#x2F;0&#x2F;1接口收到带有VLAN 2标签的数据之后，会交由2号子接口进行VLAN终结操作并做后续处理。从2号子接口发出的数据也会带上VLAN 2的标签。</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.2]arp broadcast enable </p>
+<p>终结子接口不能转发广播报文，在收到广播报文后它们直接把该报文丢弃。为了允许终结子接口能转发广播报文，可以通过在子接口上执行命令<strong>arp broadcast enable</strong>使能终结子接口的ARP广播功能。部分设备默认使能该功能，此命令的配置根据设备而定。</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.2]ip address 192.168.2.254 24 </p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.2]quit</p>
+<p>[R1]interface GigabitEthernet 0&#x2F;0&#x2F;1.3</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.3]dot1q termination vid 3</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.3]arp broadcast enable</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.3]ip address 192.168.3.254 24</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.3]quit</p>
+<p># 检测VLAN间互访联通性 </p>
+<p><R2>ping 192.168.3.1</R2></p>
+<p> PING 192.168.3.1: 56  data bytes, press CTRL_C to break</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;1 ttl&#x3D;254 time&#x3D;60 ms</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;2 ttl&#x3D;254 time&#x3D;40 ms</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;3 ttl&#x3D;254 time&#x3D;110 ms</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;4 ttl&#x3D;254 time&#x3D;70 ms</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;5 ttl&#x3D;254 time&#x3D;100 ms</p>
+<p> — 192.168.3.1 ping statistics —</p>
+<p>  5 packet(s) transmitted</p>
+<p>  5 packet(s) received</p>
+<p>  0.00% packet loss</p>
+<p>  round-trip min&#x2F;avg&#x2F;max &#x3D; 40&#x2F;76&#x2F;110 ms</p>
+<p><R2>tracert 192.168.3.1 </R2></p>
+<p> traceroute to  192.168.3.1(192.168.3.1), max hops: 30 ,packet length: 40,press CTRL_C to break </p>
+<p> 1 192.168.2.254 30 ms  50 ms  50 ms </p>
+<p> 2 192.168.3.1 70 ms  60 ms  60 ms </p>
+<p>此时VLAN2和VLAN3之间已经可以正常的互访。</p>
+<p>步骤 2 通过VLANIF接口实现VLAN间互访</p>
+<p># 清除上一步配置</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;1]undo port trunk allow-pass vlan 2 3</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;1]undo port link-type</p>
+<p>[R1]undo interface GigabitEthernet 0&#x2F;0&#x2F;1.2 </p>
+<p>[R1]undo interface GigabitEthernet 0&#x2F;0&#x2F;1.3</p>
+<p># 在S1上创建相应的VLANIF接口 </p>
+<p>[S1]interface Vlanif 2</p>
+<p><strong>interface vlanif</strong> <em>vlan-id</em>命令用来创建VLANIF接口并进入VLANIF接口视图。只有先通过命令创建VLAN后，才能执行interface vlanif命令创建VLANIF接口。</p>
+<p>[S1-Vlanif2]ip address 192.168.2.254 24</p>
+<p>[S1-Vlanif2]quit</p>
+<p>[S1]interface Vlanif 3</p>
+<p>[S1-Vlanif3]ip address 192.168.3.254 24 </p>
+<p>[S1-Vlanif3]quit</p>
+<p># 检测VLAN间互访联通性</p>
+<p><R2>ping 192.168.3.1 </R2></p>
+<p> PING 192.168.3.1: 56  data bytes, press CTRL_C to break</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;1 ttl&#x3D;254 time&#x3D;100 ms</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;2 ttl&#x3D;254 time&#x3D;50 ms</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;3 ttl&#x3D;254 time&#x3D;50 ms</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;4 ttl&#x3D;254 time&#x3D;60 ms</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;5 ttl&#x3D;254 time&#x3D;70 ms</p>
+<p> — 192.168.3.1 ping statistics —</p>
+<p>  5 packet(s) transmitted</p>
+<p>  5 packet(s) received</p>
+<p>  0.00% packet loss</p>
+<p>  round-trip min&#x2F;avg&#x2F;max &#x3D; 50&#x2F;66&#x2F;100 ms</p>
+<p><R2>tracert 192.168.3.1 </R2></p>
+<p> traceroute to  192.168.3.1(192.168.3.1), max hops: 30 ,packet length: 40,press CTRL_C to break </p>
+<p> 1 192.168.2.254 40 ms  30 ms  20 ms </p>
+<p> 2 192.168.3.1 40 ms  30 ms  40 ms</p>
+<p>此时VLAN2和VLAN3之间已经可以正常的互访。</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>vlan间通信</tag>
+        <tag>dot1q</tag>
+        <tag>vlanif</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>交换机工作原理</title>
+    <url>/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/</url>
+    <content><![CDATA[<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/1jhjgzyl938.png" alt="1jhjgzyl938"></p>
+<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/2jhjgzyl0011038.png" alt="2jhjgzyl0011038"></p>
+<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/3jhjgzyl011116.png" alt="3jhjgzyl011116"></p>
+<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/4jhjgzyl135.png" alt="4jhjgzyl135"></p>
+<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/5jhjgzyl330011154.png" alt="5jhjgzyl330011154"></p>
+<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/6jhjgzyl0011208.png" alt="6jhjgzyl0011208"></p>
+<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/7jhjgzyl1222.png" alt="7jhjgzyl1222"></p>
+<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/8jhjgzyl240.png" alt="8jhjgzyl240"></p>
+<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/9jhjadji11254.png" alt="9jhjadji11254"></p>
+]]></content>
+      <categories>
+        <category>基础知识</category>
+      </categories>
+      <tags>
+        <tag>交换机工作原理</tag>
       </tags>
   </entry>
   <entry>
