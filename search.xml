@@ -374,167 +374,6 @@
       </tags>
   </entry>
   <entry>
-    <title>FTP实验</title>
-    <url>/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/</url>
-    <content><![CDATA[<h1 id="File-Transfer-Protocol-文件传输协议"><a href="#File-Transfer-Protocol-文件传输协议" class="headerlink" title="File Transfer Protocol 文件传输协议"></a>File Transfer Protocol 文件传输协议</h1><p>FTP服务器开启21号端口进行控制连接，20号端口与客户端建立数据连接</p>
-<p>ASCII ((American Standard Code for Information Interchange): 美国信息交换标准代码）是基于拉丁字母的一套电脑编码系统，主要用于显示现代英语和其他西欧语言，它是最通用的信息交换标准。</p>
-<p>FTP是用来传送文件的协议。使用FTP实现远程文件传输的同时，还可以保证数据传输的可靠性和高效性。</p>
-<p>FTP 是基于客户———服务器（C&#x2F;S）模型而设计的，在客户端与 FTP 服务器之间建立两个连接</p>
-<h2 id="传输方式"><a href="#传输方式" class="headerlink" title="传输方式"></a>传输方式</h2><p>FTP支持两种方式的传输：文本（ASCII）方式和二进制（Binary）方式。通常文本文件的传输采用ASCII方式，而图象、声音文件、加密和压缩文件等非文本文件采用二进制方式传输，如果为了从一个系统上传输文件而使用了与本地系统不同的计算机字节位数，那么就必须使用Tenex模式。FTP以ASCII方式作为缺省的文件传输方式。</p>
-<h2 id="传输过程"><a href="#传输过程" class="headerlink" title="传输过程"></a>传输过程</h2><p> 使用FTP进行文件传输时，会使用两个TCP连接。第一个连接是FTP客户端和FTP服务器间的控制连接。FTP服务器开启21号端口，等待FTP客户端发送连接请求。FTP客户端随机开启端口，向服务器发送建立连接的请求。控制连接用于在服务器和客户端之间传输控制命令。<br>        第二个连接是FTP客户端和FTP服务器间的数据连接。服务器使用TCP的20号端口与客户端建立数据连接。通常情况下，服务器主动建立或中断数据连接。</p>
-<h2 id="FTP服务器配置"><a href="#FTP服务器配置" class="headerlink" title="FTP服务器配置"></a>FTP服务器配置</h2><p>路由器和X7系列交换机均可提供FTP功能。<br>执行ftp server enable命令使能FTP功能。<br>执行set default ftp-directory命令设置FTP用户的默认工作目录。</p>
-<p>在配置FTP服务器时，可以使用AAA为每个用户分别配置登录账号和访问权限。 aaa命令用来进入AAA视图。</p>
-<p>  local-user user-name { access-limit max-number | ftp-directory directory | idle-timeout         minutes [ seconds ] | password cipher password [ opt ]         | privilege level level | state {active | block } } *命令用来创建本地用户，并配置本地用户的各项参数。</p>
-<pre><code>  user-name指定用户名。
-    local-user huawei service-type ftp命令用来配置本地用户的接入类型为ftp。
-    ftp-directory指定FTP用户可访问的目录。如果不配置FTP用户可访问的目录，则FTP用户无法登录设备。
-    access-limit指定用户名可建立的最大连接数目。
-    idle-timeout指定用户的闲置超时时间。
-    privilege level指定用户的优先级。
-</code></pre>
-<h2 id="命令详解"><a href="#命令详解" class="headerlink" title="命令详解"></a>命令详解</h2><h3 id="idle-timeout"><a href="#idle-timeout" class="headerlink" title="idle-timeout"></a>idle-timeout</h3><p><strong>idle-timeout</strong>命令用来设置用户连接的超时时间。</p>
-<p><strong>undo idle-timeout</strong>命令用来恢复超时时间的缺省值。</p>
-<p>缺省情况下，用户连接的超时时间是5分钟。</p>
-<p>命令格式</p>
-<p><strong>idle-timeout</strong> <em>minutes</em> [ <em>seconds</em> ]</p>
-<p><strong>undo idle-timeout</strong></p>
-<table>
-<thead>
-<tr>
-<th align="left"><em>minutes</em></th>
-<th>指定用户界面断连的超时时间的分钟数。</th>
-<th>整数形式，取值范围是0～35791，单位是分钟。</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left"><em>seconds</em></td>
-<td>指定用户界面断连的超时时间的秒数。</td>
-<td>整数形式，取值范围是0～59，单位是秒</td>
-</tr>
-</tbody></table>
-<p>缺省级别</p>
-<p>3：管理级</p>
-<ul>
-<li>设置执行命令<strong>idle-timeout</strong> <strong>0 0</strong>即关闭用户界面的超时断连功能。</li>
-<li>如果用户界面没有设置闲置断连功能，则会导致已登录的用户始终处于连接状态，给设备带来安全风险，同时还有可能导致其他用户无法获得连接。</li>
-<li>通常情况下，推荐设置用户界面断连的超时时间在10～15分钟之间。</li>
-</ul>
-<p># 设置超时为1分钟30秒。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">idle-timeout 1 30</span><br></pre></td></tr></table></figure>
-
-
-
-<h3 id="local-user-privilege-level"><a href="#local-user-privilege-level" class="headerlink" title="local-user privilege level"></a>local-user privilege level</h3><p>必须配置在3以上，否则ftp连接无法成功</p>
-<p><strong>local-user privilege level</strong>命令用来配置本地用户的优先级。</p>
-<p><strong>undo</strong> <strong>local-user privilege level</strong>命令用来将本地用户的优先级恢复为缺省配置。</p>
-<p>缺省情况下，本地用户（如Telnet用户、SSH用户）的优先级由管理模块来决定。</p>
-<p>命令格式</p>
-<p><strong>local-user</strong> <em>user-name</em> <strong>privilege level</strong> <em>level</em></p>
-<p><strong>undo local-user</strong> <em>user-name</em> <strong>privilege level</strong></p>
-<table>
-<thead>
-<tr>
-<th><em>user-name</em></th>
-<th>用户名。</th>
-<th>字符串形式，不支持空格，不区分大小写，长度范围是1~64。</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><em>level</em></td>
-<td>用户的优先级。</td>
-<td>整数形式，取值范围是0~15，取值越大，用户的优先级越高。缺省级别是0级。不同级别的用户登录后，只能使用等于或低于自己级别的命令</td>
-</tr>
-</tbody></table>
-<p>缺省情况下，命令级别分为0~3级：</p>
-<ul>
-<li>级别0即参观级，网络诊断工具命令（ping、tracert）、从本设备出发访问外部设备的命令（包括：Telnet 客户端、SSH）等。该级别命令不允许进行配置文件保存的操作。</li>
-<li>级别1即监控级，用于系统维护，包括display命令。该级别命令不允许进行配置文件保存的操作。</li>
-<li>级别2即配置级，可以使用业务配置命令，包括路由、各个网络层次的命令，向用户提供直接网络服务。</li>
-<li>级别3即管理级，用于系统基本运行的命令，对业务提供支撑作用，包括文件系统、FTP、TFTP、配置文件切换命令、备板控制命令、用户管理命令、命令级别设置命令、系统内部参数设置命令；用于业务故障诊断的debugging命令。</li>
-</ul>
-<h3 id="access-limit"><a href="#access-limit" class="headerlink" title="access-limit"></a>access-limit</h3><p><strong>access-limit</strong>命令用来配置当前域允许接入的用户数。</p>
-<p><strong>undo access-limit</strong>命令用来恢复缺省配置。</p>
-<p>缺省情况下，不限制接入的用户数目。</p>
-<p>命令格式</p>
-<p><strong>access-limit</strong> <em>max-number</em></p>
-<p><strong>undo access-limit</strong></p>
-<table>
-<thead>
-<tr>
-<th><em>max-number</em></th>
-<th>指定允许接入的用户数。</th>
-<th>整数形式，取值范围是0～283648。</th>
-</tr>
-</thead>
-<tbody><tr>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-</tbody></table>
-<p>为了更方便地管理用户访问设备，可以限制域下用户的在线数量。</p>
-<p><strong>注意事项</strong></p>
-<p>执行这条配置命令后，当接入用户数大于允许的用户数时，系统不再允许用户接入系统，提示用户认证失败。</p>
-<p><strong>access-limit</strong>命令对一个域下所能接入的用户总数进行限制，不区分接入用户的类型。</p>
-<p># 设置当前域最多允许接入100个用户。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">access-limit 100</span><br></pre></td></tr></table></figure>
-
-
-
-<h3 id="local-user-ftp-directory"><a href="#local-user-ftp-directory" class="headerlink" title="local-user ftp-directory"></a>local-user ftp-directory</h3><p><strong>local-user ftp-directory</strong>命令用来配置本地用户的FTP目录。</p>
-<p><strong>undo local-user ftp-directory</strong>命令用来将本地用户的FTP目录恢复为缺省配置。</p>
-<p>缺省情况下，本地用户的FTP目录为空。</p>
-<p>当需要将设备配置为FTP服务器，从而便于本地用户以FTP方式登录设备，对设备上的文件进行增加、删除、修改等操作时，可以通过本命令配置本地用户以FTP方式登录设备后所处的目录。</p>
-<p>不指定该目录时，本地用户无法以FTP方式登录设备。</p>
-<p>配置本地用户的FTP目录时，该用户必须已由local-user password命令建立。</p>
-<h3 id="local-user-password"><a href="#local-user-password" class="headerlink" title="local-user password"></a>local-user password</h3><p><strong>local-user password</strong>命令用来创建一个本地用户并配置该用户的登录密码，或者修改已创建用户的登录密码。</p>
-<p><strong>undo local-user</strong>命令用来删除一个本地用户。</p>
-<p>缺省情况下，系统没有本地用户。</p>
-<p><strong>local-user</strong> <em>user-name</em> <strong>password</strong> [ <strong>cipher</strong> <em>password</em> | <strong>irreversible-cipher</strong> <em>irreversible-cipher-password</em> ]</p>
-<p><strong>undo local-user</strong> <em>user-name</em></p>
-<p><strong>cipher</strong> <em>password</em></p>
-<p>指定密文密钥。密钥以明文或密文形式输入，但配置文件中保存为密文形式。</p>
-<p><strong>irreversible-cipher</strong> <em>irreversible-cipher-password</em></p>
-<p>指定不可逆密文密钥。密钥以明文或不可逆密文形式输入，但配置文件中保存为密文形式。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>1.FTP服务器需要开启TCP的21号端口来建立控制连接，20号端口来建立数据连接。</p>
-<p>2.如果用户无权访问任何工作目录，则需要定义一个默认的FTP目录。执行set default ftp-directory <directory location>命令建立默认目录。</directory></p>
-<h2 id="FTP实验"><a href="#FTP实验" class="headerlink" title="FTP实验"></a>FTP实验</h2><p>R1 做为FTP Server 进行配置<br>R2 做为Client 测试</p>
-<p>R1：<br>undo ter mo<br>sys<br>sysname R1<br>int g0&#x2F;0&#x2F;0<br>ip add 192.168.1.1 24</p>
-<p>R2：<br>undo ter mo<br>sys<br>sysname R2<br>int g0&#x2F;0&#x2F;0<br>ip add 192.168.1.2 24</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/ftp1130183749.png" alt="ftp1130183749"></p>
-<p>R1:<br>ftp server enable<br>set default ftp-directory flash:&#x2F;</p>
-<p>（设置默认目录为flash:&#x2F;）</p>
-<p><strong>ftp server enable</strong>命令用来开启设备的FTP服务器功能，允许FTP用户登录。缺省情况下，FTP服务器功能处于关闭状态。</p>
-<p>其他可选的配置参数还包括：指定FTP服务器端口号、指定FTP服务器的源地址和配置FTP连接空闲时间等。</p>
-<p>R1：</p>
-<p>通过在AAA中设置用户名和密码（均为huawei）<br>aaa<br>local-user huawei password cipher huawei<br>local-user huawei service-type ftp<br>local-user huawei ftp-directory flash:&#x2F;<br>local-user huawei access-limit 200<br>local-user huawei idle-timeout 0 0<br>local-user huawei privilege level 3</p>
-<p>查看ftp server配置信息</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/diskvk30184121.png" alt="diskvk30184121"></p>
-<p>R2登录FTP服务器</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/ftpdenglu1130184259.png" alt="ftpdenglu1130184259"></p>
-<p>在R1和R2上分别保存文件text1.cfg和text2.cfg，用于后续测试</p>
-<p>R1：save text1.cfg</p>
-<p>R2：save text2.cfg</p>
-<p>R2上通过dir命令查看服务器上的文件</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/dirr2184558.png" alt="dirr2184558"></p>
-<p>R2从服务器上下载text1.cfg文件，并改名为newtext1.cfg</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/xiazaigaiming0184834.png" alt="xiazaigaiming0184834"></p>
-<p>R2本地查看dir</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/r2bendichakan30184952.png" alt="r2bendichakan30184952"></p>
-<p>put把本地文件text2.cfg上传到服务器，并改名为newtext2.cfg</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/putnew85130.png" alt="putnew85130"></p>
-<p>查看是否上传成功</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/yanzg5227.png" alt="yanzg5227"></p>
-<p>关闭ftp连接：bye</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>FTP</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>DHCP基础配置</title>
     <url>/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/</url>
     <content><![CDATA[<p> DHCP是一种终端自动配置协议，客户端通过DHCP协议可获取一个合法的动态IP地址。</p>
@@ -810,6 +649,167 @@
       </tags>
   </entry>
   <entry>
+    <title>FTP实验</title>
+    <url>/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/</url>
+    <content><![CDATA[<h1 id="File-Transfer-Protocol-文件传输协议"><a href="#File-Transfer-Protocol-文件传输协议" class="headerlink" title="File Transfer Protocol 文件传输协议"></a>File Transfer Protocol 文件传输协议</h1><p>FTP服务器开启21号端口进行控制连接，20号端口与客户端建立数据连接</p>
+<p>ASCII ((American Standard Code for Information Interchange): 美国信息交换标准代码）是基于拉丁字母的一套电脑编码系统，主要用于显示现代英语和其他西欧语言，它是最通用的信息交换标准。</p>
+<p>FTP是用来传送文件的协议。使用FTP实现远程文件传输的同时，还可以保证数据传输的可靠性和高效性。</p>
+<p>FTP 是基于客户———服务器（C&#x2F;S）模型而设计的，在客户端与 FTP 服务器之间建立两个连接</p>
+<h2 id="传输方式"><a href="#传输方式" class="headerlink" title="传输方式"></a>传输方式</h2><p>FTP支持两种方式的传输：文本（ASCII）方式和二进制（Binary）方式。通常文本文件的传输采用ASCII方式，而图象、声音文件、加密和压缩文件等非文本文件采用二进制方式传输，如果为了从一个系统上传输文件而使用了与本地系统不同的计算机字节位数，那么就必须使用Tenex模式。FTP以ASCII方式作为缺省的文件传输方式。</p>
+<h2 id="传输过程"><a href="#传输过程" class="headerlink" title="传输过程"></a>传输过程</h2><p> 使用FTP进行文件传输时，会使用两个TCP连接。第一个连接是FTP客户端和FTP服务器间的控制连接。FTP服务器开启21号端口，等待FTP客户端发送连接请求。FTP客户端随机开启端口，向服务器发送建立连接的请求。控制连接用于在服务器和客户端之间传输控制命令。<br>        第二个连接是FTP客户端和FTP服务器间的数据连接。服务器使用TCP的20号端口与客户端建立数据连接。通常情况下，服务器主动建立或中断数据连接。</p>
+<h2 id="FTP服务器配置"><a href="#FTP服务器配置" class="headerlink" title="FTP服务器配置"></a>FTP服务器配置</h2><p>路由器和X7系列交换机均可提供FTP功能。<br>执行ftp server enable命令使能FTP功能。<br>执行set default ftp-directory命令设置FTP用户的默认工作目录。</p>
+<p>在配置FTP服务器时，可以使用AAA为每个用户分别配置登录账号和访问权限。 aaa命令用来进入AAA视图。</p>
+<p>  local-user user-name { access-limit max-number | ftp-directory directory | idle-timeout         minutes [ seconds ] | password cipher password [ opt ]         | privilege level level | state {active | block } } *命令用来创建本地用户，并配置本地用户的各项参数。</p>
+<pre><code>  user-name指定用户名。
+    local-user huawei service-type ftp命令用来配置本地用户的接入类型为ftp。
+    ftp-directory指定FTP用户可访问的目录。如果不配置FTP用户可访问的目录，则FTP用户无法登录设备。
+    access-limit指定用户名可建立的最大连接数目。
+    idle-timeout指定用户的闲置超时时间。
+    privilege level指定用户的优先级。
+</code></pre>
+<h2 id="命令详解"><a href="#命令详解" class="headerlink" title="命令详解"></a>命令详解</h2><h3 id="idle-timeout"><a href="#idle-timeout" class="headerlink" title="idle-timeout"></a>idle-timeout</h3><p><strong>idle-timeout</strong>命令用来设置用户连接的超时时间。</p>
+<p><strong>undo idle-timeout</strong>命令用来恢复超时时间的缺省值。</p>
+<p>缺省情况下，用户连接的超时时间是5分钟。</p>
+<p>命令格式</p>
+<p><strong>idle-timeout</strong> <em>minutes</em> [ <em>seconds</em> ]</p>
+<p><strong>undo idle-timeout</strong></p>
+<table>
+<thead>
+<tr>
+<th align="left"><em>minutes</em></th>
+<th>指定用户界面断连的超时时间的分钟数。</th>
+<th>整数形式，取值范围是0～35791，单位是分钟。</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><em>seconds</em></td>
+<td>指定用户界面断连的超时时间的秒数。</td>
+<td>整数形式，取值范围是0～59，单位是秒</td>
+</tr>
+</tbody></table>
+<p>缺省级别</p>
+<p>3：管理级</p>
+<ul>
+<li>设置执行命令<strong>idle-timeout</strong> <strong>0 0</strong>即关闭用户界面的超时断连功能。</li>
+<li>如果用户界面没有设置闲置断连功能，则会导致已登录的用户始终处于连接状态，给设备带来安全风险，同时还有可能导致其他用户无法获得连接。</li>
+<li>通常情况下，推荐设置用户界面断连的超时时间在10～15分钟之间。</li>
+</ul>
+<p># 设置超时为1分钟30秒。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">idle-timeout 1 30</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="local-user-privilege-level"><a href="#local-user-privilege-level" class="headerlink" title="local-user privilege level"></a>local-user privilege level</h3><p>必须配置在3以上，否则ftp连接无法成功</p>
+<p><strong>local-user privilege level</strong>命令用来配置本地用户的优先级。</p>
+<p><strong>undo</strong> <strong>local-user privilege level</strong>命令用来将本地用户的优先级恢复为缺省配置。</p>
+<p>缺省情况下，本地用户（如Telnet用户、SSH用户）的优先级由管理模块来决定。</p>
+<p>命令格式</p>
+<p><strong>local-user</strong> <em>user-name</em> <strong>privilege level</strong> <em>level</em></p>
+<p><strong>undo local-user</strong> <em>user-name</em> <strong>privilege level</strong></p>
+<table>
+<thead>
+<tr>
+<th><em>user-name</em></th>
+<th>用户名。</th>
+<th>字符串形式，不支持空格，不区分大小写，长度范围是1~64。</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><em>level</em></td>
+<td>用户的优先级。</td>
+<td>整数形式，取值范围是0~15，取值越大，用户的优先级越高。缺省级别是0级。不同级别的用户登录后，只能使用等于或低于自己级别的命令</td>
+</tr>
+</tbody></table>
+<p>缺省情况下，命令级别分为0~3级：</p>
+<ul>
+<li>级别0即参观级，网络诊断工具命令（ping、tracert）、从本设备出发访问外部设备的命令（包括：Telnet 客户端、SSH）等。该级别命令不允许进行配置文件保存的操作。</li>
+<li>级别1即监控级，用于系统维护，包括display命令。该级别命令不允许进行配置文件保存的操作。</li>
+<li>级别2即配置级，可以使用业务配置命令，包括路由、各个网络层次的命令，向用户提供直接网络服务。</li>
+<li>级别3即管理级，用于系统基本运行的命令，对业务提供支撑作用，包括文件系统、FTP、TFTP、配置文件切换命令、备板控制命令、用户管理命令、命令级别设置命令、系统内部参数设置命令；用于业务故障诊断的debugging命令。</li>
+</ul>
+<h3 id="access-limit"><a href="#access-limit" class="headerlink" title="access-limit"></a>access-limit</h3><p><strong>access-limit</strong>命令用来配置当前域允许接入的用户数。</p>
+<p><strong>undo access-limit</strong>命令用来恢复缺省配置。</p>
+<p>缺省情况下，不限制接入的用户数目。</p>
+<p>命令格式</p>
+<p><strong>access-limit</strong> <em>max-number</em></p>
+<p><strong>undo access-limit</strong></p>
+<table>
+<thead>
+<tr>
+<th><em>max-number</em></th>
+<th>指定允许接入的用户数。</th>
+<th>整数形式，取值范围是0～283648。</th>
+</tr>
+</thead>
+<tbody><tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>为了更方便地管理用户访问设备，可以限制域下用户的在线数量。</p>
+<p><strong>注意事项</strong></p>
+<p>执行这条配置命令后，当接入用户数大于允许的用户数时，系统不再允许用户接入系统，提示用户认证失败。</p>
+<p><strong>access-limit</strong>命令对一个域下所能接入的用户总数进行限制，不区分接入用户的类型。</p>
+<p># 设置当前域最多允许接入100个用户。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">access-limit 100</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="local-user-ftp-directory"><a href="#local-user-ftp-directory" class="headerlink" title="local-user ftp-directory"></a>local-user ftp-directory</h3><p><strong>local-user ftp-directory</strong>命令用来配置本地用户的FTP目录。</p>
+<p><strong>undo local-user ftp-directory</strong>命令用来将本地用户的FTP目录恢复为缺省配置。</p>
+<p>缺省情况下，本地用户的FTP目录为空。</p>
+<p>当需要将设备配置为FTP服务器，从而便于本地用户以FTP方式登录设备，对设备上的文件进行增加、删除、修改等操作时，可以通过本命令配置本地用户以FTP方式登录设备后所处的目录。</p>
+<p>不指定该目录时，本地用户无法以FTP方式登录设备。</p>
+<p>配置本地用户的FTP目录时，该用户必须已由local-user password命令建立。</p>
+<h3 id="local-user-password"><a href="#local-user-password" class="headerlink" title="local-user password"></a>local-user password</h3><p><strong>local-user password</strong>命令用来创建一个本地用户并配置该用户的登录密码，或者修改已创建用户的登录密码。</p>
+<p><strong>undo local-user</strong>命令用来删除一个本地用户。</p>
+<p>缺省情况下，系统没有本地用户。</p>
+<p><strong>local-user</strong> <em>user-name</em> <strong>password</strong> [ <strong>cipher</strong> <em>password</em> | <strong>irreversible-cipher</strong> <em>irreversible-cipher-password</em> ]</p>
+<p><strong>undo local-user</strong> <em>user-name</em></p>
+<p><strong>cipher</strong> <em>password</em></p>
+<p>指定密文密钥。密钥以明文或密文形式输入，但配置文件中保存为密文形式。</p>
+<p><strong>irreversible-cipher</strong> <em>irreversible-cipher-password</em></p>
+<p>指定不可逆密文密钥。密钥以明文或不可逆密文形式输入，但配置文件中保存为密文形式。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>1.FTP服务器需要开启TCP的21号端口来建立控制连接，20号端口来建立数据连接。</p>
+<p>2.如果用户无权访问任何工作目录，则需要定义一个默认的FTP目录。执行set default ftp-directory <directory location>命令建立默认目录。</directory></p>
+<h2 id="FTP实验"><a href="#FTP实验" class="headerlink" title="FTP实验"></a>FTP实验</h2><p>R1 做为FTP Server 进行配置<br>R2 做为Client 测试</p>
+<p>R1：<br>undo ter mo<br>sys<br>sysname R1<br>int g0&#x2F;0&#x2F;0<br>ip add 192.168.1.1 24</p>
+<p>R2：<br>undo ter mo<br>sys<br>sysname R2<br>int g0&#x2F;0&#x2F;0<br>ip add 192.168.1.2 24</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/ftp1130183749.png" alt="ftp1130183749"></p>
+<p>R1:<br>ftp server enable<br>set default ftp-directory flash:&#x2F;</p>
+<p>（设置默认目录为flash:&#x2F;）</p>
+<p><strong>ftp server enable</strong>命令用来开启设备的FTP服务器功能，允许FTP用户登录。缺省情况下，FTP服务器功能处于关闭状态。</p>
+<p>其他可选的配置参数还包括：指定FTP服务器端口号、指定FTP服务器的源地址和配置FTP连接空闲时间等。</p>
+<p>R1：</p>
+<p>通过在AAA中设置用户名和密码（均为huawei）<br>aaa<br>local-user huawei password cipher huawei<br>local-user huawei service-type ftp<br>local-user huawei ftp-directory flash:&#x2F;<br>local-user huawei access-limit 200<br>local-user huawei idle-timeout 0 0<br>local-user huawei privilege level 3</p>
+<p>查看ftp server配置信息</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/diskvk30184121.png" alt="diskvk30184121"></p>
+<p>R2登录FTP服务器</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/ftpdenglu1130184259.png" alt="ftpdenglu1130184259"></p>
+<p>在R1和R2上分别保存文件text1.cfg和text2.cfg，用于后续测试</p>
+<p>R1：save text1.cfg</p>
+<p>R2：save text2.cfg</p>
+<p>R2上通过dir命令查看服务器上的文件</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/dirr2184558.png" alt="dirr2184558"></p>
+<p>R2从服务器上下载text1.cfg文件，并改名为newtext1.cfg</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/xiazaigaiming0184834.png" alt="xiazaigaiming0184834"></p>
+<p>R2本地查看dir</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/r2bendichakan30184952.png" alt="r2bendichakan30184952"></p>
+<p>put把本地文件text2.cfg上传到服务器，并改名为newtext2.cfg</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/putnew85130.png" alt="putnew85130"></p>
+<p>查看是否上传成功</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/yanzg5227.png" alt="yanzg5227"></p>
+<p>关闭ftp连接：bye</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>FTP</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Hybrid接口</title>
     <url>/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/</url>
     <content><![CDATA[<h1 id="接口属性"><a href="#接口属性" class="headerlink" title="接口属性"></a>接口属性</h1><p>​	交换机接口的类型，可以是Access、Trunk和Hybrid。Access类型的接口仅属于一个VLAN,,,,只能接收、转发相应VLAN的帧；而Trunk类型接口则默认属于所有VLAN任何Tagged帧都能经过Trunk接收和转发； Hybrid类型接口则介于二者之间，可自主定义端口上能接收和转发那些VLAN Tag帧，并可决定VLAN Tag是否继续携带或者剥离。。Access和Trunk类型接口是Hybrid类型接口的两个特例，，，一个仅支持一个VLAN传递，，一个默认支持所有VLAN的传递，而Access类型和Trunk类型的接口能做到的，Hybrid接口都能做到。</p>
@@ -838,6 +838,95 @@
       <tags>
         <tag>hybrid</tag>
         <tag>tag</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>IS-IS总结</title>
+    <url>/2024/04/20/IS-IS%E6%80%BB%E7%BB%93/</url>
+    <content><![CDATA[<p>1、IS-IS的介绍</p>
+<p>IS-IS   —中间系统到中间系统</p>
+<p>Is-is最开始是在osi模型中，适用于CLNP网络，现在的Isis指的是集成Isis</p>
+<p>集成IS-IS特点:<br>支持CLNP网络、IP网络<br>采用数据链路层封装</p>
+<p>OSPF特点:<br>只支持IP网络<br>采用IP报文封装</p>
+<p>应用场景：</p>
+<p>ospf：园区网络</p>
+<p>Isis：ISP骨干网</p>
+<p>CLNP协议中不实用IP地址，使用的是NSAP地址</p>
+<p><img src="/2024/04/20/IS-IS%E6%80%BB%E7%BB%93/wps1.jpg" alt="img"> </p>
+<p>NET（Network Entity Title，网络实体名称）是OSI协议栈中设备的网络层信息，主要用于路由计算，由区域地址（Area ID）和System ID组成，可以看作是特殊的NSAP（SEL为00的NSAP）。<br>NET的长度与NSAP的相同，最长为20Byte，最短为8Byte。<br>在IP网络中运行IS-IS时，只需配置NET，根据NET地址设备可以获取到Area ID以及System ID。<br>System ID必须唯一，类似ospf中的router id</p>
+<p>2、IS-IS基本概念</p>
+<p>1）IS-IS中路由器的分类</p>
+<p>Leverl-1：只能和同区域的L1、L1&#x2F;2路由器建立L1的邻接关系，只能有本区域的L1 LSDB数据库</p>
+<p>level-2：可以和同区域的或者不同 区域L2、L1&#x2F;2路由器建立L2的邻接关系，拥有L2的LSDB</p>
+<p>level1-2：可以 和同区域的L1路由器建立L1的邻接关系，也可以和同区域或者不同区域的L2路由器建立L2的邻接关系</p>
+<p>2）Isis支持 的网络类型</p>
+<p>广播和点到点</p>
+<p>广播（Broadcast）： 如Ethernet。<br>点到点（P2P）： 如PPP、 HDLC等。</p>
+<p>3）Isis的开销值</p>
+<p>IS-IS有三种方式来确定接口的开销，按照优先级由高到低分别是：<br>接口开销：为单个接口设置开销。<br>全局开销：为所有接口设置开销。<br>自动计算开销：根据接口带宽自动计算开销。</p>
+<p>3、IS-IS协议工作原理</p>
+<p>工作原理：①建立邻接；②同步LSDB；③计算路由；</p>
+<p>1）邻接建立</p>
+<p>IS-IS按如下原则建立邻接关系：<br>只有同一层次的相邻路由器才有可能成为邻接。<br>对于Level-1路由器来说，Area ID必须一致。<br>链路两端IS-IS接口的网络类型必须一致。<br>链路两端IS-IS接口的地址必须处于同一网段（默认情况下）。</p>
+<p>使用IIH（Isis hello ）：发现邻居；建立邻接关系；维护邻接关系，</p>
+<p>广播网络：level-1 LAN IIH、level-2 LAN IIH、</p>
+<p>Level-1 IIH和Level-2 IIH发送的组播地址分别为01-80-C2-00-00-14、01-80-C2-00-00-15。</p>
+<p>点到点网络中：P2P  IIH</p>
+<p>广播类型：</p>
+<p><img src="/2024/04/20/IS-IS%E6%80%BB%E7%BB%93/wps2.jpg" alt="img"> </p>
+<p>点到点类型：</p>
+<p><img src="/2024/04/20/IS-IS%E6%80%BB%E7%BB%93/wps3.jpg" alt="img"> </p>
+<p>选举DIS：</p>
+<p>在广播网络中，IS-IS需要在一个广播网络中的所有的路由器中选举一个路由器作为DIS（Designated Intermediate System）。<br>DIS用来创建和更新伪节点（Pseudonodes），并负责生成伪节点的LSP，用来描述这个网络上有哪些网络设备。伪节点是用来模拟广播网络的一个虚拟节点，并非真实的路由器。在IS-IS中，伪节点用DIS的System ID和Circuit ID（非0值）标识。</p>
+<p>Level-1和Level-2的DIS是分别选举的，用户可以为不同级别的DIS选举设置不同的优先级。</p>
+<p>DIS选举原则：</p>
+<p>①优先级：0-127  默认64，越大越优，优先级0也参与选举</p>
+<p>②MAC地址：越大越优</p>
+<p>DIS发送Hello PDU的时间间隔是普通路由器的1&#x2F;3，这样可以确保DIS出现故障时能够被更快速地被发现。</p>
+<p>IS-IS中DIS与OSPF协议中DR（Designated Router）的区别：<br>在IS-IS广播网中，优先级为0的路由器也参与DIS的选举，而在OSPF中优先级为0的路由器则不参与DR的选举。<br>在IS-IS广播网中，当有新的路由器加入，并符合成为DIS的条件时，这个路由器会被选中成为新的DIS，原有的伪节点被删除。此更改会引起一组新的LSP泛洪。而在OSPF中，当一台新路由器加入后，即使它的DR优先级值最大，也不会立即成为该网段中的DR。—-ISis中的DIS支持抢占，ospf中的DR和BDR不支持抢占<br>在IS-IS广播网中，同一网段上的同一级别的路由器之间都会形成邻接关系，包括所有的非DIS路由器之间也会形成邻接关系。而在OSPF中，路由器只与DR和BDR建立邻接关系。 —Isis中建立的都是邻接的关系</p>
+<p>2）同步链路状态数据库</p>
+<p>L1和L2分别有自己的LSDB</p>
+<p>LSDB中包含的就是LSP，LSP描述路由器的链路状态信息</p>
+<p><R1> display isis lsdb<br>               Database information for ISIS(1)<br>Level-1 Link State Database<br>LSPID               Seq Num    Checksum  Holdtime  Length  ATT&#x2F;P&#x2F;OL<br>-——————————————————————————————–<br>0100.0000.1001.00-00*  0x00000005  0x13a8    1187      97     0&#x2F;0&#x2F;0<br>0100.0000.1001.01-00*   0x00000001  0xda2e    1185      55     0&#x2F;0&#x2F;0<br>0100.0000.2002.00-00   0x00000004  0x94e9    1188      86     1&#x2F;0&#x2F;0<br>Total LSP(s): 5<br>  <em>(In TLV)-Leaking Route, <em>(By LSPID)-Self LSP, +-Self LSP(Extended),<br>     ATT-Attached, P-Partition, OL-Overload<br>0100.0000.1001（路由器的系统ID）.00（实节点还是伪节点，00表示实节点，非0表示伪节点）-00（LSP分片）</em>（</em>表示是本路由器产生的）</R1></p>
+<p><img src="/2024/04/20/IS-IS%E6%80%BB%E7%BB%93/wps4.jpg" alt="img"> </p>
+<p><img src="/2024/04/20/IS-IS%E6%80%BB%E7%BB%93/wps5.jpg" alt="img"> </p>
+<p><img src="/2024/04/20/IS-IS%E6%80%BB%E7%BB%93/wps6.jpg" alt="img"> </p>
+<p>3）Isis路由计算</p>
+<p>①L1的路由器只能通过L1的LSBD计算学习到L1的路由  —只有L1邻接关系的路由</p>
+<p>②L2的路由器维护L2的LSDB，但是可以学习所有的路由，包括L1和L2的路由—全网路由</p>
+<p>③L1&#x2F;2会向L1区域下发一条L1的缺省路由，L1可以通过该缺省路由到达L2</p>
+<p>④路由渗透：将L2路由在L1&#x2F;2路由器上进行引入，让L1路由器可以学习到L2的明细路由</p>
+<p>[R2-isis-1]import-route isis level-2 into level-1 </p>
+<p> 4、IS-IS协议的报文</p>
+<p>ospf–Isis报文的对应</p>
+<p>Hello  —&gt;IIH</p>
+<p>DD  —&gt;CSNP</p>
+<p>LSR  —&gt;PSNP</p>
+<p>LSU  —&gt;LSP</p>
+<p>LSACK  —&gt;PSNP</p>
+<p>LSA  —&gt;LSP</p>
+<p>根据报文的种类，认证可以分为以下三类：<br>接口认证：在接口视图下配置，对Level-1和Level-2的Hello报文进行认证。<br>区域认证：在IS-IS进程视图下配置，对Level-1的CSNP、PSNP和LSP报文进行认证。<br>路由域认证：在IS-IS进程视图下配置，对Level-2的CSNP、PSNP和LSP报文进行认证。</p>
+<p>根据报文的认证方式，可以分为以下四类：<br>简单认证：将配置的密码直接加入报文中，这种加密方式安全性较其他两种方式低。<br>MD5认证：通过将配置的密码进行MD5算法加密之后再加入报文中，提高密码的安全性。<br>Keychian认证：通过配置随时间变化的密码链表来进一步提升网络的安全性。<br>HMAC-SHA256认证：通过将配置的密码进行HMAC-SHA256算法加密之后再加入报文中，提高密码的安全性。</p>
+<p>5、IS-IS协议配置</p>
+<p>[r1]isis  进入Isis进程，默认进程1   </p>
+<p>[r1-isis-1]network-entity 49.0001.0000.0000.0001.00   配置NET地址，其中system id必须唯一</p>
+<p>[r1-isis-1]is-level level-1  修改路由的级别，默认为L1&#x2F;2路由器 </p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;0]isis enable  100   宣告网段进入Isis进程100</p>
+<p>[R2-isis-1]is-name R2   将system id用name表示</p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;1]isis circuit-level level-2  修改接口的链路级别</p>
+<p>[r1-GigabitEthernet0&#x2F;0&#x2F;0]isis circuit-type p2p   修改接口的链路类型</p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;2]isis dis-priority 127 level-2   修改接口的优先级，影响DIS的选举，可以只针对某个level进行更改</p>
+<p><img src="/2024/04/20/IS-IS%E6%80%BB%E7%BB%93/wps7.jpg" alt="img"> </p>
+<p>查看命令</p>
+<p>Display  isis peer  查看Isis邻居</p>
+<p>Display Isis interface  查看DIS的选举、</p>
+<p>Display Isis  route  查看Isis路由</p>
+]]></content>
+      <categories>
+        <category>基础知识</category>
+      </categories>
+      <tags>
+        <tag>IS-IS</tag>
       </tags>
   </entry>
   <entry>
@@ -1373,6 +1462,71 @@
       </tags>
   </entry>
   <entry>
+    <title>nat实验</title>
+    <url>/2023/11/25/nat%E5%AE%9E%E9%AA%8C/</url>
+    <content><![CDATA[<h1 id="静态nat"><a href="#静态nat" class="headerlink" title="静态nat"></a>静态nat</h1><p>静态NAT实现了私有地址和公有地址的一对一映射。如果希望一台主机优先使用某个关联地址，或者想要外部网络使用一个指定的公网地址访问内部服务器时，可以使用静态NAT。但是在大型网络中，这种一对一的IP地址映射无法缓解公用地址短缺的问题。</p>
+<span id="more"></span>
+
+<p>静态NAT实现了私有地址和共有地址一对一的映射（一个私有地址对应一个共有地址），并没有做到缓解地址短缺的问题，只是做到了地址转换。</p>
+<p>一个公网地址只会分配给唯一且固定的内网地址</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingttuopu4509.png" alt="jingttuopu4509"></p>
+<p>如图配置ip地址和网关</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingta15204327.png" alt="jingta15204327"></p>
+<p>r1上配置静态nat（注意是在公网的接口上，出接口）</p>
+<p>注意配置一条静态路由，不然没有路由的下一跳会被丢弃</p>
+<p>在r1上查看nat映射关系：dis nat static</p>
+<p>验证一下：<img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingtainatjg25204222.png" alt="jingtainatjg25204222"></p>
+<p>发现去往2.2.2.2的源地址变为2.2.2.3，说明nat完成转换。</p>
+<p>静态nat两种配置方式：</p>
+<p>1.接口下（上述实验采用这种方式）：进入到连接外网路由器的出接口下，然后在接口视图下配置nat映射关系</p>
+<p>2.全局：在全局视图下，配置好nat映射关系，再进入到出接口，执行：nat static enable</p>
+<h1 id="动态nat"><a href="#动态nat" class="headerlink" title="动态nat"></a>动态nat</h1><p>动态NAT通过使用地址池来实现。</p>
+<p>如上图，当内部主机A和主机B需要与公网中的目的主机通信时，网关RTA会从配置的公网地址池中选择一个未使用的公网地址与之做映射。每台主机都会分配到地址池中的一个唯一地址。当不需要此连接时，对应的地址映射将会被删除，公网地址也会被恢复到地址池中待用。当网关收到回复报文后，会根据之前的映射再次进行转换之后转发给对应主机。</p>
+<p>注意：</p>
+<p>动态NAT实际上实现的还是私有地址和公有地址一对一的关系，但是共有地址不再绑定给特定的内网地址。实现了一定程度的缓解地址短缺问题。<br>动态NAT地址池中的地址用尽以后，只能等待被占用的公用IP被释放后，其他主机才能使用它来访问公网。<img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dongtaitu00800.png" alt="dongtaitu00800"></p>
+<h2 id="动态NAT转换流程："><a href="#动态NAT转换流程：" class="headerlink" title="动态NAT转换流程："></a>动态NAT转换流程：</h2><p>1）路由器上配置一个内部地址池（公司内部所有主机用到的私有IP）动态映射一个外部地址池（所购买的公有IP）。<br>2）当有一个内网主机访问外网时，路由器首先查看NAT地址转换表；<br>3）若无，则再查看是否配置了动态NAT映射，若配置，则将IP包头中的源IP与内部地址池进行匹配，若有匹配项，则将该内网IP从内部地址池中取出，同时取出外部地址池中的一个IP地址，动态形成NAT地址转换表。注意，外部地址池的公网IP地址取出后，外部地址池中将没有该公网IP了。<br>4）默认当该主机24小时没有联系外网时，该动态NAT条目会自动消失，所被取出的公私有地址重新回到地址池中。</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/tuopudawda12714.png" alt="tuopudawda12714"></p>
+<p>ip如图，pc的网关192.168.1.254</p>
+<p>r1上配置默认路由，ip route-static 0.0.0.0 0 172.16.1.2</p>
+<p>r1上配置动态地址池：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/acldongtai2005212357.png" alt="acldongtai2005212357"></p>
+<p>地址池验证：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dizhichi1201.png" alt="dizhichi1201"></p>
+<p>配置acl策略：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/acl55da612432.png" alt="acl55da612432"></p>
+<p>在r1的外网出接口上调用：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/natout25212448.png" alt="natout25212448"></p>
+<p>验证：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dongtaijiegy12547.png" alt="dongtaijiegy12547"></p>
+<p>其中源IP为3、4、5不定，说明是在动态分配外网地址。动态NAT配置完成。</p>
+<p>在动态NAT实验中，最后利用PC1测试连通性时，间歇性会丢包</p>
+<p>可能的原因：ping的时候默认按地址池中可用地址顺序从1~254进行地址转换，放大nat地址池可解决。</p>
+<h1 id="NAPT"><a href="#NAPT" class="headerlink" title="NAPT"></a>NAPT</h1><p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/NApttu39.png" alt="NApttu39"></p>
+<p>如上图，RTA收到一个私网主机发送的报文，源IP地址是192.168.1.1，源端口号是1025，目的IP地址是100.1.1.1，目的端口是80。RTA会从配置的公网地址池中选择一个空闲的公网IP地址和端口号，并建立相应的NAPT表项。这些NAPT表项指定了报文的私网IP地址和端口号与公网IP地址和端口号的映射关系。之后，RTA将报文的源IP地址和端口号转换成公网地址200.10.10.1和端口号2843，并转发报文到公网。当网关RTA收到回复报文后，会根据之前的映射表再次进行转换之后转发给主机A。主机B同理。</p>
+<p>注意：</p>
+<p>NAPT技术允许多个内部地址映射到同一个公有地址的不同端口。<br>NAPT实现了私有地址对共有地址多对一</p>
+<p>相当于一种特殊的动态nat</p>
+<p>1、端口NAT和动态NAT的配置过程基本一致，只是在应用到接口时，配置命令少no-pat<br>2、端口NAT一个地址可以给多个源地址转换，不是单对单的转换，所以节省了nat地址！<br>3、端口NAT实际应用较多，静态NAT和动态NAT因为地址不能节约，所以实际应用少</p>
+<h1 id="Easy-IP"><a href="#Easy-IP" class="headerlink" title="Easy IP"></a>Easy IP</h1><p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/easydahwka5.png" alt="easydahwka5"></p>
+<p>Easy IP本质上是NAPT（所以原理与NAPT大致相似）<br>由于网关设备出接口IP地址为公网地址，所以可以利用该<strong>出接口地址</strong>来作为地址转换的公有地址。<br>Easy IP适用于小规模局域网中的主机访问Internet的场景。小规模局域网通常部署在小型的网吧或者办公室中，这些地方内部主机不多，出接口可以通过拨号方式获取一个临时公网IP地址。Easy IP可以实现内部主机使用这个临时公网IP地址访问Internet。</p>
+<p>Easy IP适用于小规模局域网中的主机访问Internet的场景。小规模局域网通常部署在小型的网吧或者办公室中，这些地方内部主机不多，出接口可以通过拨号方式获取一个临时公网IP地址。Easy IP可以实现内部主机使用这个临时公网IP地址访问Internet。</p>
+<h2 id="Easy-IP的配置："><a href="#Easy-IP的配置：" class="headerlink" title="Easy IP的配置："></a>Easy IP的配置：</h2><p>1.创建ACL：acl 2000</p>
+<p>2.允许1.0的数据进行转换：rule 5 permit source 192.168.1.0 0 .0.0.255</p>
+<p>3.进入公网出接口</p>
+<p>4.应用acl：nat outbound 2000</p>
+<p>（相较于napt少了地址池）</p>
+<p>验证：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/easadwaawh215116.png" alt="easadwaawh215116"></p>
+<p>源地址为出接口地址172.16.1.1，只是端口不同</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>nat</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>opsf总结</title>
     <url>/2024/04/18/opsf%E6%80%BB%E7%BB%93/</url>
     <content><![CDATA[<h1 id="ospf协议工作原理"><a href="#ospf协议工作原理" class="headerlink" title="ospf协议工作原理"></a>ospf协议工作原理</h1><p>工作过程：①建立邻居关系（hello   2-way状态）每台路由器都会产生lsa，路由器将接收到的lsa放入自己的lsdb中；②同步LSDB（DD、LSR、LSU、LSACK    full状态）；③计算路由（本路由器通过自己的LSDB，以自己为根节点，计算最短路径树，最终得到路由）SPF算法；</p>
@@ -1628,71 +1782,6 @@
       <tags>
         <tag>telnet</tag>
         <tag>aaa</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>nat实验</title>
-    <url>/2023/11/25/nat%E5%AE%9E%E9%AA%8C/</url>
-    <content><![CDATA[<h1 id="静态nat"><a href="#静态nat" class="headerlink" title="静态nat"></a>静态nat</h1><p>静态NAT实现了私有地址和公有地址的一对一映射。如果希望一台主机优先使用某个关联地址，或者想要外部网络使用一个指定的公网地址访问内部服务器时，可以使用静态NAT。但是在大型网络中，这种一对一的IP地址映射无法缓解公用地址短缺的问题。</p>
-<span id="more"></span>
-
-<p>静态NAT实现了私有地址和共有地址一对一的映射（一个私有地址对应一个共有地址），并没有做到缓解地址短缺的问题，只是做到了地址转换。</p>
-<p>一个公网地址只会分配给唯一且固定的内网地址</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingttuopu4509.png" alt="jingttuopu4509"></p>
-<p>如图配置ip地址和网关</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingta15204327.png" alt="jingta15204327"></p>
-<p>r1上配置静态nat（注意是在公网的接口上，出接口）</p>
-<p>注意配置一条静态路由，不然没有路由的下一跳会被丢弃</p>
-<p>在r1上查看nat映射关系：dis nat static</p>
-<p>验证一下：<img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingtainatjg25204222.png" alt="jingtainatjg25204222"></p>
-<p>发现去往2.2.2.2的源地址变为2.2.2.3，说明nat完成转换。</p>
-<p>静态nat两种配置方式：</p>
-<p>1.接口下（上述实验采用这种方式）：进入到连接外网路由器的出接口下，然后在接口视图下配置nat映射关系</p>
-<p>2.全局：在全局视图下，配置好nat映射关系，再进入到出接口，执行：nat static enable</p>
-<h1 id="动态nat"><a href="#动态nat" class="headerlink" title="动态nat"></a>动态nat</h1><p>动态NAT通过使用地址池来实现。</p>
-<p>如上图，当内部主机A和主机B需要与公网中的目的主机通信时，网关RTA会从配置的公网地址池中选择一个未使用的公网地址与之做映射。每台主机都会分配到地址池中的一个唯一地址。当不需要此连接时，对应的地址映射将会被删除，公网地址也会被恢复到地址池中待用。当网关收到回复报文后，会根据之前的映射再次进行转换之后转发给对应主机。</p>
-<p>注意：</p>
-<p>动态NAT实际上实现的还是私有地址和公有地址一对一的关系，但是共有地址不再绑定给特定的内网地址。实现了一定程度的缓解地址短缺问题。<br>动态NAT地址池中的地址用尽以后，只能等待被占用的公用IP被释放后，其他主机才能使用它来访问公网。<img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dongtaitu00800.png" alt="dongtaitu00800"></p>
-<h2 id="动态NAT转换流程："><a href="#动态NAT转换流程：" class="headerlink" title="动态NAT转换流程："></a>动态NAT转换流程：</h2><p>1）路由器上配置一个内部地址池（公司内部所有主机用到的私有IP）动态映射一个外部地址池（所购买的公有IP）。<br>2）当有一个内网主机访问外网时，路由器首先查看NAT地址转换表；<br>3）若无，则再查看是否配置了动态NAT映射，若配置，则将IP包头中的源IP与内部地址池进行匹配，若有匹配项，则将该内网IP从内部地址池中取出，同时取出外部地址池中的一个IP地址，动态形成NAT地址转换表。注意，外部地址池的公网IP地址取出后，外部地址池中将没有该公网IP了。<br>4）默认当该主机24小时没有联系外网时，该动态NAT条目会自动消失，所被取出的公私有地址重新回到地址池中。</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/tuopudawda12714.png" alt="tuopudawda12714"></p>
-<p>ip如图，pc的网关192.168.1.254</p>
-<p>r1上配置默认路由，ip route-static 0.0.0.0 0 172.16.1.2</p>
-<p>r1上配置动态地址池：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/acldongtai2005212357.png" alt="acldongtai2005212357"></p>
-<p>地址池验证：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dizhichi1201.png" alt="dizhichi1201"></p>
-<p>配置acl策略：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/acl55da612432.png" alt="acl55da612432"></p>
-<p>在r1的外网出接口上调用：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/natout25212448.png" alt="natout25212448"></p>
-<p>验证：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dongtaijiegy12547.png" alt="dongtaijiegy12547"></p>
-<p>其中源IP为3、4、5不定，说明是在动态分配外网地址。动态NAT配置完成。</p>
-<p>在动态NAT实验中，最后利用PC1测试连通性时，间歇性会丢包</p>
-<p>可能的原因：ping的时候默认按地址池中可用地址顺序从1~254进行地址转换，放大nat地址池可解决。</p>
-<h1 id="NAPT"><a href="#NAPT" class="headerlink" title="NAPT"></a>NAPT</h1><p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/NApttu39.png" alt="NApttu39"></p>
-<p>如上图，RTA收到一个私网主机发送的报文，源IP地址是192.168.1.1，源端口号是1025，目的IP地址是100.1.1.1，目的端口是80。RTA会从配置的公网地址池中选择一个空闲的公网IP地址和端口号，并建立相应的NAPT表项。这些NAPT表项指定了报文的私网IP地址和端口号与公网IP地址和端口号的映射关系。之后，RTA将报文的源IP地址和端口号转换成公网地址200.10.10.1和端口号2843，并转发报文到公网。当网关RTA收到回复报文后，会根据之前的映射表再次进行转换之后转发给主机A。主机B同理。</p>
-<p>注意：</p>
-<p>NAPT技术允许多个内部地址映射到同一个公有地址的不同端口。<br>NAPT实现了私有地址对共有地址多对一</p>
-<p>相当于一种特殊的动态nat</p>
-<p>1、端口NAT和动态NAT的配置过程基本一致，只是在应用到接口时，配置命令少no-pat<br>2、端口NAT一个地址可以给多个源地址转换，不是单对单的转换，所以节省了nat地址！<br>3、端口NAT实际应用较多，静态NAT和动态NAT因为地址不能节约，所以实际应用少</p>
-<h1 id="Easy-IP"><a href="#Easy-IP" class="headerlink" title="Easy IP"></a>Easy IP</h1><p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/easydahwka5.png" alt="easydahwka5"></p>
-<p>Easy IP本质上是NAPT（所以原理与NAPT大致相似）<br>由于网关设备出接口IP地址为公网地址，所以可以利用该<strong>出接口地址</strong>来作为地址转换的公有地址。<br>Easy IP适用于小规模局域网中的主机访问Internet的场景。小规模局域网通常部署在小型的网吧或者办公室中，这些地方内部主机不多，出接口可以通过拨号方式获取一个临时公网IP地址。Easy IP可以实现内部主机使用这个临时公网IP地址访问Internet。</p>
-<p>Easy IP适用于小规模局域网中的主机访问Internet的场景。小规模局域网通常部署在小型的网吧或者办公室中，这些地方内部主机不多，出接口可以通过拨号方式获取一个临时公网IP地址。Easy IP可以实现内部主机使用这个临时公网IP地址访问Internet。</p>
-<h2 id="Easy-IP的配置："><a href="#Easy-IP的配置：" class="headerlink" title="Easy IP的配置："></a>Easy IP的配置：</h2><p>1.创建ACL：acl 2000</p>
-<p>2.允许1.0的数据进行转换：rule 5 permit source 192.168.1.0 0 .0.0.255</p>
-<p>3.进入公网出接口</p>
-<p>4.应用acl：nat outbound 2000</p>
-<p>（相较于napt少了地址池）</p>
-<p>验证：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/easadwaawh215116.png" alt="easadwaawh215116"></p>
-<p>源地址为出接口地址172.16.1.1，只是端口不同</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>nat</tag>
       </tags>
   </entry>
   <entry>
