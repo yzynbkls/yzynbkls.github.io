@@ -1,6 +1,119 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>BGP路由优选</title>
+    <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/</url>
+    <content><![CDATA[<h1 id="BGP路由优选"><a href="#BGP路由优选" class="headerlink" title="BGP路由优选"></a>BGP路由优选</h1><h2 id="实验背景"><a href="#实验背景" class="headerlink" title="实验背景"></a>实验背景</h2><p>你是公司的网络管理员。公司的网络采用了BGP协议接入了两个服务运营商。公司自己采用了私有的AS号64512，ISP1的AS号为100，ISP2的AS号为200。通过AS100、AS200都可以到达相同的网络，你通过改变BGP的各种属性达到了调整路由走向的目的。</p>
+<span id="more"></span>
+
+<p>实验介绍：</p>
+<p>设备互联方式、互联接口地址如图所示，所有设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号，所有设备都使用Loopback0地址作为BGP Router ID。</p>
+<p>R1在AS100，R5在AS200，R2、R3、R4在AS64512。AS64512内运行OSPF，在互联接口（不包括连接外部AS的接口）、Loopback0接口上激活OSPF。</p>
+<p>EBGP对等体关系基于直连接口建立，IBGP对等体关系基于Loopback0接口建立。</p>
+<p>R1、R5上存在相同的网段172.16.1.0&#x2F;24、172.16.2.0&#x2F;24、172.16.3.0&#x2F;24、172.16.4.0&#x2F;24，在R1、R5上将其发布到BGP，以用于BGP路由优选。</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/tuopu22sd182306.png" alt="tuopu22sd182306"></p>
+<p>配置ip，配置bgp：略</p>
+<p>#在R1、R5上将Loopback1、Loopback2、Loopback3、Loopback4接口路由发布到BGP中</p>
+<p>[R1]bgp 100</p>
+<p>[R1-bgp] network 172.16.1.0 24</p>
+<p>[R1-bgp] network 172.16.2.0 24</p>
+<p>[R1-bgp] network 172.16.3.0 24</p>
+<p>[R1-bgp] network 172.16.4.0 24</p>
+<p>[R5]bgp 200</p>
+<p>[R5-bgp] network 172.16.1.0 24</p>
+<p>[R5-bgp] network 172.16.2.0 24</p>
+<p>[R5-bgp] network 172.16.3.0 24</p>
+<p>[R5-bgp] network 172.16.4.0 24</p>
+<p>#在R3上查看BGP路由表，检查BGP路由是否成功学习</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/r3chakandp128185306.png" alt="r3chakandp128185306"></p>
+<p>R3已经成功学习R1、R5发布的路由，此时所有路由都优选由R2通告的。</p>
+<h2 id="修改AS-Path属性"><a href="#修改AS-Path属性" class="headerlink" title="修改AS_Path属性"></a>修改AS_Path属性</h2><p>在R1上通过路由策略修改BGP路由172.16.1.0&#x2F;24的 AS_Path属性值，使得R3优选R5发布的BGP路由172.16.1.0&#x2F;24。</p>
+<p>#创建IP前缀列表1，匹配Loopback1接口路由</p>
+<p>[R1]ip ip-prefix 1 permit 172.16.1.0 24 greater-equal 24 less-equal 24</p>
+<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改AS_Path属性值</p>
+<p>[R1]route-policy hcip permit node 10</p>
+<p>[R1-route-policy] if-match ip-prefix 1</p>
+<p>[R1-route-policy] apply as-path 300 400 additive</p>
+<p>[R1-route-policy] quit</p>
+<p>[R1]route-policy hcip permit node 20</p>
+<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
+<p>#对向BGP对等体R2通告的BGP路由应用Route-Policy</p>
+<p>[R1]bgp 100</p>
+<p>[R1-bgp] peer 10.0.12.2 route-policy hcip export</p>
+<p>#在R1上触发出方向的软复位，刷新对外通告的BGP路由</p>
+<p><R1>refresh bgp all export</R1></p>
+<p>#在R3上查看BGP路由172.16.1.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/as5cs28190005.png" alt="as5cs28190005"></p>
+<p>此时R3优选R4通告的BGP路由172.16.1.0&#x2F;24，R2通告的未被优选的原因是AS_Path长度。</p>
+<h2 id="修改Local-Preference属性"><a href="#修改Local-Preference属性" class="headerlink" title="修改Local_Preference属性"></a>修改Local_Preference属性</h2><p>local_Preference：默认100，越大越优先，只能在ibgp对等体之间传递</p>
+<p>在R4上通过路由策略修改BGP路由172.16.2.0&#x2F;24的Local_Preference属性值，使得R3优选R4通告的BGP路由172.16.2.0&#x2F;24。</p>
+<p>#创建IP前缀列表1，匹配BGP路由172.16.2.0&#x2F;24</p>
+<p>[R4]ip ip-prefix 1 permit 172.16.2.0 24 greater-equal 24 less-equal 24</p>
+<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改Local_Preference属性值</p>
+<p>[R4]route-policy hcip permit node 10</p>
+<p>[R4-route-policy] if-match ip-prefix 1</p>
+<p>[R4-route-policy] apply local-preference 200</p>
+<p>[R4-route-policy] quit</p>
+<p>[R4]route-policy hcip permit node 20</p>
+<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
+<p>#对向BGP对等体R3通告的BGP路由应用Route-Policy</p>
+<p>[R4]bgp 64512</p>
+<p>[R4-bgp] peer 10.0.3.3 route-policy hcip export</p>
+<p>#在R4上触发出方向的软复位，刷新对外通告的BGP路由</p>
+<p><R4>refresh bgp all export</R4></p>
+<p>#在R3上查看BGP路由172.16.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/local55chakan192014.png" alt="local55chakan192014"></p>
+<p>此时R3优选R4通告的BGP路由172.16.2.0&#x2F;24，R2通告的BGP路由其Local_Preference值为100，小于R3通告的BGP路由Local_Preference值200，因此R2通告的BGP路由未被优选。</p>
+<h2 id="修改MED属性"><a href="#修改MED属性" class="headerlink" title="修改MED属性"></a>修改MED属性</h2><p>在R2上通过路由策略修改BGP路由172.16.3.0&#x2F;24的MED属性值，使得R3优选R5发布的BGP路由172.16.3.0&#x2F;24。</p>
+<p>#创建IP前缀列表1，匹配BGP路由172.16.3.0&#x2F;24</p>
+<p>[R2]ip ip-prefix 1 permit 172.16.3.0 24 greater-equal 24 less-equal 24</p>
+<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改MED属性值</p>
+<p>[R2]route-policy hcip permit node 10</p>
+<p>[R2-route-policy] if-match ip-prefix 1</p>
+<p>[R2-route-policy] apply cost 200</p>
+<p>[R2-route-policy] quit</p>
+<p>[R2]route-policy hcip permit node 20</p>
+<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
+<p>#对来自BGP对等体R1的BGP路由应用Route-Policy</p>
+<p>[R2]bgp 64512</p>
+<p>[R2-bgp] peer 10.0.12.1 route-policy hcip import</p>
+<p>#在R2上触发入方向的软复位，刷新接收到的BGP路由</p>
+<p><R2>refresh bgp all import</R2></p>
+<p>#在R3上配置允许比较来自不同AS的BGP路由的MED值</p>
+<p>[R3]bgp 64512</p>
+<p>[R3-bgp] compare-different-as-med  </p>
+<p>缺省情况下，不比较来自不同AS邻居的BGP的MED属性值。</p>
+<p>#在R3上查看BGP路由172.16.3.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/medchakanf2735.png" alt="medchakanf2735"></p>
+<p>R2通告的BGP路由172.16.3.0&#x2F;24其MED值为200，而R4通告BGP路由MED值为0，R3优选MED值较小的BGP路由，因此R2通告的BGP路由未被优选。</p>
+<h2 id="修改preferred-value属性"><a href="#修改preferred-value属性" class="headerlink" title="修改preferred-value属性"></a>修改preferred-value属性</h2><p>preferred-value：华为特有的属性值，仅在本地有效，当bgp存在到相同的路由时，将优选prefeerred-value大的路由。只能在路由器本地配置，只影响本设备的路由优选，不会传递给任何bgp对等体。</p>
+<p>在R3上通过路由策略修改BGP路由172.16.4.0&#x2F;24的preferred-value属性值，使得R3优选R4通告的BGP路由172.16.4.0&#x2F;24。</p>
+<p>#创建IP前缀列表1，匹配BGP路由172.16.4.0&#x2F;24</p>
+<p>[R3]ip ip-prefix 1 permit 172.16.4.0 24 greater-equal 24 less-equal 24</p>
+<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改preferred-value属性值</p>
+<p>[R3]route-policy hcip permit node 10</p>
+<p>[R3-route-policy] if-match ip-prefix 1</p>
+<p>[R3-route-policy] apply preferred-value 300</p>
+<p>[R3-route-policy] quit</p>
+<p>[R3]route-policy hcip permit node 20</p>
+<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
+<p>#对来自BGP对等体R4的BGP路由应用Route-Policy</p>
+<p>[R3]bgp 64512</p>
+<p>[R3-bgp] peer 10.0.4.4 route-policy hcip import</p>
+<p>#在R3上触发入方向的软复位，刷新收到的BGP路由</p>
+<p><R3>refresh bgp all import</R3></p>
+<p>#在R3上查看BGP路由172.16.4.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/prexiiuhai8193458.png" alt="prexiiuhai8193458"></p>
+<p>R4通告的BGP路由172.16.3.0&#x2F;24其preferred-value值为300，而R2通告的preferred-value值为0，R3优选preferred-value值较大的BGP路由，因此R3优选R4通告的BGP路由。</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>BGP路由优选</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>BGP实验</title>
     <url>/2023/11/28/BGP%E5%AE%9E%E9%AA%8C/</url>
     <content><![CDATA[<h1 id="BGP基础实验"><a href="#BGP基础实验" class="headerlink" title="BGP基础实验"></a>BGP基础实验</h1><p>设备连接方式、IP地址规划、BGP AS号如图所示，所有设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号，所有设备都使用Loopback0接口IP地址作为BGP Router ID。R1、R5上存在Loopback1模拟用户网段。</p>
@@ -169,208 +282,6 @@
       </categories>
       <tags>
         <tag>BGP</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>BGP路由优选</title>
-    <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/</url>
-    <content><![CDATA[<h1 id="BGP路由优选"><a href="#BGP路由优选" class="headerlink" title="BGP路由优选"></a>BGP路由优选</h1><h2 id="实验背景"><a href="#实验背景" class="headerlink" title="实验背景"></a>实验背景</h2><p>你是公司的网络管理员。公司的网络采用了BGP协议接入了两个服务运营商。公司自己采用了私有的AS号64512，ISP1的AS号为100，ISP2的AS号为200。通过AS100、AS200都可以到达相同的网络，你通过改变BGP的各种属性达到了调整路由走向的目的。</p>
-<span id="more"></span>
-
-<p>实验介绍：</p>
-<p>设备互联方式、互联接口地址如图所示，所有设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号，所有设备都使用Loopback0地址作为BGP Router ID。</p>
-<p>R1在AS100，R5在AS200，R2、R3、R4在AS64512。AS64512内运行OSPF，在互联接口（不包括连接外部AS的接口）、Loopback0接口上激活OSPF。</p>
-<p>EBGP对等体关系基于直连接口建立，IBGP对等体关系基于Loopback0接口建立。</p>
-<p>R1、R5上存在相同的网段172.16.1.0&#x2F;24、172.16.2.0&#x2F;24、172.16.3.0&#x2F;24、172.16.4.0&#x2F;24，在R1、R5上将其发布到BGP，以用于BGP路由优选。</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/tuopu22sd182306.png" alt="tuopu22sd182306"></p>
-<p>配置ip，配置bgp：略</p>
-<p>#在R1、R5上将Loopback1、Loopback2、Loopback3、Loopback4接口路由发布到BGP中</p>
-<p>[R1]bgp 100</p>
-<p>[R1-bgp] network 172.16.1.0 24</p>
-<p>[R1-bgp] network 172.16.2.0 24</p>
-<p>[R1-bgp] network 172.16.3.0 24</p>
-<p>[R1-bgp] network 172.16.4.0 24</p>
-<p>[R5]bgp 200</p>
-<p>[R5-bgp] network 172.16.1.0 24</p>
-<p>[R5-bgp] network 172.16.2.0 24</p>
-<p>[R5-bgp] network 172.16.3.0 24</p>
-<p>[R5-bgp] network 172.16.4.0 24</p>
-<p>#在R3上查看BGP路由表，检查BGP路由是否成功学习</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/r3chakandp128185306.png" alt="r3chakandp128185306"></p>
-<p>R3已经成功学习R1、R5发布的路由，此时所有路由都优选由R2通告的。</p>
-<h2 id="修改AS-Path属性"><a href="#修改AS-Path属性" class="headerlink" title="修改AS_Path属性"></a>修改AS_Path属性</h2><p>在R1上通过路由策略修改BGP路由172.16.1.0&#x2F;24的 AS_Path属性值，使得R3优选R5发布的BGP路由172.16.1.0&#x2F;24。</p>
-<p>#创建IP前缀列表1，匹配Loopback1接口路由</p>
-<p>[R1]ip ip-prefix 1 permit 172.16.1.0 24 greater-equal 24 less-equal 24</p>
-<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改AS_Path属性值</p>
-<p>[R1]route-policy hcip permit node 10</p>
-<p>[R1-route-policy] if-match ip-prefix 1</p>
-<p>[R1-route-policy] apply as-path 300 400 additive</p>
-<p>[R1-route-policy] quit</p>
-<p>[R1]route-policy hcip permit node 20</p>
-<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
-<p>#对向BGP对等体R2通告的BGP路由应用Route-Policy</p>
-<p>[R1]bgp 100</p>
-<p>[R1-bgp] peer 10.0.12.2 route-policy hcip export</p>
-<p>#在R1上触发出方向的软复位，刷新对外通告的BGP路由</p>
-<p><R1>refresh bgp all export</R1></p>
-<p>#在R3上查看BGP路由172.16.1.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/as5cs28190005.png" alt="as5cs28190005"></p>
-<p>此时R3优选R4通告的BGP路由172.16.1.0&#x2F;24，R2通告的未被优选的原因是AS_Path长度。</p>
-<h2 id="修改Local-Preference属性"><a href="#修改Local-Preference属性" class="headerlink" title="修改Local_Preference属性"></a>修改Local_Preference属性</h2><p>local_Preference：默认100，越大越优先，只能在ibgp对等体之间传递</p>
-<p>在R4上通过路由策略修改BGP路由172.16.2.0&#x2F;24的Local_Preference属性值，使得R3优选R4通告的BGP路由172.16.2.0&#x2F;24。</p>
-<p>#创建IP前缀列表1，匹配BGP路由172.16.2.0&#x2F;24</p>
-<p>[R4]ip ip-prefix 1 permit 172.16.2.0 24 greater-equal 24 less-equal 24</p>
-<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改Local_Preference属性值</p>
-<p>[R4]route-policy hcip permit node 10</p>
-<p>[R4-route-policy] if-match ip-prefix 1</p>
-<p>[R4-route-policy] apply local-preference 200</p>
-<p>[R4-route-policy] quit</p>
-<p>[R4]route-policy hcip permit node 20</p>
-<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
-<p>#对向BGP对等体R3通告的BGP路由应用Route-Policy</p>
-<p>[R4]bgp 64512</p>
-<p>[R4-bgp] peer 10.0.3.3 route-policy hcip export</p>
-<p>#在R4上触发出方向的软复位，刷新对外通告的BGP路由</p>
-<p><R4>refresh bgp all export</R4></p>
-<p>#在R3上查看BGP路由172.16.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/local55chakan192014.png" alt="local55chakan192014"></p>
-<p>此时R3优选R4通告的BGP路由172.16.2.0&#x2F;24，R2通告的BGP路由其Local_Preference值为100，小于R3通告的BGP路由Local_Preference值200，因此R2通告的BGP路由未被优选。</p>
-<h2 id="修改MED属性"><a href="#修改MED属性" class="headerlink" title="修改MED属性"></a>修改MED属性</h2><p>在R2上通过路由策略修改BGP路由172.16.3.0&#x2F;24的MED属性值，使得R3优选R5发布的BGP路由172.16.3.0&#x2F;24。</p>
-<p>#创建IP前缀列表1，匹配BGP路由172.16.3.0&#x2F;24</p>
-<p>[R2]ip ip-prefix 1 permit 172.16.3.0 24 greater-equal 24 less-equal 24</p>
-<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改MED属性值</p>
-<p>[R2]route-policy hcip permit node 10</p>
-<p>[R2-route-policy] if-match ip-prefix 1</p>
-<p>[R2-route-policy] apply cost 200</p>
-<p>[R2-route-policy] quit</p>
-<p>[R2]route-policy hcip permit node 20</p>
-<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
-<p>#对来自BGP对等体R1的BGP路由应用Route-Policy</p>
-<p>[R2]bgp 64512</p>
-<p>[R2-bgp] peer 10.0.12.1 route-policy hcip import</p>
-<p>#在R2上触发入方向的软复位，刷新接收到的BGP路由</p>
-<p><R2>refresh bgp all import</R2></p>
-<p>#在R3上配置允许比较来自不同AS的BGP路由的MED值</p>
-<p>[R3]bgp 64512</p>
-<p>[R3-bgp] compare-different-as-med  </p>
-<p>缺省情况下，不比较来自不同AS邻居的BGP的MED属性值。</p>
-<p>#在R3上查看BGP路由172.16.3.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/medchakanf2735.png" alt="medchakanf2735"></p>
-<p>R2通告的BGP路由172.16.3.0&#x2F;24其MED值为200，而R4通告BGP路由MED值为0，R3优选MED值较小的BGP路由，因此R2通告的BGP路由未被优选。</p>
-<h2 id="修改preferred-value属性"><a href="#修改preferred-value属性" class="headerlink" title="修改preferred-value属性"></a>修改preferred-value属性</h2><p>preferred-value：华为特有的属性值，仅在本地有效，当bgp存在到相同的路由时，将优选prefeerred-value大的路由。只能在路由器本地配置，只影响本设备的路由优选，不会传递给任何bgp对等体。</p>
-<p>在R3上通过路由策略修改BGP路由172.16.4.0&#x2F;24的preferred-value属性值，使得R3优选R4通告的BGP路由172.16.4.0&#x2F;24。</p>
-<p>#创建IP前缀列表1，匹配BGP路由172.16.4.0&#x2F;24</p>
-<p>[R3]ip ip-prefix 1 permit 172.16.4.0 24 greater-equal 24 less-equal 24</p>
-<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改preferred-value属性值</p>
-<p>[R3]route-policy hcip permit node 10</p>
-<p>[R3-route-policy] if-match ip-prefix 1</p>
-<p>[R3-route-policy] apply preferred-value 300</p>
-<p>[R3-route-policy] quit</p>
-<p>[R3]route-policy hcip permit node 20</p>
-<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
-<p>#对来自BGP对等体R4的BGP路由应用Route-Policy</p>
-<p>[R3]bgp 64512</p>
-<p>[R3-bgp] peer 10.0.4.4 route-policy hcip import</p>
-<p>#在R3上触发入方向的软复位，刷新收到的BGP路由</p>
-<p><R3>refresh bgp all import</R3></p>
-<p>#在R3上查看BGP路由172.16.4.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/prexiiuhai8193458.png" alt="prexiiuhai8193458"></p>
-<p>R4通告的BGP路由172.16.3.0&#x2F;24其preferred-value值为300，而R2通告的preferred-value值为0，R3优选preferred-value值较大的BGP路由，因此R3优选R4通告的BGP路由。</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>BGP路由优选</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>BGP路由反射器</title>
-    <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/</url>
-    <content><![CDATA[<h1 id="BGP路由反射器"><a href="#BGP路由反射器" class="headerlink" title="BGP路由反射器"></a>BGP路由反射器</h1><p>由于水平分割的原因，为了保证AS内所有的BGP路由器都能学习到完整的BGP路由，就必须在AS内实现IBGP全互联。</p>
-<p>然而实现IBGP全互联存在诸多短板：</p>
-<p> 路由器需维护大量的TCP及BGP连接，尤其在路由器数量较多时。</p>
-<p> AS内BGP网络的可扩展性较差，因为通过纯手工配置命令。</p>
-<p>为了解决该问题，可应用到RR路由反射器技术。</p>
-<p>1、Client：RR客户端，在RR设备上通过手动指定。</p>
-<blockquote>
-<p>指定命令：peer 邻居 reflect-client</p>
-</blockquote>
-<p>2、除了指定的设备为客户端，其它设备均为非客户端。</p>
-<p>实验：</p>
-<p>R1、R2、R3、R4都属于AS64511，其连接方式、互联接口地址如图所示。每台设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号。R1、R2上的Loopback1地址分别为10.1.1.1&#x2F;24、10.2.2.2&#x2F;24，用于模拟用户网段。</p>
-<span id="more"></span>
-
-<p>所有设备都使用Loopback0地址作为BGP Router ID，R1与R2、R2与R3、R3与R4、R4与R2之间基于直连接口建立IBGP对等体关系，其中R1为R2的路由反射器客户端，R2为R3的路由反射器客户端，R3为R4的路由反射器客户端。</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/bgpluy8165208.png" alt="bgpluy8165208"></p>
-<p>配置ip地址：略</p>
-<p>建立ibgp对等体：略</p>
-<h1 id="配置路由反射器"><a href="#配置路由反射器" class="headerlink" title="配置路由反射器"></a>配置路由反射器</h1><p>#R2上将R1配置为路由反射器客户端</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] peer 10.0.1.1 reflect-client</p>
-<p>#R3上将R2配置为路由反射器客户端</p>
-<p>[R3]bgp 64511</p>
-<p>[R3-bgp] peer 10.0.2.2 reflect-client</p>
-<p>#R4上将R3配置为路由反射器客户端</p>
-<p>[R4]bgp 64511</p>
-<p>[R4-bgp] peer 10.0.3.3 reflect-client</p>
-<h1 id="验证Orginator-ID实现路由防环"><a href="#验证Orginator-ID实现路由防环" class="headerlink" title="验证Orginator_ID实现路由防环"></a>验证Orginator_ID实现路由防环</h1><p>在本步骤中，我们将在R2上发布BGP路由10.2.2.0&#x2F;24，并观察该路由依次经路由反射器R3、R4反射后，被通告回R2从而引发潜在路由环路风险的情况。</p>
-<p>缺省情况下，R2发布BGP路由后，该路由将被R2直接通告给R4，另一方面也会通过R3反射给R4，此时R4将优选R2直接通告过来的路由，从而不会再将R3反射过来的路由再反射回给R2。为此，我们需要在R2上部署路由策略，使R2不直接向R4通告10.2.2.0&#x2F;24路由。</p>
-<p>#配置路由策略</p>
-<p>[R2]acl number 2000</p>
-<p>[R2-acl-basic-2000] rule 5 permit</p>
-<p>[R2-acl-basic-2000] quit</p>
-<p>[R2]route-policy bgp deny node 10</p>
-<p>[R2-route-policy] if-match acl 2000</p>
-<p>#在BGP中调用路由策略</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] peer 10.0.24.4 route-policy bgp export</p>
-<p>#在R2上发布路由</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] network 10.2.2.0 24</p>
-<p>#R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/chakan102224728.png" alt="chakan102224728"></p>
-<p>R2将该条路由通告给了R3、R1，但是并未通告给R4。</p>
-<p>#R3上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r174808.png" alt="r174808"></p>
-<p>R3将来自反射器客户端的BGP路由10.2.2.0&#x2F;24反射给了10.0.34.4（R4）。同时该BGP路由的nexthop为10.0.23.2。</p>
-<p># R4上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r4chakan80119.png" alt="r4chakan80119"></p>
-<p>该条路由来自反射器客户端R3，原始路由经由R3反射，路由的nexthop地址并未改变，同时R3为其添加了Orginator_ID属性，值为10.0.2.2。同时R4将该条路由反射给了R2。</p>
-<p>#再次在R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zacifa80349.png" alt="zacifa80349"></p>
-<p>依旧只存在本地通告的BGP路由，没有R4通告的BGP路由。</p>
-<p>#在R2上查看BGP对等体10.0.4.4的详细信息</p>
-<p>display bgp peer 10.0.4.4 verbose</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/safhaofbsh1128180629.png" alt="safhaofbsh1128180629"></p>
-<p>从输出信息可以看到R2从R4收到了1个Update报文，未向R4发送Update报文（路由策略限制），但是本地BGP路由表中不存在由R4通告的BGP路由10.2.2.0&#x2F;24。</p>
-<p>R4通告的BGP路由Orginator_ID属性值与本地的Router ID一致，R2忽略了该路由通告。</p>
-<h1 id="验证Cluster-List实现路由防环"><a href="#验证Cluster-List实现路由防环" class="headerlink" title="验证Cluster_List实现路由防环"></a>验证Cluster_List实现路由防环</h1><p>为了方便观察现象，取消R2上的BGP路由发布，在R1上将Loopback1接口路由发布到BGP，观察Cluster_List如何防止环路。</p>
-<p>#取消R2上的BGP路由发布</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] undo network 10.2.2.0 255.255.255.0</p>
-<p>#在R1上将Loopback1接口路由发布到BGP</p>
-<p>[R1]bgp 64511</p>
-<p>[R1-bgp] network 10.1.1.0 24</p>
-<p>#依次在R1、R2、R3、R4上查看BGP路由10.1.1.0 &#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/xinfuaiell181000.png" alt="xinfuaiell181000"></p>
-<p>R1为BGP路由10.1.1.0&#x2F;24的始发者，R1将路由通告给了R2</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/2xinfahol128181116.png" alt="2xinfahol128181116"></p>
-<p>来自路由反射器客户端R1的BGP路由10.1.1.0&#x2F;24，R2将其反射给了R3</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/3xinmbxmcx1128181206.png" alt="3xinmbxmcx1128181206"></p>
-<p>来自路由反射器客户端R2的BGP路由10.1.1.0&#x2F;24，R2反射时添加了Cluster_List属性，值为10.0.2.2，R3将该条路由反射给了R4</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/44xinm1334.png" alt="44xinm1334"></p>
-<p>来自路由反射器客户端R3的BGP路由10.1.1.0&#x2F;24，R3反射时添加了Cluster_List属性的值，当前值为10.0.3.3，10.0.2.2，R4将该条路由反射给了R2</p>
-<p>#再次查看R2的BGP路由表</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zaizaici661435.png" alt="zaizaici661435"></p>
-<p>R2的BGP路由表中依旧只有一条来自r1的BGP路由10.1.1.0&#x2F;24。</p>
-<p>4通告的BGP路由其Cluster_List属性值中包含了R2的Cluster-ID，R2忽略了该路由通告。</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>BGP路由反射器</tag>
       </tags>
   </entry>
   <entry>
@@ -646,6 +557,95 @@
       <tags>
         <tag>DHCP Relay</tag>
         <tag>DHCP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>BGP路由反射器</title>
+    <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/</url>
+    <content><![CDATA[<h1 id="BGP路由反射器"><a href="#BGP路由反射器" class="headerlink" title="BGP路由反射器"></a>BGP路由反射器</h1><p>由于水平分割的原因，为了保证AS内所有的BGP路由器都能学习到完整的BGP路由，就必须在AS内实现IBGP全互联。</p>
+<p>然而实现IBGP全互联存在诸多短板：</p>
+<p> 路由器需维护大量的TCP及BGP连接，尤其在路由器数量较多时。</p>
+<p> AS内BGP网络的可扩展性较差，因为通过纯手工配置命令。</p>
+<p>为了解决该问题，可应用到RR路由反射器技术。</p>
+<p>1、Client：RR客户端，在RR设备上通过手动指定。</p>
+<blockquote>
+<p>指定命令：peer 邻居 reflect-client</p>
+</blockquote>
+<p>2、除了指定的设备为客户端，其它设备均为非客户端。</p>
+<p>实验：</p>
+<p>R1、R2、R3、R4都属于AS64511，其连接方式、互联接口地址如图所示。每台设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号。R1、R2上的Loopback1地址分别为10.1.1.1&#x2F;24、10.2.2.2&#x2F;24，用于模拟用户网段。</p>
+<span id="more"></span>
+
+<p>所有设备都使用Loopback0地址作为BGP Router ID，R1与R2、R2与R3、R3与R4、R4与R2之间基于直连接口建立IBGP对等体关系，其中R1为R2的路由反射器客户端，R2为R3的路由反射器客户端，R3为R4的路由反射器客户端。</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/bgpluy8165208.png" alt="bgpluy8165208"></p>
+<p>配置ip地址：略</p>
+<p>建立ibgp对等体：略</p>
+<h1 id="配置路由反射器"><a href="#配置路由反射器" class="headerlink" title="配置路由反射器"></a>配置路由反射器</h1><p>#R2上将R1配置为路由反射器客户端</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] peer 10.0.1.1 reflect-client</p>
+<p>#R3上将R2配置为路由反射器客户端</p>
+<p>[R3]bgp 64511</p>
+<p>[R3-bgp] peer 10.0.2.2 reflect-client</p>
+<p>#R4上将R3配置为路由反射器客户端</p>
+<p>[R4]bgp 64511</p>
+<p>[R4-bgp] peer 10.0.3.3 reflect-client</p>
+<h1 id="验证Orginator-ID实现路由防环"><a href="#验证Orginator-ID实现路由防环" class="headerlink" title="验证Orginator_ID实现路由防环"></a>验证Orginator_ID实现路由防环</h1><p>在本步骤中，我们将在R2上发布BGP路由10.2.2.0&#x2F;24，并观察该路由依次经路由反射器R3、R4反射后，被通告回R2从而引发潜在路由环路风险的情况。</p>
+<p>缺省情况下，R2发布BGP路由后，该路由将被R2直接通告给R4，另一方面也会通过R3反射给R4，此时R4将优选R2直接通告过来的路由，从而不会再将R3反射过来的路由再反射回给R2。为此，我们需要在R2上部署路由策略，使R2不直接向R4通告10.2.2.0&#x2F;24路由。</p>
+<p>#配置路由策略</p>
+<p>[R2]acl number 2000</p>
+<p>[R2-acl-basic-2000] rule 5 permit</p>
+<p>[R2-acl-basic-2000] quit</p>
+<p>[R2]route-policy bgp deny node 10</p>
+<p>[R2-route-policy] if-match acl 2000</p>
+<p>#在BGP中调用路由策略</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] peer 10.0.24.4 route-policy bgp export</p>
+<p>#在R2上发布路由</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] network 10.2.2.0 24</p>
+<p>#R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/chakan102224728.png" alt="chakan102224728"></p>
+<p>R2将该条路由通告给了R3、R1，但是并未通告给R4。</p>
+<p>#R3上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r174808.png" alt="r174808"></p>
+<p>R3将来自反射器客户端的BGP路由10.2.2.0&#x2F;24反射给了10.0.34.4（R4）。同时该BGP路由的nexthop为10.0.23.2。</p>
+<p># R4上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r4chakan80119.png" alt="r4chakan80119"></p>
+<p>该条路由来自反射器客户端R3，原始路由经由R3反射，路由的nexthop地址并未改变，同时R3为其添加了Orginator_ID属性，值为10.0.2.2。同时R4将该条路由反射给了R2。</p>
+<p>#再次在R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zacifa80349.png" alt="zacifa80349"></p>
+<p>依旧只存在本地通告的BGP路由，没有R4通告的BGP路由。</p>
+<p>#在R2上查看BGP对等体10.0.4.4的详细信息</p>
+<p>display bgp peer 10.0.4.4 verbose</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/safhaofbsh1128180629.png" alt="safhaofbsh1128180629"></p>
+<p>从输出信息可以看到R2从R4收到了1个Update报文，未向R4发送Update报文（路由策略限制），但是本地BGP路由表中不存在由R4通告的BGP路由10.2.2.0&#x2F;24。</p>
+<p>R4通告的BGP路由Orginator_ID属性值与本地的Router ID一致，R2忽略了该路由通告。</p>
+<h1 id="验证Cluster-List实现路由防环"><a href="#验证Cluster-List实现路由防环" class="headerlink" title="验证Cluster_List实现路由防环"></a>验证Cluster_List实现路由防环</h1><p>为了方便观察现象，取消R2上的BGP路由发布，在R1上将Loopback1接口路由发布到BGP，观察Cluster_List如何防止环路。</p>
+<p>#取消R2上的BGP路由发布</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] undo network 10.2.2.0 255.255.255.0</p>
+<p>#在R1上将Loopback1接口路由发布到BGP</p>
+<p>[R1]bgp 64511</p>
+<p>[R1-bgp] network 10.1.1.0 24</p>
+<p>#依次在R1、R2、R3、R4上查看BGP路由10.1.1.0 &#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/xinfuaiell181000.png" alt="xinfuaiell181000"></p>
+<p>R1为BGP路由10.1.1.0&#x2F;24的始发者，R1将路由通告给了R2</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/2xinfahol128181116.png" alt="2xinfahol128181116"></p>
+<p>来自路由反射器客户端R1的BGP路由10.1.1.0&#x2F;24，R2将其反射给了R3</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/3xinmbxmcx1128181206.png" alt="3xinmbxmcx1128181206"></p>
+<p>来自路由反射器客户端R2的BGP路由10.1.1.0&#x2F;24，R2反射时添加了Cluster_List属性，值为10.0.2.2，R3将该条路由反射给了R4</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/44xinm1334.png" alt="44xinm1334"></p>
+<p>来自路由反射器客户端R3的BGP路由10.1.1.0&#x2F;24，R3反射时添加了Cluster_List属性的值，当前值为10.0.3.3，10.0.2.2，R4将该条路由反射给了R2</p>
+<p>#再次查看R2的BGP路由表</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zaizaici661435.png" alt="zaizaici661435"></p>
+<p>R2的BGP路由表中依旧只有一条来自r1的BGP路由10.1.1.0&#x2F;24。</p>
+<p>4通告的BGP路由其Cluster_List属性值中包含了R2的Cluster-ID，R2忽略了该路由通告。</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>BGP路由反射器</tag>
       </tags>
   </entry>
   <entry>
@@ -1242,165 +1242,6 @@
       </tags>
   </entry>
   <entry>
-    <title>VRRP基础实验</title>
-    <url>/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/</url>
-    <content><![CDATA[<p>设备连接方式如图所示，网络中存在VLAN10、20，每个VLAN中部署一组VRRP，使用与VLAN ID相同的数值作为VRID，将S1配置为VLAN10的VRRP Master，将S2配置为VLAN20的VRRP Master。</p>
-<p>同时在S1、S2、S3上部署MSTP，创建Instance 1、2，将VLAN10映射到MSTI 1、VLAN20映射到MSTI 2，将S1配置为MSTI 1的主根桥、MSTI 2的备份根桥，而将S2配置为MSTI 1的备份根桥、MSTI 2的主根桥。</p>
-<p>VLANIF接口地址使用10.0.x.y&#x2F;24，其中x为VRID组号，y为设备编号，VRIP使用10.0.x.254&#x2F;24。</p>
-<p><img src="/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/vrrptuopu29210315.png" alt="vrrptuopu29210315"></p>
-<p>#创建VLAN</p>
-<p>[S1]vlan batch 10 20</p>
-<p>[S2]vlan batch 10 20 </p>
-<p>[S3]vlan batch 10 20 </p>
-<p>[S4]vlan batch 10 20 </p>
-<p>#将所有互联接口配置为Trunk接口，放通对应VLAN</p>
-<p>略</p>
-<p>#修改STP模式为MSTP</p>
-<p>[S1]stp mode mstp</p>
-<p>[S2]stp mode mstp</p>
-<p>[S3]stp mode mstp</p>
-<p>#配置MSTP</p>
-<p>[S1]stp region-configuration</p>
-<p>[S1-mst-region] region-name hcip</p>
-<p>[S1-mst-region] revision-level 1</p>
-<p>[S1-mst-region] instance 1 vlan 10 </p>
-<p>[S1-mst-region] instance 2 vlan 20</p>
-<p>[S1-mst-region] active region-configuration</p>
-<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
-<p>[S1-mst-region] quit</p>
-<p>[S2]stp region-configuration</p>
-<p>[S2-mst-region] region-name hcip</p>
-<p>[S2-mst-region] revision-level 1</p>
-<p>[S2-mst-region] instance 1 vlan 10 </p>
-<p>[S2-mst-region] instance 2 vlan 20 </p>
-<p>[S2-mst-region] active region-configuration</p>
-<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
-<p>[S2-mst-region] quit</p>
-<p>[S3]stp region-configuration</p>
-<p>[S3-mst-region] region-name hcip</p>
-<p>[S3-mst-region] revision-level 1</p>
-<p>[S3-mst-region] instance 1 vlan 10 </p>
-<p>[S3-mst-region] instance 2 vlan 20 </p>
-<p>[S3-mst-region] active region-configuration</p>
-<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
-<p>[S3-mst-region] quit</p>
-<p>#配置SW1为MSTI1的根桥、MSTI2的备份根桥</p>
-<p>[S1]stp instance 1 root primary </p>
-<p>[S1]stp instance 2 root secondary</p>
-<p>#配置SW2为MSTI2的根桥、MSTI1的备份根桥</p>
-<p>[S2]stp instance 1 root secondary </p>
-<p>[S2]stp instance 2 root primary</p>
-<p>#在S1上查看MSTI1的状态和统计信息摘要</p>
-<p><img src="/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/shili1129211309.png" alt="shili1129211309"></p>
-<p>S1上所有接口都是指定接口，S1为MSTI1的根桥。</p>
-<p>#在S2上查看MSTI2的状态和统计信息摘要</p>
-<p><img src="/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/shili229211338.png" alt="shili229211338"></p>
-<p>S2上所有接口都是指定接口，S2为MSTI1的根桥。</p>
-<h2 id="VRRP基础配置"><a href="#VRRP基础配置" class="headerlink" title="VRRP基础配置"></a>VRRP基础配置</h2><p>在S1、S2均创建VLANIF 10、20，分别加入VRRP组10、20，手动配置VRRP优先级，使得S1的VLAN10成为VRRP Master、S2的VLAN20成为VRRP Master。</p>
-<p>#创建VLANIF</p>
-<p>[S1]interface Vlanif10</p>
-<p>[S1-Vlanif10] ip address 10.0.10.1 255.255.255.0</p>
-<p>[S1-Vlanif10] quit</p>
-<p>[S1]interface Vlanif20</p>
-<p>[S1-Vlanif20] ip address 10.0.20.1 255.255.255.0</p>
-<p>[S1-Vlanif20] quit</p>
-<p>[S2]interface Vlanif10</p>
-<p>[S2-Vlanif10] ip address 10.0.10.2 255.255.255.0</p>
-<p>[S2-Vlanif10] quit</p>
-<p>[S2]interface Vlanif20</p>
-<p>[S2-Vlanif20] ip address 10.0.20.2 255.255.255.0</p>
-<p>[S2-Vlanif20] quit</p>
-<p>#S1上配置VRRP</p>
-<p>[S1]interface Vlanif 10</p>
-<p>[S1-Vlanif10] vrrp vrid 10 virtual-ip 10.0.10.254</p>
-<p>[S1-Vlanif10] vrrp vrid 10 priority 120</p>
-<p>[S1-Vlanif10] quit</p>
-<p>[S1]interface Vlanif 20</p>
-<p>[S1-Vlanif20] vrrp vrid 20 virtual-ip 10.0.20.254</p>
-<p>[S1-Vlanif20] quit</p>
-<p>配置VLAN10的VRRP优先级为120，VLAN20保持默认的100。</p>
-<p>#S2上配置VRRP</p>
-<p>[S2]interface Vlanif10</p>
-<p>[S2-Vlanif10] vrrp vrid 10 virtual-ip 10.0.10.254</p>
-<p>[S2-Vlanif10] quit</p>
-<p>[S2]interface Vlanif20</p>
-<p>[S2-Vlanif20] vrrp vrid 20 virtual-ip 10.0.20.254</p>
-<p>[S2-Vlanif20] vrrp vrid 20 priority 120</p>
-<p>[S2-Vlanif20] quit</p>
-<p>配置VLAN20的VRRP优先级为120，VLAN10保持默认的100。</p>
-<p>#查看VRRP组状态</p>
-<p><img src="/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/chakanvrrp1914.png" alt="chakanvrrp1914"></p>
-<h2 id="配置VRRP与BFD联动进行快速切换"><a href="#配置VRRP与BFD联动进行快速切换" class="headerlink" title="配置VRRP与BFD联动进行快速切换"></a>配置VRRP与BFD联动进行快速切换</h2><p>在S1、S2上配置BFD单跳检测，检测VLANIF接口之间的连通性，将VRRP与BFD联动，当BFD会话状态Down时，增加VRRP Backup设备的优先级。</p>
-<p>#在S1上配置BFD会话</p>
-<p>[S1]bfd</p>
-<p>[S1-bfd] quit</p>
-<p>[S1]bfd vlanif10 bind peer-ip 10.0.10.2 interface Vlanif10</p>
-<p>[S1-bfd-session-vlanif10] discriminator local 1</p>
-<p>[S1-bfd-session-vlanif10] discriminator remote 2</p>
-<p>[S1-bfd-session-vlanif10] min-tx-interval 100</p>
-<p>[S1-bfd-session-vlanif10] min-rx-interval 100</p>
-<p>[S1-bfd-session-vlanif10] commit</p>
-<p>[S1-bfd-session-vlanif10] quit</p>
-<p>[S1]bfd vlanif20 bind peer-ip 10.0.20.2 interface Vlanif20</p>
-<p>[S1-bfd-session-vlanif20] discriminator local 11</p>
-<p>[S1-bfd-session-vlanif20] discriminator remote 22</p>
-<p>[S1-bfd-session-vlanif20] min-tx-interval 100</p>
-<p>[S1-bfd-session-vlanif20] min-rx-interval 100</p>
-<p>[S1-bfd-session-vlanif20] commit</p>
-<p>[S1-bfd-session-vlanif20] quit</p>
-<p>#在S2上配置BFD会话</p>
-<p>[S2]bfd</p>
-<p>[S2-bfd] quit</p>
-<p>[S2]bfd vlanif10 bind peer-ip 10.0.10.1 interface Vlanif10</p>
-<p>[S2-bfd-session-vlanif10] discriminator local 2</p>
-<p>[S2-bfd-session-vlanif10] discriminator remote 1</p>
-<p>[S2-bfd-session-vlanif10] min-tx-interval 100</p>
-<p>[S2-bfd-session-vlanif10] min-rx-interval 100</p>
-<p>[S2-bfd-session-vlanif10] commit</p>
-<p>[S2-bfd-session-vlanif10] quit</p>
-<p>[S2]bfd vlanif20 bind peer-ip 10.0.20.1 interface Vlanif20</p>
-<p>[S2-bfd-session-vlanif20] discriminator local 22</p>
-<p>[S2-bfd-session-vlanif20] discriminator remote 11</p>
-<p>[S2-bfd-session-vlanif20] min-tx-interval 100</p>
-<p>[S2-bfd-session-vlanif20] min-rx-interval 100</p>
-<p>[S2-bfd-session-vlanif20] commit</p>
-<p>[S2-bfd-session-vlanif20] quit</p>
-<p>#检查BFD会话状态</p>
-<p><img src="/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/bfdahakan737.png" alt="bfdahakan737"></p>
-<p>此时S1、S2上BFD会话状态都为Up。</p>
-<p>#配置VRRP与BFD联动</p>
-<p>[S1]interface Vlanif20</p>
-<p>[S1-Vlanif20] vrrp vrid 20 track bfd-session 11 increased 30</p>
-<p>[S1-Vlanif20] quit</p>
-<p>[S2]interface Vlanif10</p>
-<p>[S2-Vlanif10] vrrp vrid 10 track bfd-session 2 increased 30</p>
-<p>[S2-Vlanif10] quit</p>
-<p>注意，此处的bfd-session号为本地的BFD discriminator，只需要在Backup状态的接口上配置联动，BFD会话Down时增加本地的VRRP优先级。</p>
-<p>#关闭S1上所有接口，模拟链路故障</p>
-<p>[S1]interface GigabitEthernet0&#x2F;0&#x2F;10</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10] shutdown</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10] quit</p>
-<p>[S1]interface GigabitEthernet0&#x2F;0&#x2F;11</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11] shutdown</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11] quit</p>
-<p>[S1]interface GigabitEthernet0&#x2F;0&#x2F;12</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12] shutdown</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12] quit</p>
-<p>#在S2上查看BFD会话状态</p>
-<p><img src="/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/yichang13038.png" alt="yichang13038"></p>
-<p>此时两个BFD会话状态立马变为Down。</p>
-<p>#在S2上查看VRRP组状态</p>
-<p><img src="/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/shuangzhu129213128.png" alt="shuangzhu129213128"></p>
-<p>VRRP组10、20的Master此时都是S2。</p>
-<p>#在S2上查看VRRP组的状态和配置参数信息</p>
-<p><img src="/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/canshufiejo9213200.png" alt="canshufiejo9213200"></p>
-]]></content>
-      <tags>
-        <tag>VRRP</tag>
-        <tag>BFD</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>mpls实验</title>
     <url>/2023/12/05/mpls%E5%AE%9E%E9%AA%8C/</url>
     <content><![CDATA[<h1 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h1><p>MPLS（Multiprotocol Label Switching）多协议标签转发复习总结<br>首先我们要先知道MPLS是为何出现的？<br>MPLS是基于传统IP网络（RIP，OSPF等）的缺陷由IETF确定的</p>
@@ -1668,93 +1509,68 @@
       </tags>
   </entry>
   <entry>
-    <title>opsf总结</title>
-    <url>/2024/04/18/opsf%E6%80%BB%E7%BB%93/</url>
-    <content><![CDATA[<h1 id="ospf协议工作原理"><a href="#ospf协议工作原理" class="headerlink" title="ospf协议工作原理"></a>ospf协议工作原理</h1><p>工作过程：①建立邻居关系（hello   2-way状态）每台路由器都会产生lsa，路由器将接收到的lsa放入自己的lsdb中；②同步LSDB（DD、LSR、LSU、LSACK    full状态）；③计算路由（本路由器通过自己的LSDB，以自己为根节点，计算最短路径树，最终得到路由）SPF算法；</p>
-<p>ospf支持的网络类型：广播、NBMA、点到点、点到多点</p>
-<p>ospf计算；计算路由+计算拓扑</p>
-<p>ospf报文采用IP封装，协议号89，</p>
-<p>ospfv2（ipv4），ospfv3（ipv6）</p>
-<p>ospf组播更新</p>
-<p>224.0.0.5（所有运行ospf协议的路由器侦听）</p>
-<p>224.0.0.6（DR和BDR侦听）</p>
-<h1 id="Router-id"><a href="#Router-id" class="headerlink" title="Router id"></a>Router id</h1><p>在自治系统中唯一标识一台运行ospf的路由器，32位无符号整数</p>
-<p>选举规则：手动配置（建议），如果没有手动配置，则路由器使用Loopback接口中最大的IP地址作为Router id，如果没有配置Loopback接口，则使用物理接口中最大的IP地址</p>
-<h1 id="Cost值"><a href="#Cost值" class="headerlink" title="Cost值"></a>Cost值</h1><p>缺省接口cost&#x3D;（100mib&#x2F;s）&#x2F; 接口带宽，修改100mid&#x2F;s改变cost</p>
-<p>也可以直接修改</p>
-<p>累计cost作为开销值，流量从源网络到目的网络所经过所有路由器的出接口的cost总和</p>
-<h1 id="Hello报文"><a href="#Hello报文" class="headerlink" title="Hello报文"></a>Hello报文</h1><p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/%E5%9B%BE%E7%89%871.png" alt="图片1"></p>
-<p>发送间隔10s，失效40s，修改发送，失效也变，失效始终为发送的4倍</p>
-<p>命令：接口视图下，ospf timer hello 10</p>
-<p>ospf邻居建立失败 ，可能原因：①物理链路故障；②ospf版本不一致；③区域ID不一致；④认证类型不一致；⑤认证数据不一致；⑥掩码不一致；（只出现在广播型网络中，点到点网络不检查掩码信息）⑦hello报文间隔不一致；⑧router id一致；（华为设备遇到router id一致，会重新配置router id）</p>
-<h1 id="DD报文"><a href="#DD报文" class="headerlink" title="DD报文"></a>DD报文</h1><p>DD报文部分字段解释<br>I：当发送连续多个DD报文时，如果这是第一个DD报文，则置为1，否则置为0。<br>M (More)：当发送连续多个DD报文时，如果这是最后一个DD报文，则置为0。否则置为1，表示后面还有其他的DD报文。<br>MS (Master&#x2F;Slave)：当两台OSPF路由器交换DD报文时，首先需要确定双方的主从关系，Router ID大的一方会成为Master。当值为1时表示发送方为Master。<br>DD sequence number：DD报文序列号。主从双方利用序列号来保证DD报文传输的可靠性和完整性。</p>
-<p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/%E5%9B%BE%E7%89%872.png" alt="图片2"></p>
-<p>链路状态类型、链路状态ID、通告路由器三元组唯一地标识了一个LSA。<br>链路状态老化时间 、链路状态序列号 、校验和用于判断LSA的新旧</p>
-<h1 id="ospf状态机"><a href="#ospf状态机" class="headerlink" title="ospf状态机"></a>ospf状态机</h1><p>之前的手写笔记😍</p>
-<p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/QQ%E5%9B%BE%E7%89%8720240418204859.jpg" alt="QQ图片20240418204859"></p>
-<p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/QQ%E5%9B%BE%E7%89%8720240418204932.jpg" alt="QQ图片20240418204932"></p>
-<p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/QQ%E5%9B%BE%E7%89%8720240418204926.jpg" alt="QQ图片20240418204926"></p>
-<h1 id="DR和BDR"><a href="#DR和BDR" class="headerlink" title="DR和BDR"></a>DR和BDR</h1><p>既侦听224.0.0.5也侦听224.0.0.6</p>
-<p>每个网段选举一个</p>
-<p>DR：指定路由器，负责在MA网络中建立和维护邻接关系，并负责lsa同步</p>
-<p>DR和其他所有路由器形成邻接关系，其他路由器之间不直接交换链路状态信息</p>
-<p>在DR失效时候，BDR接替</p>
-<p>DR默认优先级1（0-255）越大越优，非抢占，优先级为0的不参与选举</p>
-<h1 id="Router-LSA（1类）"><a href="#Router-LSA（1类）" class="headerlink" title="Router LSA（1类）"></a>Router LSA（1类）</h1><p>单区域中会用到1类、2类LSA</p>
-<p>Router LSA—1类LSA  <strong>所有的路由器都会产生</strong>，描述本路由器的信息  泛洪区域：本区域</p>
-<p>Router LSA使用Link来承载路由器直连接口的信息。<br>每条Link均包含“链路类型”、“链路ID”、“链路数据”以及“度量值”这几个关键信息。<br>路由器可能会采用一个或者多个Link来描述某个接口。<img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/%E5%9B%BE%E7%89%873.png" alt="图片3"></p>
-<p>广播型网络中链路类型：TransNet</p>
-<p>点到点网络中链路类型：point-to-point  （拓扑信息）、stubnet（网络信息）</p>
-<p>Router LSA中链路状态类型、链路状态ID、通告路由器用谁表示：</p>
-<p>链路状态类型：router</p>
-<p>链路状态ID：本路由器的router id</p>
-<p>通告路由器：本路由</p>
-<h1 id="Network-LSA（2类）"><a href="#Network-LSA（2类）" class="headerlink" title="Network LSA（2类）"></a>Network LSA（2类）</h1><p>Network  LSA–2类LSA  DR路由器   泛洪区域：本区域</p>
-<p>Network LSA中链路状态类型、链路状态ID、通告路由器用谁表示：</p>
-<p>链路状态类型：network</p>
-<p>链路状态ID：DR路由器的接口IP地址</p>
-<p>通告路由器：DR路由器的router id</p>
-<h1 id="Network-LSA（3类）"><a href="#Network-LSA（3类）" class="headerlink" title="Network LSA（3类）"></a>Network LSA（3类）</h1><p>3类LSA   ABR产生，泛洪范围本区域  作用：用于向一个区域通告到达另一个区域的路由</p>
-<p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/%E5%9B%BE%E7%89%874.png" alt="图片4"></p>
-<p><strong>区域间防环</strong>：</p>
-<p>1）非骨干区必须和骨干区area0相连，非骨干区不能直接进行通信</p>
-<p>2）三类LSA传递是 单向的</p>
-<p>3）从非骨干区域收到的3类LSA不能用于区域间路由的计算。</p>
-<h1 id="AS-External-LSA（5类）"><a href="#AS-External-LSA（5类）" class="headerlink" title="AS External LSA（5类）"></a>AS External LSA（5类）</h1><p>AS-external LSA（5类LSA）：由ASBR产生，描述到达AS外部的路由，该LSA会被通告到所有的区域</p>
-<p>LS Type：取值5，代表AS-external-LSA。<br>Link State ID：外部路由的目的网络地址。<br>Advertising Router：生成该LSA的Router ID。<br>Network Mask：网络掩码。</p>
-<h1 id="ASBR-Summary-LSA（4类）"><a href="#ASBR-Summary-LSA（4类）" class="headerlink" title="ASBR-Summary LSA（4类）"></a>ASBR-Summary LSA（4类）</h1><p>ASBR-Summary LSA（4类LSA）：由ABR产生，描述到ASBR的路由，通告给除ASBR所在区域的其他相关区域。</p>
-<p>LS Type：取值4，代表ASBR-Summary LSA。<br>Link State ID ：ASBR的Router ID。<br>Advertising Router:生成LSA的Router ID。 </p>
-<p>ospf外部路由在引入时，开销值类型有两种：默认情况是type-2</p>
-<p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/wps1.jpg" alt="img"> </p>
-<p>配置：[R7-ospf-1]import-route direct type 1</p>
-<p>OSPF路由遵循以下优先级顺序，区域内路由&gt;区域间路由&gt;Metric-Type-1外部路由&gt;Metric-Type-2外部路由。</p>
-<h1 id="ospf路由汇总"><a href="#ospf路由汇总" class="headerlink" title="ospf路由汇总"></a>ospf路由汇总</h1><p>OSPF路由汇总的类型：<br>在ABR执行路由汇总：对区域间的路由执行路由汇总。<br>在ASBR执行路由汇总：对引入的外部路由执行路由汇总。</p>
-<p>区域间路由汇总在ABR设备上配置：</p>
-<p>[R6-ospf-1-area-0.0.0.3]abr-summary 172.16.0.0 255.255.252.0</p>
-<p>外部路由汇总在ASBR上配置：</p>
-<p>[R8-ospf-1]asbr-summary 10.1.0.0 255.255.240.0</p>
-<h1 id="ospf认证"><a href="#ospf认证" class="headerlink" title="ospf认证"></a>ospf认证</h1><p>OSPF支持报文认证功能，只有通过认证的OSPF报文才能被接收。<br>路由器支持两种OSPF报文认证方式，当两种认证方式都存在时，优先使用接口认证方式：<br>区域认证方式：一个OSPF区域中所有的路由器在该区域下的认证模式和口令必须一致。</p>
-<p>[R6-ospf-1-area-0.0.0.3]authentication-mode md5 1 cipher huawei</p>
-<p>该区域中所有路由器都要配置<br>接口认证方式：相邻路由器直连接口下的认证模式和口令必须一致。<br>[R2-GigabitEthernet0&#x2F;0&#x2F;0]ospf authentication-mode md5 1 cipher huawei</p>
-<p>在一条链路上的所有接口下配置</p>
-<h1 id="stub区域"><a href="#stub区域" class="headerlink" title="stub区域"></a>stub区域</h1><p>1、2、3、3类缺省LSA（ABR产生的）</p>
-<p>Stub区域的ABR不向Stub区域内传播它接收到的AS外部路由（也就是4类、5类LSA），Stub区域中路由器的LSDB、路由表规模都会大大减小。<br>为保证Stub区域能够到达AS外部，Stub区域的ABR将生成一条缺省路由（使用3类LSA描述）。</p>
-<p>配置Stub区域时需要注意下列几点：<br>骨干区域不能被配置为Stub区域。<br>Stub区域中的所有路由器都必须将该区域配置为Stub。<br>Stub区域内不能引入也不接收AS外部路由。<br>虚连接不能穿越Stub区域。</p>
-<h1 id="Totally-Stub区域"><a href="#Totally-Stub区域" class="headerlink" title="Totally Stub区域"></a>Totally Stub区域</h1><p>1、2、3类缺省LSA（ABR产生的）</p>
-<p>Totally Stub区域既不允许AS外部路由在本区域内传播，也不允许区域间路由在本区域内传播。<br>Totally Stub区域内的路由器通过本区域ABR下发的缺省路由（使用3类LSA描述）到达其他区域，以及AS外部<br>配置Totally Stub区域时需要注意：<br>与Stub区域配置的区别在于，在ABR上需要追加no-summary关键字。</p>
-<h1 id="NSSA"><a href="#NSSA" class="headerlink" title="NSSA"></a>NSSA</h1><p>1、2、3、7类、7类缺省LSA（ABR产生的）</p>
-<p>NSSA区域 相对于stub区别在于，可以引入外部路由，外部路由引入后，会以7类LSA在NSSA区域中泛洪，然后 在ABR设备上将7类LSA转化成5类LSA在其他区域 泛洪</p>
-<p>Totally  NSSA：1、2、3缺省（ABR产生）、7类、7类缺省LSA（ABR产生的）</p>
-<h1 id="Silent-Interface"><a href="#Silent-Interface" class="headerlink" title="Silent-Interface"></a>Silent-Interface</h1><p>Silent-Interface有以下特性：<br>Silent-Interface不会接收和发送OSPF报文。<br>Silent-Interface的直连路由仍可以发布出去。</p>
-<p>通常我们会 将连接终端或者服务器的接口设置成Silent-Interface</p>
-<p>[R1]ospf<br>[R1-ospf-1]area 0<br>[R1-ospf-1-area-0.0.0.0]network 192.168.4.0 0.0.0.255<br>[R1-ospf-1]silent-interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
-<h1 id="路由器对lsa处理流程"><a href="#路由器对lsa处理流程" class="headerlink" title="路由器对lsa处理流程"></a>路由器对lsa处理流程</h1><p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/QQ%E5%9B%BE%E7%89%8720240418211229.jpg" alt="QQ图片20240418211229"></p>
+    <title>nat实验</title>
+    <url>/2023/11/25/nat%E5%AE%9E%E9%AA%8C/</url>
+    <content><![CDATA[<h1 id="静态nat"><a href="#静态nat" class="headerlink" title="静态nat"></a>静态nat</h1><p>静态NAT实现了私有地址和公有地址的一对一映射。如果希望一台主机优先使用某个关联地址，或者想要外部网络使用一个指定的公网地址访问内部服务器时，可以使用静态NAT。但是在大型网络中，这种一对一的IP地址映射无法缓解公用地址短缺的问题。</p>
+<span id="more"></span>
+
+<p>静态NAT实现了私有地址和共有地址一对一的映射（一个私有地址对应一个共有地址），并没有做到缓解地址短缺的问题，只是做到了地址转换。</p>
+<p>一个公网地址只会分配给唯一且固定的内网地址</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingttuopu4509.png" alt="jingttuopu4509"></p>
+<p>如图配置ip地址和网关</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingta15204327.png" alt="jingta15204327"></p>
+<p>r1上配置静态nat（注意是在公网的接口上，出接口）</p>
+<p>注意配置一条静态路由，不然没有路由的下一跳会被丢弃</p>
+<p>在r1上查看nat映射关系：dis nat static</p>
+<p>验证一下：<img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingtainatjg25204222.png" alt="jingtainatjg25204222"></p>
+<p>发现去往2.2.2.2的源地址变为2.2.2.3，说明nat完成转换。</p>
+<p>静态nat两种配置方式：</p>
+<p>1.接口下（上述实验采用这种方式）：进入到连接外网路由器的出接口下，然后在接口视图下配置nat映射关系</p>
+<p>2.全局：在全局视图下，配置好nat映射关系，再进入到出接口，执行：nat static enable</p>
+<h1 id="动态nat"><a href="#动态nat" class="headerlink" title="动态nat"></a>动态nat</h1><p>动态NAT通过使用地址池来实现。</p>
+<p>如上图，当内部主机A和主机B需要与公网中的目的主机通信时，网关RTA会从配置的公网地址池中选择一个未使用的公网地址与之做映射。每台主机都会分配到地址池中的一个唯一地址。当不需要此连接时，对应的地址映射将会被删除，公网地址也会被恢复到地址池中待用。当网关收到回复报文后，会根据之前的映射再次进行转换之后转发给对应主机。</p>
+<p>注意：</p>
+<p>动态NAT实际上实现的还是私有地址和公有地址一对一的关系，但是共有地址不再绑定给特定的内网地址。实现了一定程度的缓解地址短缺问题。<br>动态NAT地址池中的地址用尽以后，只能等待被占用的公用IP被释放后，其他主机才能使用它来访问公网。<img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dongtaitu00800.png" alt="dongtaitu00800"></p>
+<h2 id="动态NAT转换流程："><a href="#动态NAT转换流程：" class="headerlink" title="动态NAT转换流程："></a>动态NAT转换流程：</h2><p>1）路由器上配置一个内部地址池（公司内部所有主机用到的私有IP）动态映射一个外部地址池（所购买的公有IP）。<br>2）当有一个内网主机访问外网时，路由器首先查看NAT地址转换表；<br>3）若无，则再查看是否配置了动态NAT映射，若配置，则将IP包头中的源IP与内部地址池进行匹配，若有匹配项，则将该内网IP从内部地址池中取出，同时取出外部地址池中的一个IP地址，动态形成NAT地址转换表。注意，外部地址池的公网IP地址取出后，外部地址池中将没有该公网IP了。<br>4）默认当该主机24小时没有联系外网时，该动态NAT条目会自动消失，所被取出的公私有地址重新回到地址池中。</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/tuopudawda12714.png" alt="tuopudawda12714"></p>
+<p>ip如图，pc的网关192.168.1.254</p>
+<p>r1上配置默认路由，ip route-static 0.0.0.0 0 172.16.1.2</p>
+<p>r1上配置动态地址池：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/acldongtai2005212357.png" alt="acldongtai2005212357"></p>
+<p>地址池验证：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dizhichi1201.png" alt="dizhichi1201"></p>
+<p>配置acl策略：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/acl55da612432.png" alt="acl55da612432"></p>
+<p>在r1的外网出接口上调用：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/natout25212448.png" alt="natout25212448"></p>
+<p>验证：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dongtaijiegy12547.png" alt="dongtaijiegy12547"></p>
+<p>其中源IP为3、4、5不定，说明是在动态分配外网地址。动态NAT配置完成。</p>
+<p>在动态NAT实验中，最后利用PC1测试连通性时，间歇性会丢包</p>
+<p>可能的原因：ping的时候默认按地址池中可用地址顺序从1~254进行地址转换，放大nat地址池可解决。</p>
+<h1 id="NAPT"><a href="#NAPT" class="headerlink" title="NAPT"></a>NAPT</h1><p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/NApttu39.png" alt="NApttu39"></p>
+<p>如上图，RTA收到一个私网主机发送的报文，源IP地址是192.168.1.1，源端口号是1025，目的IP地址是100.1.1.1，目的端口是80。RTA会从配置的公网地址池中选择一个空闲的公网IP地址和端口号，并建立相应的NAPT表项。这些NAPT表项指定了报文的私网IP地址和端口号与公网IP地址和端口号的映射关系。之后，RTA将报文的源IP地址和端口号转换成公网地址200.10.10.1和端口号2843，并转发报文到公网。当网关RTA收到回复报文后，会根据之前的映射表再次进行转换之后转发给主机A。主机B同理。</p>
+<p>注意：</p>
+<p>NAPT技术允许多个内部地址映射到同一个公有地址的不同端口。<br>NAPT实现了私有地址对共有地址多对一</p>
+<p>相当于一种特殊的动态nat</p>
+<p>1、端口NAT和动态NAT的配置过程基本一致，只是在应用到接口时，配置命令少no-pat<br>2、端口NAT一个地址可以给多个源地址转换，不是单对单的转换，所以节省了nat地址！<br>3、端口NAT实际应用较多，静态NAT和动态NAT因为地址不能节约，所以实际应用少</p>
+<h1 id="Easy-IP"><a href="#Easy-IP" class="headerlink" title="Easy IP"></a>Easy IP</h1><p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/easydahwka5.png" alt="easydahwka5"></p>
+<p>Easy IP本质上是NAPT（所以原理与NAPT大致相似）<br>由于网关设备出接口IP地址为公网地址，所以可以利用该<strong>出接口地址</strong>来作为地址转换的公有地址。<br>Easy IP适用于小规模局域网中的主机访问Internet的场景。小规模局域网通常部署在小型的网吧或者办公室中，这些地方内部主机不多，出接口可以通过拨号方式获取一个临时公网IP地址。Easy IP可以实现内部主机使用这个临时公网IP地址访问Internet。</p>
+<p>Easy IP适用于小规模局域网中的主机访问Internet的场景。小规模局域网通常部署在小型的网吧或者办公室中，这些地方内部主机不多，出接口可以通过拨号方式获取一个临时公网IP地址。Easy IP可以实现内部主机使用这个临时公网IP地址访问Internet。</p>
+<h2 id="Easy-IP的配置："><a href="#Easy-IP的配置：" class="headerlink" title="Easy IP的配置："></a>Easy IP的配置：</h2><p>1.创建ACL：acl 2000</p>
+<p>2.允许1.0的数据进行转换：rule 5 permit source 192.168.1.0 0 .0.0.255</p>
+<p>3.进入公网出接口</p>
+<p>4.应用acl：nat outbound 2000</p>
+<p>（相较于napt少了地址池）</p>
+<p>验证：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/easadwaawh215116.png" alt="easadwaawh215116"></p>
+<p>源地址为出接口地址172.16.1.1，只是端口不同</p>
 ]]></content>
       <categories>
-        <category>基础知识</category>
+        <category>ip实验</category>
       </categories>
       <tags>
-        <tag>ospf</tag>
+        <tag>nat</tag>
       </tags>
   </entry>
   <entry>
@@ -1910,68 +1726,252 @@
       </tags>
   </entry>
   <entry>
-    <title>nat实验</title>
-    <url>/2023/11/25/nat%E5%AE%9E%E9%AA%8C/</url>
-    <content><![CDATA[<h1 id="静态nat"><a href="#静态nat" class="headerlink" title="静态nat"></a>静态nat</h1><p>静态NAT实现了私有地址和公有地址的一对一映射。如果希望一台主机优先使用某个关联地址，或者想要外部网络使用一个指定的公网地址访问内部服务器时，可以使用静态NAT。但是在大型网络中，这种一对一的IP地址映射无法缓解公用地址短缺的问题。</p>
-<span id="more"></span>
-
-<p>静态NAT实现了私有地址和共有地址一对一的映射（一个私有地址对应一个共有地址），并没有做到缓解地址短缺的问题，只是做到了地址转换。</p>
-<p>一个公网地址只会分配给唯一且固定的内网地址</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingttuopu4509.png" alt="jingttuopu4509"></p>
-<p>如图配置ip地址和网关</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingta15204327.png" alt="jingta15204327"></p>
-<p>r1上配置静态nat（注意是在公网的接口上，出接口）</p>
-<p>注意配置一条静态路由，不然没有路由的下一跳会被丢弃</p>
-<p>在r1上查看nat映射关系：dis nat static</p>
-<p>验证一下：<img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingtainatjg25204222.png" alt="jingtainatjg25204222"></p>
-<p>发现去往2.2.2.2的源地址变为2.2.2.3，说明nat完成转换。</p>
-<p>静态nat两种配置方式：</p>
-<p>1.接口下（上述实验采用这种方式）：进入到连接外网路由器的出接口下，然后在接口视图下配置nat映射关系</p>
-<p>2.全局：在全局视图下，配置好nat映射关系，再进入到出接口，执行：nat static enable</p>
-<h1 id="动态nat"><a href="#动态nat" class="headerlink" title="动态nat"></a>动态nat</h1><p>动态NAT通过使用地址池来实现。</p>
-<p>如上图，当内部主机A和主机B需要与公网中的目的主机通信时，网关RTA会从配置的公网地址池中选择一个未使用的公网地址与之做映射。每台主机都会分配到地址池中的一个唯一地址。当不需要此连接时，对应的地址映射将会被删除，公网地址也会被恢复到地址池中待用。当网关收到回复报文后，会根据之前的映射再次进行转换之后转发给对应主机。</p>
-<p>注意：</p>
-<p>动态NAT实际上实现的还是私有地址和公有地址一对一的关系，但是共有地址不再绑定给特定的内网地址。实现了一定程度的缓解地址短缺问题。<br>动态NAT地址池中的地址用尽以后，只能等待被占用的公用IP被释放后，其他主机才能使用它来访问公网。<img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dongtaitu00800.png" alt="dongtaitu00800"></p>
-<h2 id="动态NAT转换流程："><a href="#动态NAT转换流程：" class="headerlink" title="动态NAT转换流程："></a>动态NAT转换流程：</h2><p>1）路由器上配置一个内部地址池（公司内部所有主机用到的私有IP）动态映射一个外部地址池（所购买的公有IP）。<br>2）当有一个内网主机访问外网时，路由器首先查看NAT地址转换表；<br>3）若无，则再查看是否配置了动态NAT映射，若配置，则将IP包头中的源IP与内部地址池进行匹配，若有匹配项，则将该内网IP从内部地址池中取出，同时取出外部地址池中的一个IP地址，动态形成NAT地址转换表。注意，外部地址池的公网IP地址取出后，外部地址池中将没有该公网IP了。<br>4）默认当该主机24小时没有联系外网时，该动态NAT条目会自动消失，所被取出的公私有地址重新回到地址池中。</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/tuopudawda12714.png" alt="tuopudawda12714"></p>
-<p>ip如图，pc的网关192.168.1.254</p>
-<p>r1上配置默认路由，ip route-static 0.0.0.0 0 172.16.1.2</p>
-<p>r1上配置动态地址池：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/acldongtai2005212357.png" alt="acldongtai2005212357"></p>
-<p>地址池验证：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dizhichi1201.png" alt="dizhichi1201"></p>
-<p>配置acl策略：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/acl55da612432.png" alt="acl55da612432"></p>
-<p>在r1的外网出接口上调用：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/natout25212448.png" alt="natout25212448"></p>
-<p>验证：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dongtaijiegy12547.png" alt="dongtaijiegy12547"></p>
-<p>其中源IP为3、4、5不定，说明是在动态分配外网地址。动态NAT配置完成。</p>
-<p>在动态NAT实验中，最后利用PC1测试连通性时，间歇性会丢包</p>
-<p>可能的原因：ping的时候默认按地址池中可用地址顺序从1~254进行地址转换，放大nat地址池可解决。</p>
-<h1 id="NAPT"><a href="#NAPT" class="headerlink" title="NAPT"></a>NAPT</h1><p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/NApttu39.png" alt="NApttu39"></p>
-<p>如上图，RTA收到一个私网主机发送的报文，源IP地址是192.168.1.1，源端口号是1025，目的IP地址是100.1.1.1，目的端口是80。RTA会从配置的公网地址池中选择一个空闲的公网IP地址和端口号，并建立相应的NAPT表项。这些NAPT表项指定了报文的私网IP地址和端口号与公网IP地址和端口号的映射关系。之后，RTA将报文的源IP地址和端口号转换成公网地址200.10.10.1和端口号2843，并转发报文到公网。当网关RTA收到回复报文后，会根据之前的映射表再次进行转换之后转发给主机A。主机B同理。</p>
-<p>注意：</p>
-<p>NAPT技术允许多个内部地址映射到同一个公有地址的不同端口。<br>NAPT实现了私有地址对共有地址多对一</p>
-<p>相当于一种特殊的动态nat</p>
-<p>1、端口NAT和动态NAT的配置过程基本一致，只是在应用到接口时，配置命令少no-pat<br>2、端口NAT一个地址可以给多个源地址转换，不是单对单的转换，所以节省了nat地址！<br>3、端口NAT实际应用较多，静态NAT和动态NAT因为地址不能节约，所以实际应用少</p>
-<h1 id="Easy-IP"><a href="#Easy-IP" class="headerlink" title="Easy IP"></a>Easy IP</h1><p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/easydahwka5.png" alt="easydahwka5"></p>
-<p>Easy IP本质上是NAPT（所以原理与NAPT大致相似）<br>由于网关设备出接口IP地址为公网地址，所以可以利用该<strong>出接口地址</strong>来作为地址转换的公有地址。<br>Easy IP适用于小规模局域网中的主机访问Internet的场景。小规模局域网通常部署在小型的网吧或者办公室中，这些地方内部主机不多，出接口可以通过拨号方式获取一个临时公网IP地址。Easy IP可以实现内部主机使用这个临时公网IP地址访问Internet。</p>
-<p>Easy IP适用于小规模局域网中的主机访问Internet的场景。小规模局域网通常部署在小型的网吧或者办公室中，这些地方内部主机不多，出接口可以通过拨号方式获取一个临时公网IP地址。Easy IP可以实现内部主机使用这个临时公网IP地址访问Internet。</p>
-<h2 id="Easy-IP的配置："><a href="#Easy-IP的配置：" class="headerlink" title="Easy IP的配置："></a>Easy IP的配置：</h2><p>1.创建ACL：acl 2000</p>
-<p>2.允许1.0的数据进行转换：rule 5 permit source 192.168.1.0 0 .0.0.255</p>
-<p>3.进入公网出接口</p>
-<p>4.应用acl：nat outbound 2000</p>
-<p>（相较于napt少了地址池）</p>
-<p>验证：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/easadwaawh215116.png" alt="easadwaawh215116"></p>
-<p>源地址为出接口地址172.16.1.1，只是端口不同</p>
+    <title>VRRP基础实验</title>
+    <url>/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/</url>
+    <content><![CDATA[<p>设备连接方式如图所示，网络中存在VLAN10、20，每个VLAN中部署一组VRRP，使用与VLAN ID相同的数值作为VRID，将S1配置为VLAN10的VRRP Master，将S2配置为VLAN20的VRRP Master。</p>
+<p>同时在S1、S2、S3上部署MSTP，创建Instance 1、2，将VLAN10映射到MSTI 1、VLAN20映射到MSTI 2，将S1配置为MSTI 1的主根桥、MSTI 2的备份根桥，而将S2配置为MSTI 1的备份根桥、MSTI 2的主根桥。</p>
+<p>VLANIF接口地址使用10.0.x.y&#x2F;24，其中x为VRID组号，y为设备编号，VRIP使用10.0.x.254&#x2F;24。</p>
+<p><img src="/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/vrrptuopu29210315.png" alt="vrrptuopu29210315"></p>
+<p>#创建VLAN</p>
+<p>[S1]vlan batch 10 20</p>
+<p>[S2]vlan batch 10 20 </p>
+<p>[S3]vlan batch 10 20 </p>
+<p>[S4]vlan batch 10 20 </p>
+<p>#将所有互联接口配置为Trunk接口，放通对应VLAN</p>
+<p>略</p>
+<p>#修改STP模式为MSTP</p>
+<p>[S1]stp mode mstp</p>
+<p>[S2]stp mode mstp</p>
+<p>[S3]stp mode mstp</p>
+<p>#配置MSTP</p>
+<p>[S1]stp region-configuration</p>
+<p>[S1-mst-region] region-name hcip</p>
+<p>[S1-mst-region] revision-level 1</p>
+<p>[S1-mst-region] instance 1 vlan 10 </p>
+<p>[S1-mst-region] instance 2 vlan 20</p>
+<p>[S1-mst-region] active region-configuration</p>
+<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
+<p>[S1-mst-region] quit</p>
+<p>[S2]stp region-configuration</p>
+<p>[S2-mst-region] region-name hcip</p>
+<p>[S2-mst-region] revision-level 1</p>
+<p>[S2-mst-region] instance 1 vlan 10 </p>
+<p>[S2-mst-region] instance 2 vlan 20 </p>
+<p>[S2-mst-region] active region-configuration</p>
+<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
+<p>[S2-mst-region] quit</p>
+<p>[S3]stp region-configuration</p>
+<p>[S3-mst-region] region-name hcip</p>
+<p>[S3-mst-region] revision-level 1</p>
+<p>[S3-mst-region] instance 1 vlan 10 </p>
+<p>[S3-mst-region] instance 2 vlan 20 </p>
+<p>[S3-mst-region] active region-configuration</p>
+<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
+<p>[S3-mst-region] quit</p>
+<p>#配置SW1为MSTI1的根桥、MSTI2的备份根桥</p>
+<p>[S1]stp instance 1 root primary </p>
+<p>[S1]stp instance 2 root secondary</p>
+<p>#配置SW2为MSTI2的根桥、MSTI1的备份根桥</p>
+<p>[S2]stp instance 1 root secondary </p>
+<p>[S2]stp instance 2 root primary</p>
+<p>#在S1上查看MSTI1的状态和统计信息摘要</p>
+<p><img src="/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/shili1129211309.png" alt="shili1129211309"></p>
+<p>S1上所有接口都是指定接口，S1为MSTI1的根桥。</p>
+<p>#在S2上查看MSTI2的状态和统计信息摘要</p>
+<p><img src="/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/shili229211338.png" alt="shili229211338"></p>
+<p>S2上所有接口都是指定接口，S2为MSTI1的根桥。</p>
+<h2 id="VRRP基础配置"><a href="#VRRP基础配置" class="headerlink" title="VRRP基础配置"></a>VRRP基础配置</h2><p>在S1、S2均创建VLANIF 10、20，分别加入VRRP组10、20，手动配置VRRP优先级，使得S1的VLAN10成为VRRP Master、S2的VLAN20成为VRRP Master。</p>
+<p>#创建VLANIF</p>
+<p>[S1]interface Vlanif10</p>
+<p>[S1-Vlanif10] ip address 10.0.10.1 255.255.255.0</p>
+<p>[S1-Vlanif10] quit</p>
+<p>[S1]interface Vlanif20</p>
+<p>[S1-Vlanif20] ip address 10.0.20.1 255.255.255.0</p>
+<p>[S1-Vlanif20] quit</p>
+<p>[S2]interface Vlanif10</p>
+<p>[S2-Vlanif10] ip address 10.0.10.2 255.255.255.0</p>
+<p>[S2-Vlanif10] quit</p>
+<p>[S2]interface Vlanif20</p>
+<p>[S2-Vlanif20] ip address 10.0.20.2 255.255.255.0</p>
+<p>[S2-Vlanif20] quit</p>
+<p>#S1上配置VRRP</p>
+<p>[S1]interface Vlanif 10</p>
+<p>[S1-Vlanif10] vrrp vrid 10 virtual-ip 10.0.10.254</p>
+<p>[S1-Vlanif10] vrrp vrid 10 priority 120</p>
+<p>[S1-Vlanif10] quit</p>
+<p>[S1]interface Vlanif 20</p>
+<p>[S1-Vlanif20] vrrp vrid 20 virtual-ip 10.0.20.254</p>
+<p>[S1-Vlanif20] quit</p>
+<p>配置VLAN10的VRRP优先级为120，VLAN20保持默认的100。</p>
+<p>#S2上配置VRRP</p>
+<p>[S2]interface Vlanif10</p>
+<p>[S2-Vlanif10] vrrp vrid 10 virtual-ip 10.0.10.254</p>
+<p>[S2-Vlanif10] quit</p>
+<p>[S2]interface Vlanif20</p>
+<p>[S2-Vlanif20] vrrp vrid 20 virtual-ip 10.0.20.254</p>
+<p>[S2-Vlanif20] vrrp vrid 20 priority 120</p>
+<p>[S2-Vlanif20] quit</p>
+<p>配置VLAN20的VRRP优先级为120，VLAN10保持默认的100。</p>
+<p>#查看VRRP组状态</p>
+<p><img src="/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/chakanvrrp1914.png" alt="chakanvrrp1914"></p>
+<h2 id="配置VRRP与BFD联动进行快速切换"><a href="#配置VRRP与BFD联动进行快速切换" class="headerlink" title="配置VRRP与BFD联动进行快速切换"></a>配置VRRP与BFD联动进行快速切换</h2><p>在S1、S2上配置BFD单跳检测，检测VLANIF接口之间的连通性，将VRRP与BFD联动，当BFD会话状态Down时，增加VRRP Backup设备的优先级。</p>
+<p>#在S1上配置BFD会话</p>
+<p>[S1]bfd</p>
+<p>[S1-bfd] quit</p>
+<p>[S1]bfd vlanif10 bind peer-ip 10.0.10.2 interface Vlanif10</p>
+<p>[S1-bfd-session-vlanif10] discriminator local 1</p>
+<p>[S1-bfd-session-vlanif10] discriminator remote 2</p>
+<p>[S1-bfd-session-vlanif10] min-tx-interval 100</p>
+<p>[S1-bfd-session-vlanif10] min-rx-interval 100</p>
+<p>[S1-bfd-session-vlanif10] commit</p>
+<p>[S1-bfd-session-vlanif10] quit</p>
+<p>[S1]bfd vlanif20 bind peer-ip 10.0.20.2 interface Vlanif20</p>
+<p>[S1-bfd-session-vlanif20] discriminator local 11</p>
+<p>[S1-bfd-session-vlanif20] discriminator remote 22</p>
+<p>[S1-bfd-session-vlanif20] min-tx-interval 100</p>
+<p>[S1-bfd-session-vlanif20] min-rx-interval 100</p>
+<p>[S1-bfd-session-vlanif20] commit</p>
+<p>[S1-bfd-session-vlanif20] quit</p>
+<p>#在S2上配置BFD会话</p>
+<p>[S2]bfd</p>
+<p>[S2-bfd] quit</p>
+<p>[S2]bfd vlanif10 bind peer-ip 10.0.10.1 interface Vlanif10</p>
+<p>[S2-bfd-session-vlanif10] discriminator local 2</p>
+<p>[S2-bfd-session-vlanif10] discriminator remote 1</p>
+<p>[S2-bfd-session-vlanif10] min-tx-interval 100</p>
+<p>[S2-bfd-session-vlanif10] min-rx-interval 100</p>
+<p>[S2-bfd-session-vlanif10] commit</p>
+<p>[S2-bfd-session-vlanif10] quit</p>
+<p>[S2]bfd vlanif20 bind peer-ip 10.0.20.1 interface Vlanif20</p>
+<p>[S2-bfd-session-vlanif20] discriminator local 22</p>
+<p>[S2-bfd-session-vlanif20] discriminator remote 11</p>
+<p>[S2-bfd-session-vlanif20] min-tx-interval 100</p>
+<p>[S2-bfd-session-vlanif20] min-rx-interval 100</p>
+<p>[S2-bfd-session-vlanif20] commit</p>
+<p>[S2-bfd-session-vlanif20] quit</p>
+<p>#检查BFD会话状态</p>
+<p><img src="/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/bfdahakan737.png" alt="bfdahakan737"></p>
+<p>此时S1、S2上BFD会话状态都为Up。</p>
+<p>#配置VRRP与BFD联动</p>
+<p>[S1]interface Vlanif20</p>
+<p>[S1-Vlanif20] vrrp vrid 20 track bfd-session 11 increased 30</p>
+<p>[S1-Vlanif20] quit</p>
+<p>[S2]interface Vlanif10</p>
+<p>[S2-Vlanif10] vrrp vrid 10 track bfd-session 2 increased 30</p>
+<p>[S2-Vlanif10] quit</p>
+<p>注意，此处的bfd-session号为本地的BFD discriminator，只需要在Backup状态的接口上配置联动，BFD会话Down时增加本地的VRRP优先级。</p>
+<p>#关闭S1上所有接口，模拟链路故障</p>
+<p>[S1]interface GigabitEthernet0&#x2F;0&#x2F;10</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10] shutdown</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10] quit</p>
+<p>[S1]interface GigabitEthernet0&#x2F;0&#x2F;11</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11] shutdown</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11] quit</p>
+<p>[S1]interface GigabitEthernet0&#x2F;0&#x2F;12</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12] shutdown</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12] quit</p>
+<p>#在S2上查看BFD会话状态</p>
+<p><img src="/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/yichang13038.png" alt="yichang13038"></p>
+<p>此时两个BFD会话状态立马变为Down。</p>
+<p>#在S2上查看VRRP组状态</p>
+<p><img src="/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/shuangzhu129213128.png" alt="shuangzhu129213128"></p>
+<p>VRRP组10、20的Master此时都是S2。</p>
+<p>#在S2上查看VRRP组的状态和配置参数信息</p>
+<p><img src="/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/canshufiejo9213200.png" alt="canshufiejo9213200"></p>
+]]></content>
+      <tags>
+        <tag>VRRP</tag>
+        <tag>BFD</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>opsf总结</title>
+    <url>/2024/04/18/opsf%E6%80%BB%E7%BB%93/</url>
+    <content><![CDATA[<h1 id="ospf协议工作原理"><a href="#ospf协议工作原理" class="headerlink" title="ospf协议工作原理"></a>ospf协议工作原理</h1><p>工作过程：①建立邻居关系（hello   2-way状态）每台路由器都会产生lsa，路由器将接收到的lsa放入自己的lsdb中；②同步LSDB（DD、LSR、LSU、LSACK    full状态）；③计算路由（本路由器通过自己的LSDB，以自己为根节点，计算最短路径树，最终得到路由）SPF算法；</p>
+<p>ospf支持的网络类型：广播、NBMA、点到点、点到多点</p>
+<p>ospf计算；计算路由+计算拓扑</p>
+<p>ospf报文采用IP封装，协议号89，</p>
+<p>ospfv2（ipv4），ospfv3（ipv6）</p>
+<p>ospf组播更新</p>
+<p>224.0.0.5（所有运行ospf协议的路由器侦听）</p>
+<p>224.0.0.6（DR和BDR侦听）</p>
+<h1 id="Router-id"><a href="#Router-id" class="headerlink" title="Router id"></a>Router id</h1><p>在自治系统中唯一标识一台运行ospf的路由器，32位无符号整数</p>
+<p>选举规则：手动配置（建议），如果没有手动配置，则路由器使用Loopback接口中最大的IP地址作为Router id，如果没有配置Loopback接口，则使用物理接口中最大的IP地址</p>
+<h1 id="Cost值"><a href="#Cost值" class="headerlink" title="Cost值"></a>Cost值</h1><p>缺省接口cost&#x3D;（100mib&#x2F;s）&#x2F; 接口带宽，修改100mid&#x2F;s改变cost</p>
+<p>也可以直接修改</p>
+<p>累计cost作为开销值，流量从源网络到目的网络所经过所有路由器的出接口的cost总和</p>
+<h1 id="Hello报文"><a href="#Hello报文" class="headerlink" title="Hello报文"></a>Hello报文</h1><p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/%E5%9B%BE%E7%89%871.png" alt="图片1"></p>
+<p>发送间隔10s，失效40s，修改发送，失效也变，失效始终为发送的4倍</p>
+<p>命令：接口视图下，ospf timer hello 10</p>
+<p>ospf邻居建立失败 ，可能原因：①物理链路故障；②ospf版本不一致；③区域ID不一致；④认证类型不一致；⑤认证数据不一致；⑥掩码不一致；（只出现在广播型网络中，点到点网络不检查掩码信息）⑦hello报文间隔不一致；⑧router id一致；（华为设备遇到router id一致，会重新配置router id）</p>
+<h1 id="DD报文"><a href="#DD报文" class="headerlink" title="DD报文"></a>DD报文</h1><p>DD报文部分字段解释<br>I：当发送连续多个DD报文时，如果这是第一个DD报文，则置为1，否则置为0。<br>M (More)：当发送连续多个DD报文时，如果这是最后一个DD报文，则置为0。否则置为1，表示后面还有其他的DD报文。<br>MS (Master&#x2F;Slave)：当两台OSPF路由器交换DD报文时，首先需要确定双方的主从关系，Router ID大的一方会成为Master。当值为1时表示发送方为Master。<br>DD sequence number：DD报文序列号。主从双方利用序列号来保证DD报文传输的可靠性和完整性。</p>
+<p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/%E5%9B%BE%E7%89%872.png" alt="图片2"></p>
+<p>链路状态类型、链路状态ID、通告路由器三元组唯一地标识了一个LSA。<br>链路状态老化时间 、链路状态序列号 、校验和用于判断LSA的新旧</p>
+<h1 id="ospf状态机"><a href="#ospf状态机" class="headerlink" title="ospf状态机"></a>ospf状态机</h1><p>之前的手写笔记😍</p>
+<p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/QQ%E5%9B%BE%E7%89%8720240418204859.jpg" alt="QQ图片20240418204859"></p>
+<p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/QQ%E5%9B%BE%E7%89%8720240418204932.jpg" alt="QQ图片20240418204932"></p>
+<p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/QQ%E5%9B%BE%E7%89%8720240418204926.jpg" alt="QQ图片20240418204926"></p>
+<h1 id="DR和BDR"><a href="#DR和BDR" class="headerlink" title="DR和BDR"></a>DR和BDR</h1><p>既侦听224.0.0.5也侦听224.0.0.6</p>
+<p>每个网段选举一个</p>
+<p>DR：指定路由器，负责在MA网络中建立和维护邻接关系，并负责lsa同步</p>
+<p>DR和其他所有路由器形成邻接关系，其他路由器之间不直接交换链路状态信息</p>
+<p>在DR失效时候，BDR接替</p>
+<p>DR默认优先级1（0-255）越大越优，非抢占，优先级为0的不参与选举</p>
+<h1 id="Router-LSA（1类）"><a href="#Router-LSA（1类）" class="headerlink" title="Router LSA（1类）"></a>Router LSA（1类）</h1><p>单区域中会用到1类、2类LSA</p>
+<p>Router LSA—1类LSA  <strong>所有的路由器都会产生</strong>，描述本路由器的信息  泛洪区域：本区域</p>
+<p>Router LSA使用Link来承载路由器直连接口的信息。<br>每条Link均包含“链路类型”、“链路ID”、“链路数据”以及“度量值”这几个关键信息。<br>路由器可能会采用一个或者多个Link来描述某个接口。<img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/%E5%9B%BE%E7%89%873.png" alt="图片3"></p>
+<p>广播型网络中链路类型：TransNet</p>
+<p>点到点网络中链路类型：point-to-point  （拓扑信息）、stubnet（网络信息）</p>
+<p>Router LSA中链路状态类型、链路状态ID、通告路由器用谁表示：</p>
+<p>链路状态类型：router</p>
+<p>链路状态ID：本路由器的router id</p>
+<p>通告路由器：本路由</p>
+<h1 id="Network-LSA（2类）"><a href="#Network-LSA（2类）" class="headerlink" title="Network LSA（2类）"></a>Network LSA（2类）</h1><p>Network  LSA–2类LSA  DR路由器   泛洪区域：本区域</p>
+<p>Network LSA中链路状态类型、链路状态ID、通告路由器用谁表示：</p>
+<p>链路状态类型：network</p>
+<p>链路状态ID：DR路由器的接口IP地址</p>
+<p>通告路由器：DR路由器的router id</p>
+<h1 id="Network-LSA（3类）"><a href="#Network-LSA（3类）" class="headerlink" title="Network LSA（3类）"></a>Network LSA（3类）</h1><p>3类LSA   ABR产生，泛洪范围本区域  作用：用于向一个区域通告到达另一个区域的路由</p>
+<p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/%E5%9B%BE%E7%89%874.png" alt="图片4"></p>
+<p><strong>区域间防环</strong>：</p>
+<p>1）非骨干区必须和骨干区area0相连，非骨干区不能直接进行通信</p>
+<p>2）三类LSA传递是 单向的</p>
+<p>3）从非骨干区域收到的3类LSA不能用于区域间路由的计算。</p>
+<h1 id="AS-External-LSA（5类）"><a href="#AS-External-LSA（5类）" class="headerlink" title="AS External LSA（5类）"></a>AS External LSA（5类）</h1><p>AS-external LSA（5类LSA）：由ASBR产生，描述到达AS外部的路由，该LSA会被通告到所有的区域</p>
+<p>LS Type：取值5，代表AS-external-LSA。<br>Link State ID：外部路由的目的网络地址。<br>Advertising Router：生成该LSA的Router ID。<br>Network Mask：网络掩码。</p>
+<h1 id="ASBR-Summary-LSA（4类）"><a href="#ASBR-Summary-LSA（4类）" class="headerlink" title="ASBR-Summary LSA（4类）"></a>ASBR-Summary LSA（4类）</h1><p>ASBR-Summary LSA（4类LSA）：由ABR产生，描述到ASBR的路由，通告给除ASBR所在区域的其他相关区域。</p>
+<p>LS Type：取值4，代表ASBR-Summary LSA。<br>Link State ID ：ASBR的Router ID。<br>Advertising Router:生成LSA的Router ID。 </p>
+<p>ospf外部路由在引入时，开销值类型有两种：默认情况是type-2</p>
+<p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/wps1.jpg" alt="img"> </p>
+<p>配置：[R7-ospf-1]import-route direct type 1</p>
+<p>OSPF路由遵循以下优先级顺序，区域内路由&gt;区域间路由&gt;Metric-Type-1外部路由&gt;Metric-Type-2外部路由。</p>
+<h1 id="ospf路由汇总"><a href="#ospf路由汇总" class="headerlink" title="ospf路由汇总"></a>ospf路由汇总</h1><p>OSPF路由汇总的类型：<br>在ABR执行路由汇总：对区域间的路由执行路由汇总。<br>在ASBR执行路由汇总：对引入的外部路由执行路由汇总。</p>
+<p>区域间路由汇总在ABR设备上配置：</p>
+<p>[R6-ospf-1-area-0.0.0.3]abr-summary 172.16.0.0 255.255.252.0</p>
+<p>外部路由汇总在ASBR上配置：</p>
+<p>[R8-ospf-1]asbr-summary 10.1.0.0 255.255.240.0</p>
+<h1 id="ospf认证"><a href="#ospf认证" class="headerlink" title="ospf认证"></a>ospf认证</h1><p>OSPF支持报文认证功能，只有通过认证的OSPF报文才能被接收。<br>路由器支持两种OSPF报文认证方式，当两种认证方式都存在时，优先使用接口认证方式：<br>区域认证方式：一个OSPF区域中所有的路由器在该区域下的认证模式和口令必须一致。</p>
+<p>[R6-ospf-1-area-0.0.0.3]authentication-mode md5 1 cipher huawei</p>
+<p>该区域中所有路由器都要配置<br>接口认证方式：相邻路由器直连接口下的认证模式和口令必须一致。<br>[R2-GigabitEthernet0&#x2F;0&#x2F;0]ospf authentication-mode md5 1 cipher huawei</p>
+<p>在一条链路上的所有接口下配置</p>
+<h1 id="stub区域"><a href="#stub区域" class="headerlink" title="stub区域"></a>stub区域</h1><p>1、2、3、3类缺省LSA（ABR产生的）</p>
+<p>Stub区域的ABR不向Stub区域内传播它接收到的AS外部路由（也就是4类、5类LSA），Stub区域中路由器的LSDB、路由表规模都会大大减小。<br>为保证Stub区域能够到达AS外部，Stub区域的ABR将生成一条缺省路由（使用3类LSA描述）。</p>
+<p>配置Stub区域时需要注意下列几点：<br>骨干区域不能被配置为Stub区域。<br>Stub区域中的所有路由器都必须将该区域配置为Stub。<br>Stub区域内不能引入也不接收AS外部路由。<br>虚连接不能穿越Stub区域。</p>
+<h1 id="Totally-Stub区域"><a href="#Totally-Stub区域" class="headerlink" title="Totally Stub区域"></a>Totally Stub区域</h1><p>1、2、3类缺省LSA（ABR产生的）</p>
+<p>Totally Stub区域既不允许AS外部路由在本区域内传播，也不允许区域间路由在本区域内传播。<br>Totally Stub区域内的路由器通过本区域ABR下发的缺省路由（使用3类LSA描述）到达其他区域，以及AS外部<br>配置Totally Stub区域时需要注意：<br>与Stub区域配置的区别在于，在ABR上需要追加no-summary关键字。</p>
+<h1 id="NSSA"><a href="#NSSA" class="headerlink" title="NSSA"></a>NSSA</h1><p>1、2、3、7类、7类缺省LSA（ABR产生的）</p>
+<p>NSSA区域 相对于stub区别在于，可以引入外部路由，外部路由引入后，会以7类LSA在NSSA区域中泛洪，然后 在ABR设备上将7类LSA转化成5类LSA在其他区域 泛洪</p>
+<p>Totally  NSSA：1、2、3缺省（ABR产生）、7类、7类缺省LSA（ABR产生的）</p>
+<h1 id="Silent-Interface"><a href="#Silent-Interface" class="headerlink" title="Silent-Interface"></a>Silent-Interface</h1><p>Silent-Interface有以下特性：<br>Silent-Interface不会接收和发送OSPF报文。<br>Silent-Interface的直连路由仍可以发布出去。</p>
+<p>通常我们会 将连接终端或者服务器的接口设置成Silent-Interface</p>
+<p>[R1]ospf<br>[R1-ospf-1]area 0<br>[R1-ospf-1-area-0.0.0.0]network 192.168.4.0 0.0.0.255<br>[R1-ospf-1]silent-interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
+<h1 id="路由器对lsa处理流程"><a href="#路由器对lsa处理流程" class="headerlink" title="路由器对lsa处理流程"></a>路由器对lsa处理流程</h1><p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/QQ%E5%9B%BE%E7%89%8720240418211229.jpg" alt="QQ图片20240418211229"></p>
 ]]></content>
       <categories>
-        <category>ip实验</category>
+        <category>基础知识</category>
       </categories>
       <tags>
-        <tag>nat</tag>
+        <tag>ospf</tag>
       </tags>
   </entry>
   <entry>
@@ -1988,6 +1988,453 @@
       <tags>
         <tag>telnet</tag>
         <tag>aaa</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>组播</title>
+    <url>/2024/05/10/%E7%BB%84%E6%92%AD/</url>
+    <content><![CDATA[<h1 id="组播简介"><a href="#组播简介" class="headerlink" title="组播简介"></a>组播简介</h1><p>组播（Multicast）是在一台源IP主机和多台（一组）IP主机之间进行，中间的网络设备根</p>
+<p>据接收者的需要，有选择性地对数据进行复制和转发。</p>
+<p>• 组播技术有效地满足了单点发送、多点接收的需求，实现了IP网络中点到多点业务数据的高</p>
+<p>效传送，能够大量节约网络带宽、降低网络负载。</p>
+<p>• 组播分发树：组播流量的转发路径</p>
+<p><strong>组播地址</strong>：224.0.0.0–239.255.255.255</p>
+<p><strong>组播MAC：</strong></p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/zubomac3553.png" alt="zubomac3553"></p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/zubokun53926.png" alt="zubokun53926"></p>
+<p><strong>RPF检查：</strong></p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/rpf4213.png" alt="rpf4213"></p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/rpf2154343.png" alt="rpf2154343"></p>
+<h1 id="IGMPv1"><a href="#IGMPv1" class="headerlink" title="IGMPv1"></a>IGMPv1</h1><p>IGMPv1协议主要基于查询和响应机制完成组播组管理。当一个网段内有多个组播设备时，由于它们都可以接收到主机发送的成员报告报文，因此只需要选取其中一台组播设备发送查询报文，该组播设备称为IGMP查询器（Querier）。在IGMPv1中，由组播路由协议PIM选举出唯一的组播信息转发者（Assert Winner或DR）作为IGMP的查询器，负责该网段的组成员关系查询。</p>
+<p>（不具备选举查询器，<strong>依赖PIM协议选举</strong>）</p>
+<h2 id="IGMPv1报文"><a href="#IGMPv1报文" class="headerlink" title="IGMPv1报文"></a>IGMPv1报文</h2><p>IGMPv1报文封装在IP报文中，由8个字节组成。IGMPv1包括两种类型的报文：</p>
+<ul>
+<li><strong>普遍组查询报文</strong>（General Query）：查询器向共享网络上所有主机发送的查询报文，用于了解哪些组播组存在成员。（60s一次）</li>
+<li><strong>成员报告报文</strong>（Report）：主机向查询器发送的报告报文，用于申请加入某个组播组或者应答查询报文。</li>
+</ul>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/igmpgeshi155029.png" alt="igmpgeshi155029"></p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Version</td>
+<td>IGMP版本，值为1。</td>
+</tr>
+<tr>
+<td>Type</td>
+<td>报文类型。该字段有以下两种取值：0x1：表示普遍组查询报文。0x2：表示成员报告报文。</td>
+</tr>
+<tr>
+<td>Unused</td>
+<td>在IGMPv1中，该字段在发送时被设为0，并在接收时被忽略。</td>
+</tr>
+<tr>
+<td>Checksum</td>
+<td>校验和。</td>
+</tr>
+<tr>
+<td>Group Address</td>
+<td>组播组地址。在普遍组查询报文中，该字段设为0；在成员报告报文中，该字段为成员加入的组播组地址。</td>
+</tr>
+</tbody></table>
+<h2 id="查询组播组成员机制"><a href="#查询组播组成员机制" class="headerlink" title="查询组播组成员机制"></a>查询组播组成员机制</h2><p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/shiyi5404.png" alt="shiyi5404"></p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/v1chaxun510155159.png" alt="v1chaxun510155159"></p>
+<p>普遍组查询和响应过程如下：</p>
+<ol>
+<li><p>IGMP查询器发送目的地址为224.0.0.1（表示同一网段内所有主机和设备）的普遍组查询报文；收到该查询报文的组成员启动定时器。</p>
+<p>普遍组查询报文是周期性发送的，发送周期可以通过命令配置。HostA和HostB作为组播组G1的成员，收到普遍组查询报文后，在本地启动定时器Timer-G1。</p>
+</li>
+<li><p>第一个定时器（10s）超时的组成员发送针对该组的报告报文。</p>
+<p>假设HostA上的Timer-G1首先超时，HostA向该网段发送目的地址为G1的报告报文。也想加入组G1的HostB收到此报告报文，则停止定时器Timer-G1，不再发送针对G1的报告报文。<strong>这样报告报文被抑制</strong>，可以减少网段上的流量。</p>
+</li>
+<li><p>IGMP查询器接收到HostA的报告报文后，了解到本网段内存在组播组G1的成员，则由组播路由协议生成（<em>，G1）组播转发表项，“</em>”代表任意组播源。网络中一旦有组播组G1的数据到达DeviceA，将向该网段转发。</p>
+</li>
+</ol>
+<h2 id="加组机制"><a href="#加组机制" class="headerlink" title="加组机制"></a>加组机制</h2><ol>
+<li>主机HostC不等待普遍组查询报文的到来，主动发送针对G2的报告报文以声明加入组播组G2。</li>
+<li>IGMP查询器接收到HostC的报告报文后，了解到本网段内出现了组播组G2的成员，则生成组播转发项（*，G2）。网络中一旦有G2的数据到达DeviceA，将向该网段转发。</li>
+</ol>
+<h2 id="离组机制"><a href="#离组机制" class="headerlink" title="离组机制"></a>离组机制</h2><p>IGMPv1没有专门定义离开组的报文。主机离开组播组后，停止发送成员报告报文。根据主机想要离开的组播组中是否还有其他成员，处理机制有所不同。如<a href="http://127.0.0.1:51299/icslite/hdx/pages/HDXAZM08013_02_zh/HDXAZM08013_02_zh/resources/vrp_igmp_cfg_0004.html#ZH-CN_CONCEPT_0000001176743865__fig_03">图2</a>所示。</p>
+<ul>
+<li><p>假设HostA想要退出组播组G1</p>
+<p>HostA收到IGMP查询器发送的普遍组查询报文时，不再发送针对G1的报告报文。由于网段内还存在G1组成员HostB，HostB会向IGMP查询器发送针对G1的报告报文，因此IGMP查询器感知不到HostA的离开。</p>
+</li>
+<li><p>假设HostC想要退出组播组G2</p>
+<p>HostC收到IGMP查询器发送的普遍组查询报文时，不再发送针对G2的报告报文。由于网段内不存在组G2的其他成员，IGMP查询器不会收到G2组成员的报告报文，则在一定时间（缺省值为130秒）后，删除G2所对应的组播转发表项。</p>
+</li>
+</ul>
+<p>130&#x3D;60×2+10</p>
+<h1 id="IGMPv2"><a href="#IGMPv2" class="headerlink" title="IGMPv2"></a>IGMPv2</h1><p>IGMPv2的工作机制与IGMPv1基本相同，最大的不同之处在于IGMPv2增加了查询器选举和离开组机制。IGMPv2可以使IGMP查询器及时了解到网段内哪些组播组已不存在成员，从而及时更新组成员关系，减少网络中冗余的组播流量。</p>
+<p>与IGMPv1相比，IGMPv2的变化如下：</p>
+<ul>
+<li>除了普遍组查询报文和成员报告报文之外，IGMPv2新增了两种报文：<ul>
+<li><strong>成员离开报文</strong>（Leave）：成员离开组播组时主动向查询器发送的报文，用于宣告自己离开了某个组播组。</li>
+<li><strong>特定组查询报文</strong>（Group-Specific Query）：查询器向共享网段内<strong>指定组播组</strong>发送的查询报文，用于查询该组播组是否存在成员。</li>
+</ul>
+</li>
+<li>IGMPv2对普遍组查询报文格式也做了改进，添加了最大响应时间（Max Response Time）字段。此字段取值可以通过命令配置，用于控制成员对于查询报文的响应速度。</li>
+</ul>
+<h2 id="IGMPv2报文："><a href="#IGMPv2报文：" class="headerlink" title="IGMPv2报文："></a>IGMPv2报文：</h2><p><strong>图1</strong> IGMPv2报文格式<br><img src="http://127.0.0.1:51299/icslite/hdx/pages/HDXAZM08013_02_zh/HDXAZM08013_02_zh/resources/figure/zh-cn_image_0000001130624468.png" alt="img"></p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th align="left">说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Type</td>
+<td align="left">报文类型。该字段有以下四种取值：0x11：表示查询报文。IGMPv2的查询报文包括普遍组查询报文和特定组查询报文两类。0x12：表示IGMPv1成员报告报文。0x16：表示IGMPv2成员报告报文。0x17：表示成员离开报文。</td>
+</tr>
+<tr>
+<td>Max Response Time</td>
+<td align="left">最大响应时间。成员主机在收到IGMP查询器发送的普遍组查询报文后，需要在最大响应时间内做出回应。该字段仅在IGMP查询报文中有效。</td>
+</tr>
+<tr>
+<td>Checksum</td>
+<td align="left">校验和。</td>
+</tr>
+<tr>
+<td>Group Address</td>
+<td align="left">组播组地址。在普遍组查询报文中，该字段设为0。在特定组查询报文中，该字段为要查询的组播组地址。在成员报告报文和离开报文中，该字段为成员要加入或离开的组播组地址。</td>
+</tr>
+</tbody></table>
+<img src="/2024/05/10/%E7%BB%84%E6%92%AD/v235.png" alt="v235" style="zoom:80%;">
+
+<h2 id="v2查询器选举机制"><a href="#v2查询器选举机制" class="headerlink" title="v2查询器选举机制"></a>v2查询器选举机制</h2><p>在IGMPv2中，查询器的选举过程如下：</p>
+<ol>
+<li><p>初始状态下，所有运行IGMPv2的组播设备（DeviceA和DeviceB）都认为自己是查询器，向本网段内的所有主机和组播设备发送普遍组查询报文。DeviceA和DeviceB在收到对方发送的普遍组查询报文后，将报文的源IP地址与自己的接口地址作比较。通过比较，IP地址最小的组播设备将成为查询器，其他组播设备成为非查询器。如图所示，DeviceA的接口地址小于DeviceB，则DeviceA当选为查询器，DeviceB为非查询器。</p>
+</li>
+<li><p>确定查询器后，将由IGMP查询器（DeviceA）向本网段内的所有主机和其他组播设备发送普遍组查询报文，而非查询器（DeviceB）则不再发送普遍组查询报文。</p>
+<p>非查询器（DeviceB）上都会启动一个定时器（即其他查询器存在时间定时器Other Querier Present Timer）。在该定时器超时前，如果收到了来自查询器的查询报文，则重置该定时器；否则，就认为原查询器失效，并发起新的查询器选举过程。</p>
+</li>
+</ol>
+<h2 id="v2离组机制"><a href="#v2离组机制" class="headerlink" title="v2离组机制"></a>v2离组机制</h2><p>在IGMPv2中，成员离开组播组时可以主动向查询器发送离开报文，宣告自己离开了某个组播组。</p>
+<p>主机HostA离开组播组G1的过程如下：</p>
+<ol>
+<li>HostA向本地网段内的所有组播设备（目的地址为224.0.0.2）发送针对组G1的离开报文。</li>
+<li>查询器收到离开报文，会发送针对组G1的特定组查询报文。发送间隔和发送次数可以通过命令配置，缺省情况下每隔1秒发送一次，共发送两次。同时查询器启动组成员关系定时器（Timer-Membership&#x3D;发送间隔x发送次数）。</li>
+<li>如果该网段内还存在组G1的其他成员（如HostB），这些成员在收到查询器发送的特定组查询报文后，会立即发送针对组G1的报告报文。查询器收到针对组G1的报告报文后将继续维护该组成员关系。如果该网段内不存在组G1的其他成员，查询器将不会收到针对组G1的报告报文。在Timer-Membership超时后，查询器将删除（*，G1）对应的IGMP组表项。当有组G1的组播数据到达查询器时，查询器将不会向下游转发。</li>
+</ol>
+<h1 id="IGMPv3"><a href="#IGMPv3" class="headerlink" title="IGMPv3"></a>IGMPv3</h1><p>IGMPv3主要是为了配合SSM（Source-Specific Multicast）模型发展起来的，提供了在报文中携带组播源信息的能力，即主机可以对组播源进行选择。</p>
+<p>与IGMPv2相比，IGMPv3报文的变化如下：</p>
+<ul>
+<li>IGMPv3报文包含两大类：查询报文和成员报告报文。<strong>IGMPv3没有定义专门的成员离开报文</strong>，成员离开通过特定类型的报告报文来传达。</li>
+<li>查询报文中不仅包含普遍组查询报文和特定组查询报文，还新增了<strong>特定源组查询报文</strong>（Group-and-Source-Specific Query）。该报文由查询器向共享网段内特定组播组成员发送，用于查询该组成员是否愿意接收特定源发送的数据。特定源组查询通过在报文中携带一个或多个组播源地址来达到这一目的。</li>
+<li>成员报告报文不仅包含主机想要加入的组播组，而且包含主机想要接收来自哪些组播源的数据。IGMPv3增加了针对组播源的过滤模式（INCLUDE&#x2F;EXCLUDE），将组播组与源列表之间的对应关系简单的表示为（G，INCLUDE，(S1、S2…)），表示只接收来自指定组播源S1、S2……发往组G的数据；或（G，EXCLUDE，(S1、S2…)），表示接收除了组播源S1、S2……之外的组播源发给组G的数据。当组播组与组播源列表的对应关系发生了变化，IGMPv3报告报文会将该关系变化存放于组记录（Group Record）字段，发送给IGMP查询器。</li>
+<li>在IGMPv3中一个成员报告报文可以携带多个组播组信息，而之前的版本一个成员报告只能携带一个组播组。这样在IGMPv3中报文数量大大减少。</li>
+</ul>
+<h2 id="IGMPv3报文"><a href="#IGMPv3报文" class="headerlink" title="IGMPv3报文"></a>IGMPv3报文</h2><p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/v3cahx61552.png" alt="v3cahx61552"></p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Type</td>
+<td>报文类型，取值为0x11。</td>
+</tr>
+<tr>
+<td>Max Response Code</td>
+<td>最大响应时间。成员主机在收到IGMP查询器发送的普遍组查询报文后，需要在最大响应时间内做出回应。</td>
+</tr>
+<tr>
+<td>Checksum</td>
+<td>校验和。</td>
+</tr>
+<tr>
+<td>Group Address</td>
+<td>组播组地址。在普遍组查询报文中，该字段设为0；在特定组查询报文和特定源组查询报文中，该字段为要查询的组播组地址。</td>
+</tr>
+<tr>
+<td>Resv</td>
+<td>保留字段。发送报文时该字段设为0；接收报文时，对该字段不做处理。</td>
+</tr>
+<tr>
+<td>S</td>
+<td>该比特位为1时，所有收到此查询报文的其他设备不启动定时器刷新过程，但是此查询报文并不抑制查询器选举过程和设备的主机侧处理过程。</td>
+</tr>
+<tr>
+<td>QRV</td>
+<td>如果该字段非0，则表示查询器的健壮系数（Robustness Variable）。如果该字段为0，则表示查询器的健壮系数大于7。设备接收到查询报文时，如果发现该字段非0，则将自己的健壮系数调整为该字段的值；如果发现该字段为0，则不做处理。</td>
+</tr>
+<tr>
+<td>QQIC</td>
+<td>IGMP查询器的查询间隔，单位为秒。非查询器收到查询报文时，如果发现该字段非0，则将自己的查询间隔参数调整为该字段的值；如果发现该字段为0，则不做处理。</td>
+</tr>
+<tr>
+<td>Number of Sources</td>
+<td>报文中包含的组播源的数量。对于普遍组查询报文和特定组查询报文，该字段为0；对于特定源组查询报文，该字段非0。此参数的大小受到所在网络MTU大小的限制。</td>
+</tr>
+<tr>
+<td>Source Address</td>
+<td>组播源地址，其数量受到Number of Sources字段值大小的限制。</td>
+</tr>
+</tbody></table>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/v3baog18.png" alt="v3baog18"></p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Type</td>
+<td>报文类型，取值为0x22。</td>
+</tr>
+<tr>
+<td>Reserved</td>
+<td>保留字段。发送报文时该字段设为0；接收报文时，对该字段不做处理。</td>
+</tr>
+<tr>
+<td>Checksum</td>
+<td>IGMP报文的校验和。校验和是IGMP报文长度（即IP报文的整个有效负载）的16位检测，表示IGMP信息补码之和的补码。Checksum字段在进行校验计算时设为0。当发送报文时，必须计算校验和并插入到Checksum字段中去。当接收报文时，校验和必须在处理该报文之前进行检验。</td>
+</tr>
+<tr>
+<td>Number of Group Records (M)</td>
+<td>报文中包含的组记录的数量。</td>
+</tr>
+<tr>
+<td>Group Record</td>
+<td>组记录。Group Record字段的格式如<a href="http://127.0.0.1:51299/icslite/hdx/pages/HDXAZM08013_02_zh/HDXAZM08013_02_zh/resources/vrp_igmp_cfg_0006.html#ZH-CN_CONCEPT_0000001130784226__fig_dc_fd_igmp_100803">图3</a>所示，解释如<a href="http://127.0.0.1:51299/icslite/hdx/pages/HDXAZM08013_02_zh/HDXAZM08013_02_zh/resources/vrp_igmp_cfg_0006.html#ZH-CN_CONCEPT_0000001130784226__tab_dc_fd_igmp_100803">表3</a>所示。</td>
+</tr>
+</tbody></table>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/tusan61812.png" alt="tusan61812"></p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Record Type</td>
+<td>组记录的类型。共分为三大类。当前状态报告。用于对查询报文进行响应，通告自己目前的状态，共两种：MODE_IS_INCLUDE，表示接收源地址列表包含的源发往该组的组播数据。如果指定源地址列表为空，该报文无效。MODE_IS_EXCLUDE，表示不接收源地址列表包含的源发往该组的组播数据。过滤模式改变报告。当组和源的关系在INCLUDE和EXCLUDE之间切换时，会通告过滤模式发生变化，共两种：CHANGE_TO_INCLUDE_MODE，表示过滤模式由EXCLUDE转换到INCLUDE，接收源地址列表包含的新组播源发往该组播组的数据。如果指定源地址列表为空，主机将离开组播组。CHANGE_TO_EXCLUDE_MODE，表示过滤模式由INCLUDE转换到EXCLUDE，拒绝源地址列表包含的新组播源发往该组的组播数据。源列表改变报告。当指定源发生改变时，会通告源列表发生变化，共两种：ALLOW_NEW_SOURCES，表示在现有的基础上，需要接收源地址列表包含的组播源发往该组播组的组播数据。如果当前对应关系为INCLUDE，则向现有源列表中添加这些组播源；如果当前对应关系为EXCLUDE，则从现有阻塞源列表中删除这些组播源。BLOCK_OLD_SOURCES，表示在现有的基础上，不再接收源地址列表包含的组播源发往该组播组的组播数据。如果当前对应关系为INCLUDE，则从现有源列表中删除这些组播源；如果当前对应关系为EXCLUDE，则向现有源列表中添加这些组播源。</td>
+</tr>
+<tr>
+<td>Aux Data Len</td>
+<td>辅助数据长度。在IGMPv3的报告报文中，不存在辅助数据字段，该字段设为0。</td>
+</tr>
+<tr>
+<td>Number of Sources (N)</td>
+<td>本记录中包含的源地址数量。</td>
+</tr>
+<tr>
+<td>Multicast Address</td>
+<td>组播组地址。</td>
+</tr>
+<tr>
+<td>Source Address</td>
+<td>组播源地址。</td>
+</tr>
+<tr>
+<td>Auxiliary Data</td>
+<td>辅助数据。预留给IGMP后续扩展或后续版本。在IGMPv3的报告报文中，不存在辅助数据。</td>
+</tr>
+</tbody></table>
+<h2 id="IGMPv3工作机制"><a href="#IGMPv3工作机制" class="headerlink" title="IGMPv3工作机制"></a>IGMPv3工作机制</h2><p>在工作机制上，与IGMPv2相比，IGMPv3增加了主机对组播源的选择能力。</p>
+<p><strong>特定源组加入</strong></p>
+<p>IGMPv3的成员报告报文的目的地址为224.0.0.22（表示同一网段所有使能IGMPv3的设备）。通过在报告报文中携带组记录，主机在加入组播组的同时，能够明确要求接收或不接收特定组播源发出的组播数据。如<a href="http://127.0.0.1:51299/icslite/hdx/pages/HDXAZM08013_02_zh/HDXAZM08013_02_zh/resources/vrp_igmp_cfg_0006.html#ZH-CN_CONCEPT_0000001130784226__fig_01">图4</a>所示，网络中存在S1和S2两个组播源，均向组播组G发送组播数据，Host仅希望接收从组播源S1发往组播组G的信息。</p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/tedingh047.png" alt="tedingh047"></p>
+<p>如果Host和组播设备之间运行的是IGMPv1或IGMPv2，Host加入组播组G时无法对组播源进行选择，无论其是否需要，都会同时接收到来自组播源S1和S2的数据。如果采用IGMPv3，成员主机可以发送IGMPv3报告（G，INCLUDE，(S1)），选择仅接收源S1向组播组G发送的数据。</p>
+<p><strong>特定源组查询</strong></p>
+<p>当接收到组成员发送的改变组播组与源列表的对应关系的报告时（比如CHANGE_TO_INCLUDE_MODE、CHANGE_TO_EXCLUDE_MODE），IGMP查询器会发送特定源组查询报文。如果组成员希望接收其中任意一个源的组播数据，将反馈报告报文。IGMP查询器根据反馈的组成员报告更新该组对应的源列表。</p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/v3jiazu2434.png" alt="v3jiazu2434"></p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/v3lizu2449.png" alt="v3lizu2449"></p>
+<h2 id="各个版本比较"><a href="#各个版本比较" class="headerlink" title="各个版本比较"></a>各个版本比较</h2><p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/cahyi540.png" alt="cahyi540"></p>
+<h1 id="IGMP-Snooping"><a href="#IGMP-Snooping" class="headerlink" title="IGMP Snooping"></a>IGMP Snooping</h1><p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/Snooping5041.png" alt="Snooping5041"></p>
+<p>当Router将组播报文转发至Switch以后，Switch负责将组播报文转发给组播用户。由于组</p>
+<p>播报文的目的地址为组播组地址，在二层设备上是学习不到这一类MAC表项的，因此组播</p>
+<p>报文就会在所有接口进行广播，和它在同一广播域内的组播成员和非组播成员都能收到组</p>
+<p>播报文。这样不但浪费了网络带宽，而且影响了网络信息安全。</p>
+<p>• IGMP Snooping有效地解决了这个问题。配置IGMP Snooping后，二层组播设备可以侦听</p>
+<p>和分析组播用户和上游路由器之间的IGMP报文，根据这些信息建立二层组播转发表项，控</p>
+<p>制组播数据报文转发。这样就防止了组播数据在二层网络中的广播。</p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/sjies153.png" alt="sjies153"></p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/jiekou165325.png" alt="jiekou165325"></p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/zhuafabiao5448.png" alt="zhuafabiao5448"></p>
+<p>• 路由器端口形成后会启动老化计时器（默认180s）,当路由器端口收到新的普遍组查询后刷</p>
+<p>新该计时器。</p>
+<p>• 成员端口形成后会启动老化计时器（默认180s）,当成员端口收到新的成员关系报告报文后</p>
+<p>刷新该计时器。</p>
+<p>• IGMP Snooping不再使用成员关系报告报文抑制机制：</p>
+<p>▫ 由于IGMP Snooping需要监听IGMP报文才能决定端口角色，进而指导转发，所以所</p>
+<p>有组成员都需要发送IGMP组成员关系报告报文。</p>
+<p>▫ 当IGMP Snooping设备收到成员关系报告报文后，只将成员关系报告报文从路由器接</p>
+<p>口发送出去，从而避免其余组成员收到成员关系报告报文，不触发成员关系报告报文</p>
+<p>抑制机制。</p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/weihu65557.png" alt="weihu65557"></p>
+<p>• 收到IGMP离开报文后，成员端口的老化定时器 &#x3D; 健壮系数（默认2） x 特定组查询间隔</p>
+<p>（默认1s）。</p>
+<h1 id="IGMP-SSM-Mapping"><a href="#IGMP-SSM-Mapping" class="headerlink" title="IGMP SSM Mapping"></a>IGMP SSM Mapping</h1><p>SSM（Source-Specific Multicast）称为指定源组播，要求设备能了解成员主机加入组播组时所指定的组播源。如果成员主机上运行IGMPv3，可以在IGMPv3报告报文中直接指定组播源地址。但是某些情况下，成员主机只能运行IGMPv1或IGMPv2，为了使其也能够使用SSM服务，设备上需要提供IGMP SSM Mapping功能。</p>
+<p>IGMP SSM Mapping的机制是：通过在设备上静态配置SSM地址的映射规则，将IGMPv1和IGMPv2报告报文中的（*, G）信息转化为对应的（G, INCLUDE, (S1, S2…)）信息，以提供SSM组播服务。</p>
+<p>配置了SSM Mapping规则后，当IGMP查询器收到来自成员主机的IGMPv1或IGMPv2报告报文时，首先检查该报文中所携带的组播组地址G，然后根据检查结果的不同分别进行处理。</p>
+<ul>
+<li>如果G在ASM（Any-Source Multicast）范围内，则只提供ASM服务。</li>
+<li>如果G在SSM组地址范围内（缺省情况下为232.0.0.0～232.255.255.255）：<ul>
+<li>如果设备上没有G对应的SSM Mapping规则，则无法提供SSM服务，丢弃该报文。</li>
+<li>如果设备上有G对应的SSM Mapping规则，则依据规则将报告报文中所包含的（*, G）信息映射为（G, INCLUDE, (S1, S2…)）信息，提供SSM服务。</li>
+</ul>
+</li>
+</ul>
+<p>SSM网络的用户网段中HostA运行IGMPv3、HostB运行IGMPv2、HostC运行IGMPv1。HostB和HostC无法升级到IGMPv3，如果要为该网段中的所有主机提供SSM服务，需要在IGMP查询器（Device）上使能IGMP SSM Mapping并配置相应的映射规则。</p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/mm0923.png" alt="mm0923"></p>
+<p>假如在Device上配置如下映射关系：</p>
+<table>
+<thead>
+<tr>
+<th>组播组地址</th>
+<th>映射的组播源地址</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>232.0.0.0&#x2F;8</td>
+<td>10.10.1.1</td>
+</tr>
+<tr>
+<td>232.1.0.0&#x2F;16</td>
+<td>10.10.2.2</td>
+</tr>
+<tr>
+<td>232.1.0.0&#x2F;16</td>
+<td>10.10.3.3</td>
+</tr>
+<tr>
+<td>232.1.1.0&#x2F;24</td>
+<td>10.10.4.4</td>
+</tr>
+</tbody></table>
+<p>经过映射后，Device收到HostB和HostC的成员报告报文时，首先判断报文携带的组地址是否在SSM范围内，发现在SSM范围内，则根据配置的映射规则生成如下所示的组播表项。如果一个组地址映射了多个源，则生成多个（S，G）表项。</p>
+<p>在映射过程中，一个组播组地址只要能在规则中匹配到，都会生成一条相应的表项。因此232.1.1.1有四条表项，232.1.2.2有三条表项。</p>
+<table>
+<thead>
+<tr>
+<th align="left">IGMPv1&#x2F;IGMPv2报告报文中的组地址</th>
+<th>生成的组播表项</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">232.1.1.1 （来自HostC）</td>
+<td>（10.10.1.1，232.1.1.1）（10.10.2.2，232.1.1.1）（10.10.3.3，232.1.1.1）（10.10.4.4，232.1.1.1）</td>
+</tr>
+<tr>
+<td align="left">232.1.2.2 （来自HostB）</td>
+<td>（10.10.1.1，232.1.2.2）（10.10.2.2，232.1.2.2）（10.10.3.3，232.1.2.2）</td>
+</tr>
+</tbody></table>
+<h1 id="IGMP-Proxy"><a href="#IGMP-Proxy" class="headerlink" title="IGMP Proxy"></a>IGMP Proxy</h1><p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/p1171231.png" alt="p1171231"></p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/p2171311.png" alt="p2171311"></p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/p371410.png" alt="p371410"></p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/plizu10171452.png" alt="plizu10171452"></p>
+<h1 id="PIM-DM"><a href="#PIM-DM" class="headerlink" title="PIM DM"></a>PIM DM</h1><p>PIM-DM：密集模式，采用的是“推”模式，适用于成员比较少，相对密集的场景</p>
+<p>PIM-SM：稀疏模式  采用的是“拉”模式，适用于成员多，但是成员不集中的场景</p>
+<p>PIM（Protocol Independent Multicast，协议无关组播）是域内组播路由协议，利用单播路由信息，对组播消息进行RPF检查，创建组播路由表项。为IP组播提供路由信息的协议可以是任何单播路由协议，比如静态路由、RIP、OSPF、IS-IS、BGP等。组播路由和单播路由协议无关，只是通过单播路由表产生相应组播路由表项。</p>
+<p>目前在实际网络中，PIM协议有三种模式：PIM-DM、使用ASM（Any-Source Multicast）模型的PIM-SM，使用SSM（Source-Specific Multicast）模型的PIM-SM。需要注意的是，同一个PIM域中不能同时运行PIM-DM和PIM-SM。</p>
+<p>PIM协议中依据组播分发树转发数据，组播分发树有两种，<strong>SPT和RPT</strong></p>
+<p>以组播源为根，组播组成员为叶子的组播分发树称为SPT（Shortest Path Tree），在PIM-DM与PIM-SM中均有使用。<br>以RP（Rendezvous Point）为根，组播组成员为叶子的组播分发树称为RPT（RP Tree），在PIM-SM中使用。</p>
+<p>PIM-DM域中组播数据转发的实现过程是：</p>
+<ol>
+<li>邻居发现Neighbor Discovery）：在PIM-DM域中，PIM设备通过周期性的向所有其他PIM设备发送<a href="http://127.0.0.1:51299/icslite/hdx/pages/HDXAZM08013_02_zh/HDXAZM08013_02_zh/resources/vrp_pim_cfg_0004.html#ZH-CN_CONCEPT_0000001130783604__section_dc_vrp_multicast_feature_300502">Hello消息</a>，来发现PIM邻居，维护PIM设备之间的PIM邻居关系。缺省情况下，无论PIM设备是否收到来自邻居的Hello消息，都会接收其他的PIM控制消息或组播报文。但是如果PIM设备配置了邻居检查功能，则只有在PIM设备接收到来自邻居的Hello消息后，才会接收其他的PIM控制消息或组播报文。</li>
+<li>扩散Flooding）：PIM-DM假设网络中的每个子网都存在至少一个组播组成员，因此组播数据将被扩散到网络中的所有节点，网络中所有的PIM设备都能接收到组播数据。</li>
+<li>剪枝（Prune）：组播数据扩散到网络中后，PIM-DM对没有组播数据接收者的分支进行剪枝，只保留包含接收者的分支，即确保网络中只有需要组播数据的PIM设备能够接收到组播数据，不需要组播数据的PIM设备接收不到组播数据。</li>
+<li>状态刷新（State-Refresh）：如果设备处于剪枝状态，其上游PIM设备会维护一个“剪枝定时器”。当剪枝定时器超时，上游PIM设备恢复对不需要数据的下游PIM设备的数据转发，这样会导致不必要的网络资源浪费。采用状态刷新可使离组播源最近的第一跳设备周期性发送State-Refresh消息，刷新所有设备的剪枝定时器状态，对不需要数据的下游设备始终保持剪枝状态。</li>
+<li>嫁接Graft）：当被剪枝分支的节点上出现了组播组成员时，为了减少该节点恢复成转发状态所需的时间，PIM-DM使用嫁接机制主动恢复其对组播数据的转发。</li>
+<li>断言（Assert）：如果在一个网段内出现多台PIM设备，则相同的组播报文可能会被重复发送到该网段。通过<a href="http://127.0.0.1:51299/icslite/hdx/pages/HDXAZM08013_02_zh/HDXAZM08013_02_zh/resources/vrp_pim_cfg_0006.html#ZH-CN_CONCEPT_0000001176663373__section_dc_vrp_multicast_feature_311109">断言</a>可以为网段选定唯一的组播数据转发者，避免冗余的组播数据转发。</li>
+</ol>
+<h2 id="邻居发现"><a href="#邻居发现" class="headerlink" title="邻居发现"></a>邻居发现</h2><p>PIM设备在每个使能了PIM的接口上，都会对外发送Hello消息。封装<a href="http://127.0.0.1:51299/icslite/hdx/pages/HDXAZM08013_02_zh/HDXAZM08013_02_zh/resources/vrp_pim_cfg_0004.html#ZH-CN_CONCEPT_0000001130783604__section_dc_vrp_multicast_feature_300502">Hello消息</a>的组播报文有如下特点：</p>
+<ul>
+<li>目的地址是224.0.0.13，表示同一网段中所有PIM设备</li>
+<li>源地址为接口的IP地址</li>
+<li>TTL数值为1，仅发送给邻居接口</li>
+</ul>
+<p><a href="http://127.0.0.1:51299/icslite/hdx/pages/HDXAZM08013_02_zh/HDXAZM08013_02_zh/resources/vrp_pim_cfg_0004.html#ZH-CN_CONCEPT_0000001130783604__section_dc_vrp_multicast_feature_300502">Hello消息</a>具有发现邻居、协商各项协议参数、维持邻居关系的作用。</p>
+<p><strong>发现PIM邻居</strong></p>
+<p>同一网段中的PIM设备都必须接收目的地址为224.0.0.13的组播报文。这样在收到<a href="http://127.0.0.1:51299/icslite/hdx/pages/HDXAZM08013_02_zh/HDXAZM08013_02_zh/resources/vrp_pim_cfg_0004.html#ZH-CN_CONCEPT_0000001130783604__section_dc_vrp_multicast_feature_300502">Hello消息</a>以后，直接相连的组播设备之间，就可以知道自己的邻居信息。</p>
+<p><strong>协商各项协议参数</strong></p>
+<p><a href="http://127.0.0.1:51299/icslite/hdx/pages/HDXAZM08013_02_zh/HDXAZM08013_02_zh/resources/vrp_pim_cfg_0004.html#ZH-CN_CONCEPT_0000001130783604__section_dc_vrp_multicast_feature_300502">Hello消息</a>中携带多项协议参数，邻居之间通过<a href="http://127.0.0.1:51299/icslite/hdx/pages/HDXAZM08013_02_zh/HDXAZM08013_02_zh/resources/vrp_pim_cfg_0004.html#ZH-CN_CONCEPT_0000001130783604__section_dc_vrp_multicast_feature_300502">Hello消息</a>来进行协商，这些参数包括：</p>
+<ul>
+<li>DR_Priority：表示各设备接口竞选DR的优先级，优先级越高越容易获胜。</li>
+<li>Holdtime：表示保持邻居为可达状态的超时时间。</li>
+<li>LAN_Delay：表示共享网段内传输Prune消息的延迟时间。</li>
+<li>Override-Interval：表示Hello消息]中携带的否决剪枝的时间间隔。</li>
+</ul>
+<p><strong>维持邻居关系</strong></p>
+<p>PIM设备之间周期性地发送<a href="http://127.0.0.1:51299/icslite/hdx/pages/HDXAZM08013_02_zh/HDXAZM08013_02_zh/resources/vrp_pim_cfg_0004.html#ZH-CN_CONCEPT_0000001130783604__section_dc_vrp_multicast_feature_300502">Hello消息</a>。如果Holdtime超时还没有收到该PIM邻居发出的新的<a href="http://127.0.0.1:51299/icslite/hdx/pages/HDXAZM08013_02_zh/HDXAZM08013_02_zh/resources/vrp_pim_cfg_0004.html#ZH-CN_CONCEPT_0000001130783604__section_dc_vrp_multicast_feature_300502">Hello消息</a>，则认为该邻居不可达，将其从邻居列表中清除。</p>
+<p>PIM邻居的变化将导致网络中组播拓扑的变化。如果组播分发树上的某上游邻居或下游邻居不可达，将导致组播路由重新收敛，组播分发树迁移。</p>
+<p>维护邻居关系  30s  邻居超时时间105s</p>
+<h2 id="扩散机制"><a href="#扩散机制" class="headerlink" title="扩散机制"></a>扩散机制</h2><p>全网建立（S，G）路由表项    组播源开始发送组播数据，组播数据全网进行转发，生成（S，G ）表项，表项默认老化时间210s，，超过210s没有组播数据转发，将删除表项，有组播 数据的时候重新建立表项</p>
+<p>扩散机制会周期性（默认180s）全网扩散组播数据，周期性扩散的主要目的是探测是否有新成员加组，但是由于全网扩散组播数据会浪费大量带宽，所以现在的组播网络一般使用“状态刷新机制”加上“嫁接机制”来实现周期性全网扩散感知新成员加组的目的。</p>
+<h2 id="剪枝"><a href="#剪枝" class="headerlink" title="剪枝"></a>剪枝</h2><p>如果路由器下游没有组成员，将向上游发起剪枝，剪到最后一个不需要发组播报文的路由器</p>
+<p>剪枝接口会有一个计时器，210s，计时器超时，接口将加入下游接口，转发组播报文</p>
+<h2 id="状态刷新机制"><a href="#状态刷新机制" class="headerlink" title="状态刷新机制"></a>状态刷新机制</h2><p>状态刷新报文60s发一次</p>
+<p>对于剪枝端口而言，收到状态刷新报文，计时器将重置</p>
+<p>离组播源最近的第一跳路由器周期性触发State-Refresh消息。State-Refresh消息在全网扩散，刷新所有设备上的剪枝定时器状态，对不需要数据的下游设备始终保持剪枝状态。</p>
+<h2 id="嫁接"><a href="#嫁接" class="headerlink" title="嫁接"></a>嫁接</h2><p>一旦有新成员加入，叶子路由器会基于本地的组播路由表向上游发送Graft报文，请求上游路由器恢复相应出接口转发，将其添加在（S，G）表项下游接口列表中。</p>
+<p>下游发送Graft消息，请求上游恢复对应出接口的转发。上游收到Graft消息后，将下游的出接口恢复转发</p>
+<h2 id="断言"><a href="#断言" class="headerlink" title="断言"></a>断言</h2><p>在组播网络中，如果出现如下情况，则说明网段上还存在着其他的组播转发者。</p>
+<ul>
+<li>该组播报文不能通过RPF检查。</li>
+<li>接收到该组播报文的接口是本设备上（S，G）表项中的一个下游接口。</li>
+</ul>
+<p>此时，设备会执行Assert机制。设备从该下游接口发送<a href="http://127.0.0.1:51299/icslite/hdx/pages/HDXAZM08013_02_zh/HDXAZM08013_02_zh/resources/vrp_pim_cfg_0004.html#ZH-CN_CONCEPT_0000001130783604__section_dc_vrp_multicast_feature_300507">Assert消息</a>。同时，该下游接口也接收到了来自该网段上其他组播转发者的<a href="http://127.0.0.1:51299/icslite/hdx/pages/HDXAZM08013_02_zh/HDXAZM08013_02_zh/resources/vrp_pim_cfg_0004.html#ZH-CN_CONCEPT_0000001130783604__section_dc_vrp_multicast_feature_300507">Assert消息</a>。<a href="http://127.0.0.1:51299/icslite/hdx/pages/HDXAZM08013_02_zh/HDXAZM08013_02_zh/resources/vrp_pim_cfg_0004.html#ZH-CN_CONCEPT_0000001130783604__section_dc_vrp_multicast_feature_300507">Assert消息</a>的目的地址为224.0.0.13，源地址为下游接口地址，TTL为1。<a href="http://127.0.0.1:51299/icslite/hdx/pages/HDXAZM08013_02_zh/HDXAZM08013_02_zh/resources/vrp_pim_cfg_0004.html#ZH-CN_CONCEPT_0000001130783604__section_dc_vrp_multicast_feature_300507">Assert消息</a>中携带该PIM设备到组播源或RP的开销、所采用的单播路由协议的优先级和组播组地址G。</p>
+<p>设备将自身条件与对方报文中携带的信息进行比较，称为Assert竞选。<strong>规则如下</strong>：</p>
+<ol>
+<li><strong>单播路由协议优先级较高者获胜。</strong></li>
+<li><strong>如果优先级相同，则到组播源或RP的开销较小者获胜。</strong></li>
+<li><strong>如果以上都相同，则下游接口IP地址最大者获胜。</strong></li>
+</ol>
+<p>根据Assert竞选结果，设备将执行不同的操作：</p>
+<ul>
+<li>如果获胜，则该下游接口保持转发状态，设备负责后续在该网段上的（S，G）转发，该下游接口称为Assert winner。</li>
+<li>如果落败，则禁止该下游接口转发组播报文，将其从（S，G）表项下游接口列表中删除。该下游接口称为Assert loser。</li>
+</ul>
+<p>Assert竞选结束后，该网段上只存在一个有下游接口的上游设备，只传输一份组播报文。Assert winner周期性发送<a href="http://127.0.0.1:51299/icslite/hdx/pages/HDXAZM08013_02_zh/HDXAZM08013_02_zh/resources/vrp_pim_cfg_0004.html#ZH-CN_CONCEPT_0000001130783604__section_dc_vrp_multicast_feature_300507">Assert消息</a>，维持Assert winner的状态。若Assert loser的定时器超时后，Assert loser仍没有收到Assert winner的<a href="http://127.0.0.1:51299/icslite/hdx/pages/HDXAZM08013_02_zh/HDXAZM08013_02_zh/resources/vrp_pim_cfg_0004.html#ZH-CN_CONCEPT_0000001130783604__section_dc_vrp_multicast_feature_300507">Assert消息</a>，则重新添加下游接口转发组播数据。</p>
+<p>如<a href="http://127.0.0.1:51299/icslite/hdx/pages/HDXAZM08013_02_zh/HDXAZM08013_02_zh/resources/vrp_pim_cfg_0006.html#ZH-CN_CONCEPT_0000001176663373__fig_dc_vrp_multicast_feature_311104">图6</a>所示，如果DeviceB和DeviceC都能够接收到组播源Source发出的组播报文，并且均能通过RPF检查，创建（S，G）表项。DeviceB、DeviceC的下游接口连接在同一网段，那么DeviceB和DeviceC就会同时向该网段发送组播数据。Assert机制可以保证一个网段只能存在一个组播数据转发者。Assert过程如下：</p>
+<ol>
+<li>DeviceB从下游接口接收到DeviceC发来的组播报文，RPF检查失败，报文被丢弃。同时，DeviceB向该网段发送<a href="http://127.0.0.1:51299/icslite/hdx/pages/HDXAZM08013_02_zh/HDXAZM08013_02_zh/resources/vrp_pim_cfg_0004.html#ZH-CN_CONCEPT_0000001130783604__section_dc_vrp_multicast_feature_300507">Assert消息</a>。</li>
+<li>DeviceC将自身的路由信息与对方的Assert消息中携带的路由信息进行比较，由于自身到组播源的开销较大而落败。于是禁止该下游接口转发组播报文，将其从DeviceC的（S，G）表项的下游接口列表中删除。</li>
+<li>DeviceC从该网段接收到DeviceB发来的组播报文，RPF检查失败，报文被丢弃。Assert过程结束。</li>
+</ol>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/duanyan10181610.png" alt="duanyan10181610"></p>
+<h1 id="PIM-SM"><a href="#PIM-SM" class="headerlink" title="PIM SM"></a>PIM SM</h1><p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/pimsm32.png" alt="pimsm32"></p>
+<p><strong>RP介绍</strong>：</p>
+<p>汇聚点RP（Rendezvous Point）为网络中一台重要的PIM路由器，用于处理源端DR注册信息及组成员加入</p>
+<p>请求，网络中的所有PIM路由器都必须知道RP的地址，类似于一个供求信息的汇聚中心。</p>
+<p>• 目前可以通过以下方式配置RP：</p>
+<p>▫ 静态RP：在网络中的所有PIM路由器上配置相同的RP地址，静态指定RP的位置。</p>
+<p>▫ 动态RP：通过选举机制在多个C-RP（Candidate-RP，候选RP）之间选举出RP。</p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/rp1.png" alt="rp1"></p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/2rp.png" alt="2rp"></p>
+<p>• PIM-SM（ASM）模式首次形成组播分发树主要依赖RPT构建机制，组播源注册机制与DR选举机制。</p>
+<p>▫ RPT构建机制：组播叶子路由器主动建立到RP的组播分发树（RPT）</p>
+<p>▫ 组播源注册机制：通过该机制形成组播源到RP的组播分发树（SPT）</p>
+<p>▫ DR选举机制：DR负责源端或组成员端组播报文的收发，避免重复组播报文，同时成员端DR还负责发送Join加组消息。</p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/rpt82833.png" alt="rpt82833"></p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/zhuce0183042.png" alt="zhuce0183042"></p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/2zhuce83158.png" alt="2zhuce83158"></p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/dr3316.png" alt="dr3316"></p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/dr1.png" alt="dr1"></p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/rptciyou183410.png" alt="rptciyou183410"></p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/sptqiehuan3531.png" alt="sptqiehuan3531"></p>
+<p>• 当组播分发树（SPT或RPT）稳定后，成员端DR会周期性发送Join&#x2F;Prune报文，用于维护组播分发树。</p>
+<p>• 如果组播在一段时间后（默认210s）没有流量则SPT树会消失，成员端DR恢复到RP的RPT树。</p>
+<h1 id="PIM（SSM）"><a href="#PIM（SSM）" class="headerlink" title="PIM（SSM）"></a>PIM（SSM）</h1><p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/ssm822.png" alt="ssm822"></p>
+<p>• PIM-SM（SSM）无需Assert机制</p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/Q0183905.png" alt="Q0183905"></p>
+<p><img src="/2024/05/10/%E7%BB%84%E6%92%AD/bijiao929.png" alt="bijiao929"></p>
+]]></content>
+      <tags>
+        <tag>IGMP</tag>
+        <tag>PIM</tag>
+        <tag>[object Object]</tag>
+        <tag>基础知识</tag>
       </tags>
   </entry>
   <entry>
@@ -2011,143 +2458,63 @@
       </tags>
   </entry>
   <entry>
-    <title>vlan间通信</title>
-    <url>/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/</url>
-    <content><![CDATA[<h1 id="VLAN间通信"><a href="#VLAN间通信" class="headerlink" title="VLAN间通信"></a>VLAN间通信</h1><h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>划分VLAN后，不同VLAN的用户间不能二层互访，这样能起到隔离广播的作用。但实际应用中，不同VLAN的用户又常有互访的需求，此时就需要实现不同VLAN的用户互访，简称VLAN间互访。</p>
-<span id="more"></span>
-
-<h2 id="实验拓扑"><a href="#实验拓扑" class="headerlink" title="实验拓扑"></a>实验拓扑</h2><p><img src="/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/vlantx001.png" alt="vlantx001"></p>
-<p>详解：R2划入vlan2，R3划入vlan3，与交换机之间采用access口，由于交换机g0&#x2F;0&#x2F;1需要通过多个vlan，所以配成trunk口。R2和R3相当于主机，发送和接受的数据都不带标签，交换机g0&#x2F;0&#x2F;2收到R2发送的数据，打上标签vlan2，然后发出去；交换机g0&#x2F;0&#x2F;1收到数据后，发现vlan的标签允许通过，则数据带着vlan2的标签通过；然后交换机g0&#x2F;0&#x2F;3口转发数据时，发现自己的pvid是vlan3，和vlan2不一样，所以不接受，则vlan2和vlan3不能通信。</p>
-<p>在某些场景下，需要特定vlan之间通信</p>
-<p>方法一：dot1q接口</p>
-<p>在r1上配置两个dot1q接口，g0&#x2F;0&#x2F;1.1和g0&#x2F;0&#x2F;1.2，分别对应vlan2和vlan3，作用就是可以终结vlan标签（剥离），vlan2的标签到r1后，被剥离掉vlan2的标签，然后转发时又被g0&#x2F;0&#x2F;1.2打上vlan3的标签，交换机g0&#x2F;0&#x2F;1通过，到g0&#x2F;0&#x2F;3，access口发现和自己的pvid一样，然后剥离掉标签，转发数据帧给r3.</p>
-<p>方法二：vlanif接口：交换机上配置vlanif2和vlanif3，ip地址配成192.168.2.254和192.168.3.254</p>
-<p>其实就是相当于两个不同网段的网关，然后实现三层的转发</p>
-<h2 id="Access接口"><a href="#Access接口" class="headerlink" title="Access接口"></a>Access接口</h2><p>交换机上常用来连接用户PC、服务器等终端设备的接口。Access接口所连接的这些设备的网卡往往只收发无标记帧。Access接口只能加入一个VLAN。只能允许一个VLAN通过。</p>
-<p><strong>转发原则</strong></p>
-<p>接收原则：</p>
-<p>①收到不带标签的数据帧，打上标签，vlan id&#x3D;端口的PVID</p>
-<p>②收到带标签的数据帧，检查数据帧vlan id是否和端口的PVID相同，相同直接接收；不同拒绝接收</p>
-<p>发送原则：</p>
-<p>①数据帧vlan id和端口PVID 相同，剥离标签发送；</p>
-<p>②数据帧vlan id和端口PVID 不同，禁止发送。</p>
-<h2 id="Trunk接口"><a href="#Trunk接口" class="headerlink" title="Trunk接口"></a>Trunk接口</h2><p>Trunk接口允许多个VLAN的数据帧通过，这些数据帧通过802.1Q Tag实现区分。Trunk接口常用于交换机之间的互联，也用于连接路由器、防火墙等设备的</p>
-<p>子接口</p>
-<p><strong>转发原则</strong></p>
-<p>接收原则：</p>
-<p>①收到不带标签的数据帧，打上标签，vlan id&#x3D;端口的PVID，然后查看该vlanid是否在允许列表中，是–接收，不是–拒绝</p>
-<p>②收到带标签的数据帧，查看该vlan id是否在允许列表中，是–接收，不是–拒绝</p>
-<p>发送原则：</p>
-<p>查看vlan id是否在允许列表中，I:不是–拒绝发送；II：是，查看接口的PVID和vlan id是否相同，相同–剥标签发送；不同–直接发送。</p>
-<h2 id="Hybrid接口"><a href="#Hybrid接口" class="headerlink" title="Hybrid接口"></a>Hybrid接口</h2><p>Hybrid接口与Trunk接口类似，也允许多个VLAN的数据帧通过，这些数据帧通过802.1Q Tag实现区分。用户可以灵活指定Hybrid接口在发送某个（或某些）VLAN的数据帧时是否携带Tag</p>
-<p><strong>转发原则</strong></p>
-<p>接收原则：</p>
-<p>①收到不带标签的数据帧，打上标签，vlan id&#x3D;端口的PVID，然后查看该vlanid是否在允许列表中，是–接收，不是–拒绝</p>
-<p>②收到带标签的数据帧，查看该vlan id是否在允许列表中，是–接收，不是–拒绝发送原则：查看vlan id是否在允许列表中，I:不是–拒绝发送；II：是，是否带标签发送取决于接口的配置。</p>
-<h2 id="PVID"><a href="#PVID" class="headerlink" title="PVID"></a>PVID</h2><p>可以手工修改，默认是1，access口的就是本身的vlan号，trunk可以有一个主vlan和多个副vlan，收到的数据和主vlan相同就剥离转发，收到和主vlan不一样的标签，查表，看看是不是在允许通过的列表，如果有，就带着原来的转发，要是没有，就不让过去啦。</p>
-<h2 id="实验配置过程"><a href="#实验配置过程" class="headerlink" title="实验配置过程"></a>实验配置过程</h2><p># R2和R3的IP地址及网关配置</p>
-<p><R2> system-view</R2></p>
-<p>Enter system view, return user view with Ctrl+Z.</p>
-<p>[R2]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
-<p>[R2-GigabitEthernet0&#x2F;0&#x2F;1]ip address 192.168.2.1 24</p>
-<p>[R2-GigabitEthernet0&#x2F;0&#x2F;1]quit	</p>
-<p>[R2]ip route-static 0.0.0.0 0 192.168.2.254</p>
-<p>配置默认路由，相当于给设备配置了网关。</p>
-<p><R3>system-view </R3></p>
-<p>Enter system view, return user view with Ctrl+Z.</p>
-<p>[R3]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
-<p>[R3-GigabitEthernet0&#x2F;0&#x2F;1]ip address 192.168.3.1 24</p>
-<p>[R3-GigabitEthernet0&#x2F;0&#x2F;1]quit</p>
-<p>[R3]ip route-static 0.0.0.0 0 192.168.3.254</p>
-<p># 在S1上对R2和R3进行VLAN划分</p>
-<p>[S1]vlan batch 2 3</p>
-<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
-<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;2</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;2]port link-type access </p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;2]port default vlan 2</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;2]quit</p>
-<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;3</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;3]port link-type access </p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;3]port default vlan 3</p>
-<p>步骤 1 通过Dot1q终结子接口实现VLAN间互访 </p>
-<p># 配置S1上的Trunk接口</p>
-<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;1]port trunk allow-pass vlan 2 3</p>
-<p><em>因为VLAN间<strong>互访数据要</strong>由R1来终结VLAN<strong>，</strong>所以S1和R1之间<strong>的链路要允许</strong>VLAN2和VLAN3通过**。</em></p>
-<p># 在R1上创建并配置Dot1q终结子接口</p>
-<p>[R1]interface GigabitEthernet 0&#x2F;0&#x2F;1.2 </p>
-<p>创建并进入子接口视图。2代表子接口的编号，一般建议子接口编号与VLAN ID相同，方便记忆。</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.2]dot1q termination vid 2 </p>
-<p><strong>dot1q termination vid</strong> <em>vlan-id</em>命令用来配置子接口Dot1q终结的VLAN ID。</p>
-<p>以此配置为例：当GigabitEthernet0&#x2F;0&#x2F;1接口收到带有VLAN 2标签的数据之后，会交由2号子接口进行VLAN终结操作并做后续处理。从2号子接口发出的数据也会带上VLAN 2的标签。</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.2]arp broadcast enable </p>
-<p>终结子接口不能转发广播报文，在收到广播报文后它们直接把该报文丢弃。为了允许终结子接口能转发广播报文，可以通过在子接口上执行命令<strong>arp broadcast enable</strong>使能终结子接口的ARP广播功能。部分设备默认使能该功能，此命令的配置根据设备而定。</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.2]ip address 192.168.2.254 24 </p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.2]quit</p>
-<p>[R1]interface GigabitEthernet 0&#x2F;0&#x2F;1.3</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.3]dot1q termination vid 3</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.3]arp broadcast enable</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.3]ip address 192.168.3.254 24</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.3]quit</p>
-<p># 检测VLAN间互访联通性 </p>
-<p><R2>ping 192.168.3.1</R2></p>
-<p> PING 192.168.3.1: 56  data bytes, press CTRL_C to break</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;1 ttl&#x3D;254 time&#x3D;60 ms</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;2 ttl&#x3D;254 time&#x3D;40 ms</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;3 ttl&#x3D;254 time&#x3D;110 ms</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;4 ttl&#x3D;254 time&#x3D;70 ms</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;5 ttl&#x3D;254 time&#x3D;100 ms</p>
-<p> — 192.168.3.1 ping statistics —</p>
-<p>  5 packet(s) transmitted</p>
-<p>  5 packet(s) received</p>
-<p>  0.00% packet loss</p>
-<p>  round-trip min&#x2F;avg&#x2F;max &#x3D; 40&#x2F;76&#x2F;110 ms</p>
-<p><R2>tracert 192.168.3.1 </R2></p>
-<p> traceroute to  192.168.3.1(192.168.3.1), max hops: 30 ,packet length: 40,press CTRL_C to break </p>
-<p> 1 192.168.2.254 30 ms  50 ms  50 ms </p>
-<p> 2 192.168.3.1 70 ms  60 ms  60 ms </p>
-<p>此时VLAN2和VLAN3之间已经可以正常的互访。</p>
-<p>步骤 2 通过VLANIF接口实现VLAN间互访</p>
-<p># 清除上一步配置</p>
-<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;1]undo port trunk allow-pass vlan 2 3</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;1]undo port link-type</p>
-<p>[R1]undo interface GigabitEthernet 0&#x2F;0&#x2F;1.2 </p>
-<p>[R1]undo interface GigabitEthernet 0&#x2F;0&#x2F;1.3</p>
-<p># 在S1上创建相应的VLANIF接口 </p>
-<p>[S1]interface Vlanif 2</p>
-<p><strong>interface vlanif</strong> <em>vlan-id</em>命令用来创建VLANIF接口并进入VLANIF接口视图。只有先通过命令创建VLAN后，才能执行interface vlanif命令创建VLANIF接口。</p>
-<p>[S1-Vlanif2]ip address 192.168.2.254 24</p>
-<p>[S1-Vlanif2]quit</p>
-<p>[S1]interface Vlanif 3</p>
-<p>[S1-Vlanif3]ip address 192.168.3.254 24 </p>
-<p>[S1-Vlanif3]quit</p>
-<p># 检测VLAN间互访联通性</p>
-<p><R2>ping 192.168.3.1 </R2></p>
-<p> PING 192.168.3.1: 56  data bytes, press CTRL_C to break</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;1 ttl&#x3D;254 time&#x3D;100 ms</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;2 ttl&#x3D;254 time&#x3D;50 ms</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;3 ttl&#x3D;254 time&#x3D;50 ms</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;4 ttl&#x3D;254 time&#x3D;60 ms</p>
-<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;5 ttl&#x3D;254 time&#x3D;70 ms</p>
-<p> — 192.168.3.1 ping statistics —</p>
-<p>  5 packet(s) transmitted</p>
-<p>  5 packet(s) received</p>
-<p>  0.00% packet loss</p>
-<p>  round-trip min&#x2F;avg&#x2F;max &#x3D; 50&#x2F;66&#x2F;100 ms</p>
-<p><R2>tracert 192.168.3.1 </R2></p>
-<p> traceroute to  192.168.3.1(192.168.3.1), max hops: 30 ,packet length: 40,press CTRL_C to break </p>
-<p> 1 192.168.2.254 40 ms  30 ms  20 ms </p>
-<p> 2 192.168.3.1 40 ms  30 ms  40 ms</p>
-<p>此时VLAN2和VLAN3之间已经可以正常的互访。</p>
+    <title>子网划分</title>
+    <url>/2024/03/24/%E5%AD%90%E7%BD%91%E5%88%92%E5%88%86/</url>
+    <content><![CDATA[<h1 id="子网划分"><a href="#子网划分" class="headerlink" title="子网划分"></a>子网划分</h1><p>首先为什么要子网划分？</p>
+<p>有类IP地址规划的缺陷：使用默认掩码的问题：地址范围过大或过小，导致IP地址的浪费！</p>
+<p>在一个网络地址中，主机数：2的n次方，可用的主机数：2*n-2（这里n是主机数）</p>
+<p>如果这个网段只用于一个小型局域网，例如一个实验室，只有几十台主机，那么大大浪费了ip地址</p>
+<p>所以，子网划分给这个网络地址分成若干个，减少浪费</p>
+<p>相当于把主机数均匀的分配给若干个（网络号借位，主机号减少）</p>
+<p>例如网络地址：192.168.1.0&#x2F;24，网络号24位，主机号8位，如果划成两个子网，网络号借1位</p>
+<p>借的1位是1或者是0</p>
+<p>192.168.1.<strong>0</strong>0000000（前25位变成网络号）子网1：192.168.1.0&#x2F;25</p>
+<p>192.168.1.<strong>1</strong>0000000                                       子网2：192.168.128.0&#x2F;25</p>
+<p>例：192.168.1.0  分配三个部门，每个部门30台主机</p>
+<p>要借2位</p>
+<p>00</p>
+<p>01</p>
+<p>10</p>
+<p>11</p>
+<p>这四种排列组合，分为四个子网</p>
+<p>192.168.1.<strong>00</strong>  000000  –192.168.1.0&#x2F;26</p>
+<p>192.168.1.<strong>01</strong>  000000   –192.168.1.64&#x2F;26</p>
+<p>192.168.1.<strong>10</strong>  000000   –192.168.1.128&#x2F;26</p>
+<p>192.168.1.<strong>11</strong>  000000   –192.168.1.192&#x2F;26</p>
+<p><strong>子网划分的原理</strong></p>
+<p>IP地址由网络位+主机位组成，子网划分就是借用现有网段的主机位的最左边某几位作为子网位，划分出多个子网。</p>
+<p>①把原来有类网络IPv4地址中的“网络号”部分向“主机号”部分借位</p>
+<p>②把一部分原来属于“主机号”部分的位变成“网络号”的一部分（通常称之为“子网号”）。</p>
+<p>因此IP地址进行转变：网络号+主机号 变成 网络号+子网号（m）+主机号（n）</p>
+<p>划分后子网数量：2*m</p>
+<p>划分后每个子网可用主机数：2*n-2（主机号全为0和全为1（指二进制）的ip地址分别为网络地址与广播地址，是不能分配给某个特定的主机使用的）</p>
+<p><strong>子网划分的步骤</strong></p>
+<p>①　确定所需子网数2*m，</p>
+<p>②　确定每个子网可用主机数2*n-2</p>
+<p>③　确定需像主机号部分借多少位（m），才能满足需要求</p>
+<p>④　根据主机数可得知子网地址空间大小2*n</p>
+<p>⑤　进行地址划分</p>
+<p>子网划分示例</p>
+<p>某公司有四个部门，每个部门拥有50台主机，分配一个C类地址200.161.30.0&#x2F;24,请问如何进行网络地址规划？</p>
+<p>a.确定子网数：四个部门，2*m&gt;&#x3D;4</p>
+<p>b.确定主机数：30台主机，2*n-2&gt;&#x3D;30</p>
+<p>c.C类地址网络号位24位，主机位8位，向第四段主机位借位，由上可知子网位m&#x3D;2，主机位n&#x3D;6</p>
+<p>d.子网空间为64，子网数为4，根据原主机位八位则原网络空间为0-255，共256个，此时我们算出子网空间为64，可得出四个子网范围0-63、64-127、127-192、192-255</p>
+<p>e. 第一个子网200.161.30.0&#x2F;26-200.161.30.63&#x2F;26</p>
+<p>第二个子网200.161.30.64&#x2F;26-200.161.30.127&#x2F;26</p>
+<p>第三个子网200.161.30.128&#x2F;26-200.161.30.191&#x2F;26</p>
+<p>第四个子网200.161.39.192&#x2F;26-200.161.30.255&#x2F;26</p>
+<p>f.主机位全为0和1的地址分别为网络地址与广播地址，不能分配给主机使用，则</p>
+<p>部门1地址范围：200.161.30.1-62&#x2F;26</p>
+<p>部门2地址范围：200.161.30.65-12&#x2F;26</p>
+<p>部门3地址范围：200.161.30.129-190&#x2F;26</p>
+<p>部门4地址范围：200.161.30.193-254&#x2F;26</p>
 ]]></content>
       <categories>
-        <category>ip实验</category>
+        <category>基础知识</category>
       </categories>
       <tags>
-        <tag>vlan间通信</tag>
-        <tag>dot1q</tag>
-        <tag>vlanif</tag>
+        <tag>子网划分</tag>
       </tags>
   </entry>
   <entry>
@@ -2356,63 +2723,143 @@
       </tags>
   </entry>
   <entry>
-    <title>子网划分</title>
-    <url>/2024/03/24/%E5%AD%90%E7%BD%91%E5%88%92%E5%88%86/</url>
-    <content><![CDATA[<h1 id="子网划分"><a href="#子网划分" class="headerlink" title="子网划分"></a>子网划分</h1><p>首先为什么要子网划分？</p>
-<p>有类IP地址规划的缺陷：使用默认掩码的问题：地址范围过大或过小，导致IP地址的浪费！</p>
-<p>在一个网络地址中，主机数：2的n次方，可用的主机数：2*n-2（这里n是主机数）</p>
-<p>如果这个网段只用于一个小型局域网，例如一个实验室，只有几十台主机，那么大大浪费了ip地址</p>
-<p>所以，子网划分给这个网络地址分成若干个，减少浪费</p>
-<p>相当于把主机数均匀的分配给若干个（网络号借位，主机号减少）</p>
-<p>例如网络地址：192.168.1.0&#x2F;24，网络号24位，主机号8位，如果划成两个子网，网络号借1位</p>
-<p>借的1位是1或者是0</p>
-<p>192.168.1.<strong>0</strong>0000000（前25位变成网络号）子网1：192.168.1.0&#x2F;25</p>
-<p>192.168.1.<strong>1</strong>0000000                                       子网2：192.168.128.0&#x2F;25</p>
-<p>例：192.168.1.0  分配三个部门，每个部门30台主机</p>
-<p>要借2位</p>
-<p>00</p>
-<p>01</p>
-<p>10</p>
-<p>11</p>
-<p>这四种排列组合，分为四个子网</p>
-<p>192.168.1.<strong>00</strong>  000000  –192.168.1.0&#x2F;26</p>
-<p>192.168.1.<strong>01</strong>  000000   –192.168.1.64&#x2F;26</p>
-<p>192.168.1.<strong>10</strong>  000000   –192.168.1.128&#x2F;26</p>
-<p>192.168.1.<strong>11</strong>  000000   –192.168.1.192&#x2F;26</p>
-<p><strong>子网划分的原理</strong></p>
-<p>IP地址由网络位+主机位组成，子网划分就是借用现有网段的主机位的最左边某几位作为子网位，划分出多个子网。</p>
-<p>①把原来有类网络IPv4地址中的“网络号”部分向“主机号”部分借位</p>
-<p>②把一部分原来属于“主机号”部分的位变成“网络号”的一部分（通常称之为“子网号”）。</p>
-<p>因此IP地址进行转变：网络号+主机号 变成 网络号+子网号（m）+主机号（n）</p>
-<p>划分后子网数量：2*m</p>
-<p>划分后每个子网可用主机数：2*n-2（主机号全为0和全为1（指二进制）的ip地址分别为网络地址与广播地址，是不能分配给某个特定的主机使用的）</p>
-<p><strong>子网划分的步骤</strong></p>
-<p>①　确定所需子网数2*m，</p>
-<p>②　确定每个子网可用主机数2*n-2</p>
-<p>③　确定需像主机号部分借多少位（m），才能满足需要求</p>
-<p>④　根据主机数可得知子网地址空间大小2*n</p>
-<p>⑤　进行地址划分</p>
-<p>子网划分示例</p>
-<p>某公司有四个部门，每个部门拥有50台主机，分配一个C类地址200.161.30.0&#x2F;24,请问如何进行网络地址规划？</p>
-<p>a.确定子网数：四个部门，2*m&gt;&#x3D;4</p>
-<p>b.确定主机数：30台主机，2*n-2&gt;&#x3D;30</p>
-<p>c.C类地址网络号位24位，主机位8位，向第四段主机位借位，由上可知子网位m&#x3D;2，主机位n&#x3D;6</p>
-<p>d.子网空间为64，子网数为4，根据原主机位八位则原网络空间为0-255，共256个，此时我们算出子网空间为64，可得出四个子网范围0-63、64-127、127-192、192-255</p>
-<p>e. 第一个子网200.161.30.0&#x2F;26-200.161.30.63&#x2F;26</p>
-<p>第二个子网200.161.30.64&#x2F;26-200.161.30.127&#x2F;26</p>
-<p>第三个子网200.161.30.128&#x2F;26-200.161.30.191&#x2F;26</p>
-<p>第四个子网200.161.39.192&#x2F;26-200.161.30.255&#x2F;26</p>
-<p>f.主机位全为0和1的地址分别为网络地址与广播地址，不能分配给主机使用，则</p>
-<p>部门1地址范围：200.161.30.1-62&#x2F;26</p>
-<p>部门2地址范围：200.161.30.65-12&#x2F;26</p>
-<p>部门3地址范围：200.161.30.129-190&#x2F;26</p>
-<p>部门4地址范围：200.161.30.193-254&#x2F;26</p>
+    <title>vlan间通信</title>
+    <url>/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/</url>
+    <content><![CDATA[<h1 id="VLAN间通信"><a href="#VLAN间通信" class="headerlink" title="VLAN间通信"></a>VLAN间通信</h1><h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>划分VLAN后，不同VLAN的用户间不能二层互访，这样能起到隔离广播的作用。但实际应用中，不同VLAN的用户又常有互访的需求，此时就需要实现不同VLAN的用户互访，简称VLAN间互访。</p>
+<span id="more"></span>
+
+<h2 id="实验拓扑"><a href="#实验拓扑" class="headerlink" title="实验拓扑"></a>实验拓扑</h2><p><img src="/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/vlantx001.png" alt="vlantx001"></p>
+<p>详解：R2划入vlan2，R3划入vlan3，与交换机之间采用access口，由于交换机g0&#x2F;0&#x2F;1需要通过多个vlan，所以配成trunk口。R2和R3相当于主机，发送和接受的数据都不带标签，交换机g0&#x2F;0&#x2F;2收到R2发送的数据，打上标签vlan2，然后发出去；交换机g0&#x2F;0&#x2F;1收到数据后，发现vlan的标签允许通过，则数据带着vlan2的标签通过；然后交换机g0&#x2F;0&#x2F;3口转发数据时，发现自己的pvid是vlan3，和vlan2不一样，所以不接受，则vlan2和vlan3不能通信。</p>
+<p>在某些场景下，需要特定vlan之间通信</p>
+<p>方法一：dot1q接口</p>
+<p>在r1上配置两个dot1q接口，g0&#x2F;0&#x2F;1.1和g0&#x2F;0&#x2F;1.2，分别对应vlan2和vlan3，作用就是可以终结vlan标签（剥离），vlan2的标签到r1后，被剥离掉vlan2的标签，然后转发时又被g0&#x2F;0&#x2F;1.2打上vlan3的标签，交换机g0&#x2F;0&#x2F;1通过，到g0&#x2F;0&#x2F;3，access口发现和自己的pvid一样，然后剥离掉标签，转发数据帧给r3.</p>
+<p>方法二：vlanif接口：交换机上配置vlanif2和vlanif3，ip地址配成192.168.2.254和192.168.3.254</p>
+<p>其实就是相当于两个不同网段的网关，然后实现三层的转发</p>
+<h2 id="Access接口"><a href="#Access接口" class="headerlink" title="Access接口"></a>Access接口</h2><p>交换机上常用来连接用户PC、服务器等终端设备的接口。Access接口所连接的这些设备的网卡往往只收发无标记帧。Access接口只能加入一个VLAN。只能允许一个VLAN通过。</p>
+<p><strong>转发原则</strong></p>
+<p>接收原则：</p>
+<p>①收到不带标签的数据帧，打上标签，vlan id&#x3D;端口的PVID</p>
+<p>②收到带标签的数据帧，检查数据帧vlan id是否和端口的PVID相同，相同直接接收；不同拒绝接收</p>
+<p>发送原则：</p>
+<p>①数据帧vlan id和端口PVID 相同，剥离标签发送；</p>
+<p>②数据帧vlan id和端口PVID 不同，禁止发送。</p>
+<h2 id="Trunk接口"><a href="#Trunk接口" class="headerlink" title="Trunk接口"></a>Trunk接口</h2><p>Trunk接口允许多个VLAN的数据帧通过，这些数据帧通过802.1Q Tag实现区分。Trunk接口常用于交换机之间的互联，也用于连接路由器、防火墙等设备的</p>
+<p>子接口</p>
+<p><strong>转发原则</strong></p>
+<p>接收原则：</p>
+<p>①收到不带标签的数据帧，打上标签，vlan id&#x3D;端口的PVID，然后查看该vlanid是否在允许列表中，是–接收，不是–拒绝</p>
+<p>②收到带标签的数据帧，查看该vlan id是否在允许列表中，是–接收，不是–拒绝</p>
+<p>发送原则：</p>
+<p>查看vlan id是否在允许列表中，I:不是–拒绝发送；II：是，查看接口的PVID和vlan id是否相同，相同–剥标签发送；不同–直接发送。</p>
+<h2 id="Hybrid接口"><a href="#Hybrid接口" class="headerlink" title="Hybrid接口"></a>Hybrid接口</h2><p>Hybrid接口与Trunk接口类似，也允许多个VLAN的数据帧通过，这些数据帧通过802.1Q Tag实现区分。用户可以灵活指定Hybrid接口在发送某个（或某些）VLAN的数据帧时是否携带Tag</p>
+<p><strong>转发原则</strong></p>
+<p>接收原则：</p>
+<p>①收到不带标签的数据帧，打上标签，vlan id&#x3D;端口的PVID，然后查看该vlanid是否在允许列表中，是–接收，不是–拒绝</p>
+<p>②收到带标签的数据帧，查看该vlan id是否在允许列表中，是–接收，不是–拒绝发送原则：查看vlan id是否在允许列表中，I:不是–拒绝发送；II：是，是否带标签发送取决于接口的配置。</p>
+<h2 id="PVID"><a href="#PVID" class="headerlink" title="PVID"></a>PVID</h2><p>可以手工修改，默认是1，access口的就是本身的vlan号，trunk可以有一个主vlan和多个副vlan，收到的数据和主vlan相同就剥离转发，收到和主vlan不一样的标签，查表，看看是不是在允许通过的列表，如果有，就带着原来的转发，要是没有，就不让过去啦。</p>
+<h2 id="实验配置过程"><a href="#实验配置过程" class="headerlink" title="实验配置过程"></a>实验配置过程</h2><p># R2和R3的IP地址及网关配置</p>
+<p><R2> system-view</R2></p>
+<p>Enter system view, return user view with Ctrl+Z.</p>
+<p>[R2]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;1]ip address 192.168.2.1 24</p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;1]quit	</p>
+<p>[R2]ip route-static 0.0.0.0 0 192.168.2.254</p>
+<p>配置默认路由，相当于给设备配置了网关。</p>
+<p><R3>system-view </R3></p>
+<p>Enter system view, return user view with Ctrl+Z.</p>
+<p>[R3]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
+<p>[R3-GigabitEthernet0&#x2F;0&#x2F;1]ip address 192.168.3.1 24</p>
+<p>[R3-GigabitEthernet0&#x2F;0&#x2F;1]quit</p>
+<p>[R3]ip route-static 0.0.0.0 0 192.168.3.254</p>
+<p># 在S1上对R2和R3进行VLAN划分</p>
+<p>[S1]vlan batch 2 3</p>
+<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;2</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;2]port link-type access </p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;2]port default vlan 2</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;2]quit</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;3</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;3]port link-type access </p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;3]port default vlan 3</p>
+<p>步骤 1 通过Dot1q终结子接口实现VLAN间互访 </p>
+<p># 配置S1上的Trunk接口</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;1]port trunk allow-pass vlan 2 3</p>
+<p><em>因为VLAN间<strong>互访数据要</strong>由R1来终结VLAN<strong>，</strong>所以S1和R1之间<strong>的链路要允许</strong>VLAN2和VLAN3通过**。</em></p>
+<p># 在R1上创建并配置Dot1q终结子接口</p>
+<p>[R1]interface GigabitEthernet 0&#x2F;0&#x2F;1.2 </p>
+<p>创建并进入子接口视图。2代表子接口的编号，一般建议子接口编号与VLAN ID相同，方便记忆。</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.2]dot1q termination vid 2 </p>
+<p><strong>dot1q termination vid</strong> <em>vlan-id</em>命令用来配置子接口Dot1q终结的VLAN ID。</p>
+<p>以此配置为例：当GigabitEthernet0&#x2F;0&#x2F;1接口收到带有VLAN 2标签的数据之后，会交由2号子接口进行VLAN终结操作并做后续处理。从2号子接口发出的数据也会带上VLAN 2的标签。</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.2]arp broadcast enable </p>
+<p>终结子接口不能转发广播报文，在收到广播报文后它们直接把该报文丢弃。为了允许终结子接口能转发广播报文，可以通过在子接口上执行命令<strong>arp broadcast enable</strong>使能终结子接口的ARP广播功能。部分设备默认使能该功能，此命令的配置根据设备而定。</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.2]ip address 192.168.2.254 24 </p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.2]quit</p>
+<p>[R1]interface GigabitEthernet 0&#x2F;0&#x2F;1.3</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.3]dot1q termination vid 3</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.3]arp broadcast enable</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.3]ip address 192.168.3.254 24</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;1.3]quit</p>
+<p># 检测VLAN间互访联通性 </p>
+<p><R2>ping 192.168.3.1</R2></p>
+<p> PING 192.168.3.1: 56  data bytes, press CTRL_C to break</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;1 ttl&#x3D;254 time&#x3D;60 ms</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;2 ttl&#x3D;254 time&#x3D;40 ms</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;3 ttl&#x3D;254 time&#x3D;110 ms</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;4 ttl&#x3D;254 time&#x3D;70 ms</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;5 ttl&#x3D;254 time&#x3D;100 ms</p>
+<p> — 192.168.3.1 ping statistics —</p>
+<p>  5 packet(s) transmitted</p>
+<p>  5 packet(s) received</p>
+<p>  0.00% packet loss</p>
+<p>  round-trip min&#x2F;avg&#x2F;max &#x3D; 40&#x2F;76&#x2F;110 ms</p>
+<p><R2>tracert 192.168.3.1 </R2></p>
+<p> traceroute to  192.168.3.1(192.168.3.1), max hops: 30 ,packet length: 40,press CTRL_C to break </p>
+<p> 1 192.168.2.254 30 ms  50 ms  50 ms </p>
+<p> 2 192.168.3.1 70 ms  60 ms  60 ms </p>
+<p>此时VLAN2和VLAN3之间已经可以正常的互访。</p>
+<p>步骤 2 通过VLANIF接口实现VLAN间互访</p>
+<p># 清除上一步配置</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;1]undo port trunk allow-pass vlan 2 3</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;1]undo port link-type</p>
+<p>[R1]undo interface GigabitEthernet 0&#x2F;0&#x2F;1.2 </p>
+<p>[R1]undo interface GigabitEthernet 0&#x2F;0&#x2F;1.3</p>
+<p># 在S1上创建相应的VLANIF接口 </p>
+<p>[S1]interface Vlanif 2</p>
+<p><strong>interface vlanif</strong> <em>vlan-id</em>命令用来创建VLANIF接口并进入VLANIF接口视图。只有先通过命令创建VLAN后，才能执行interface vlanif命令创建VLANIF接口。</p>
+<p>[S1-Vlanif2]ip address 192.168.2.254 24</p>
+<p>[S1-Vlanif2]quit</p>
+<p>[S1]interface Vlanif 3</p>
+<p>[S1-Vlanif3]ip address 192.168.3.254 24 </p>
+<p>[S1-Vlanif3]quit</p>
+<p># 检测VLAN间互访联通性</p>
+<p><R2>ping 192.168.3.1 </R2></p>
+<p> PING 192.168.3.1: 56  data bytes, press CTRL_C to break</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;1 ttl&#x3D;254 time&#x3D;100 ms</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;2 ttl&#x3D;254 time&#x3D;50 ms</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;3 ttl&#x3D;254 time&#x3D;50 ms</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;4 ttl&#x3D;254 time&#x3D;60 ms</p>
+<p>  Reply from 192.168.3.1: bytes&#x3D;56 Sequence&#x3D;5 ttl&#x3D;254 time&#x3D;70 ms</p>
+<p> — 192.168.3.1 ping statistics —</p>
+<p>  5 packet(s) transmitted</p>
+<p>  5 packet(s) received</p>
+<p>  0.00% packet loss</p>
+<p>  round-trip min&#x2F;avg&#x2F;max &#x3D; 50&#x2F;66&#x2F;100 ms</p>
+<p><R2>tracert 192.168.3.1 </R2></p>
+<p> traceroute to  192.168.3.1(192.168.3.1), max hops: 30 ,packet length: 40,press CTRL_C to break </p>
+<p> 1 192.168.2.254 40 ms  30 ms  20 ms </p>
+<p> 2 192.168.3.1 40 ms  30 ms  40 ms</p>
+<p>此时VLAN2和VLAN3之间已经可以正常的互访。</p>
 ]]></content>
       <categories>
-        <category>基础知识</category>
+        <category>ip实验</category>
       </categories>
       <tags>
-        <tag>子网划分</tag>
+        <tag>vlan间通信</tag>
+        <tag>dot1q</tag>
+        <tag>vlanif</tag>
       </tags>
   </entry>
   <entry>
