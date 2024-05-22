@@ -172,6 +172,335 @@
       </tags>
   </entry>
   <entry>
+    <title>BGP总结</title>
+    <url>/2024/05/11/BGP%E6%80%BB%E7%BB%93/</url>
+    <content><![CDATA[<p>BGP使用<strong>TCP</strong>作为其传输层协议（端口号为<strong>179</strong>），使用<strong>触发式路由更新</strong>，而不是周期性路由更新。—BGP要想建立邻居关系，必须保证建立邻居关系的两端能够ping通<br>BGP能够承载大批量的路由信息，能够支撑大规模网络。<br>BGP提供了丰富的路由策略，能够灵活的进行路由选路，并能指导对等体按策略发布路由。<br>BGP能够支撑MPLS&#x2F;VPN的应用，传递客户VPN路由。<br>BGP提供了路由聚合和路由衰减功能用于防止路由振荡，通过这两项功能有效地提高了网络稳定性。</p>
+<p>AS范围：1-65535</p>
+<p>BGP版本：BGP4+</p>
+<p>一台路由器不能配置多个BGP进程</p>
+<p>只传递路由信息，不会暴露AS内拓扑信息</p>
+<h1 id="BGP对等体"><a href="#BGP对等体" class="headerlink" title="BGP对等体"></a>BGP对等体</h1><p>EBGP：对等体两端属于不同的AS</p>
+<p>IBGP：对等体两端属于同一个AS</p>
+<p>建立BGP对等体的时候可以使用物理接口建立，也可以使用loopback接口建立</p>
+<p><strong>EBGP对等体</strong>：建议使用物理接口建立 </p>
+<p>①使用物理接口建立：<br>[AR1]bgp 100</p>
+<p>[AR1-bgp]router-id 1.1.1.1  </p>
+<p>[AR1-bgp]peer 10.0.12.2 as-number 200</p>
+<p>②使用loopback接口建立：</p>
+<p>[Ar4]bgp 200    </p>
+<p>[Ar4-bgp]peer 5.5.5.5 as-number 300   </p>
+<p>[Ar4-bgp]peer 5.5.5.5 connect-interface loopback0     <strong>如果使用loopback接口建立对等体，必须要指明建立对等体的接口</strong></p>
+<p>[Ar4-bgp]router-id 4.4.4.4  指定router id</p>
+<p>[Ar4-bgp]peer 5.5.5.5  ebgp-max-hop   EBGP建立对等体关系默认发出报文TTL值为1，如果用loopback接口建立，到达loopback接口TTL值变成0，此时报文会丢弃，所以需要更改接口的TTL，peer 5.5.5.5  ebgp-max-hop命令可以直接设置TTL，至少设置为2，如果不设置，此时TTL值为255</p>
+<p>I<strong>BGP对等体</strong>：建议使用loopback接口建立（更稳定）</p>
+<p>IBGP建立对等体关系，发送报文TTL值为255，所以不用考虑TTL不可达问题</p>
+<p>①使用loopback接口建立：</p>
+<p>[Ar4]bgp 200   </p>
+<p>[Ar4-bgp]peer 2.2.2.2 as-number 200  </p>
+<p>[Ar4-bgp]peer 2.2.2.2 connect-interface loopback0</p>
+<p>②使用物理接口建立：</p>
+<p>[Ar4]bgp 200    </p>
+<p>[Ar4-bgp]peer 10.0.34.4 as-number 200</p>
+<h1 id="BGP对等体关系建立"><a href="#BGP对等体关系建立" class="headerlink" title="BGP对等体关系建立"></a>BGP对等体关系建立</h1><p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/image-20240511132855207.png" alt="image-20240511132855207"></p>
+<ul>
+<li><p>Open消息：是TCP连接建立后发送的第一个消息，用于建立BGP对等体之间的连接关系。对等体在接收到Open消息并协商成功后，将发送Keepalive消息确认并保持连接的有效性。确认后，对等体间可以进行Update、Notification、Keepalive和Route-refresh消息的交换。</p>
+</li>
+<li><p>Update消息：用于在对等体之间交换路由信息。Update消息可以发布多条属性相同的可达路由信息，也可以撤销多条不可达路由信息。</p>
+<ul>
+<li>一条Update消息可以发布多条具有相同路由属性的可达路由，这些路由可共享一组路由属性。所有包含在一个给定的Update消息里的路由属性适用于该Update消息中的NLRI（Network Layer Reachability Information）字段里的所有目的地（用IP前缀表示）。</li>
+<li>一条Update消息可以撤销多条不可达路由。每一个路由通过目的地（用IP前缀表示）清楚的定义了BGP Speaker之间先前通告过的路由。</li>
+<li>一条Update消息可以同时发布可达路由，并且撤销另一部分不可达路由。一条Update消息也可以只用于撤销路由，这样就不需要包括路径属性或者NLRI。相反，也可以只用于通告可达路由，就不需要携带撤销路由信息了。</li>
+</ul>
+</li>
+<li><p>Notification消息：当BGP检测到错误状态时，就向对等体发出Notification消息，之后BGP连接会立即中断。</p>
+</li>
+<li><p>Keepalive消息：BGP会周期性的向对等体发出Keepalive消息，用来保持连接的有效性。缺省情况下，间隔60s，保持180s</p>
+</li>
+<li><p>Route-refresh消息：Route-refresh消息用来请求对等体重新发送所有的可达路由信息。</p>
+<p>在所有BGP设备使能Route-refresh能力的情况下，如果BGP的入口路由策略发生了变化，本地BGP设备会向对等体发布Route-refresh消息，收到此消息的对等体会将其路由信息重新发给本地BGP设备。这样，可以在不中断BGP连接的情况下，对BGP路由表进行动态刷新，并应用新的路由策略。</p>
+</li>
+</ul>
+<h1 id="BGP状态机"><a href="#BGP状态机" class="headerlink" title="BGP状态机"></a>BGP状态机</h1><p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/image-20240511133639233.png" alt="image-20240511133639233"></p>
+<ol>
+<li><p>Idle状态是BGP初始状态。在Idle状态下，BGP拒绝邻居发送的连接请求。只有在收到本设备的Start事件后，BGP才开始尝试和其他BGP对等体进行TCP连接，并转至Connect状态。</p>
+<p> <strong>注意：</strong></p>
+<ul>
+<li>Start事件是由一个操作者配置一个BGP进程，或者重置一个已经存在的进程或者设备软件重置BGP进程引起的。</li>
+<li>任何状态中收到Notification报文或TCP拆链通知等Error事件后，BGP都会转至Idle状态。</li>
+</ul>
+</li>
+<li><p>在Connect状态下，BGP启动连接重传定时器（Connect Retry），等待TCP完成连接。</p>
+<ul>
+<li>如果TCP连接成功，那么BGP向对等体发送Open报文，并转至OpenSent状态。</li>
+<li>如果TCP连接失败，那么BGP转至Active状态。</li>
+<li>如果连接重传定时器超时，BGP仍没有收到BGP对等体的响应，那么BGP继续尝试和对等体进行TCP连接，停留在Connect状态。</li>
+</ul>
+</li>
+<li><p>在Active状态下，BGP总是在试图建立TCP连接。</p>
+<ul>
+<li>如果TCP连接成功，那么BGP向对等体发送Open报文，关闭连接重传定时器，并转至OpenSent状态。</li>
+<li>如果TCP连接失败，那么BGP停留在Active状态。</li>
+<li>如果连接重传定时器超时，BGP仍没有收到BGP对等体的响应，那么BGP转至Connect状态。</li>
+</ul>
+</li>
+<li><p>在OpenSent状态下，BGP等待对等体的Open报文，并对收到的Open报文中的AS号、版本号、认证码等进行检查。</p>
+<ul>
+<li>如果收到的Open报文正确，那么BGP发送Keepalive报文，并转至OpenConfirm状态。</li>
+<li>如果发现收到的Open报文有错误，那么BGP发送Notification报文给对等体，并转至Idle状态。</li>
+</ul>
+</li>
+<li><p>在OpenConfirm状态下，BGP等待Keepalive或Notification报文。如果收到Keepalive报文，则转至Established状态，如果收到Notification报文，则转至Idle状态。</p>
+</li>
+<li><p>在Established状态下，BGP可以和对等体交换Update、Keepalive、Route-refresh报文和Notification报文。</p>
+<ul>
+<li>如果收到正确的Update或Keepalive报文，那么BGP就认为对端处于正常运行状态，将保持BGP连接。</li>
+<li>如果收到错误的Update或Keepalive报文，那么BGP发送Notification报文通知对端，并转至Idle状态。</li>
+<li>Route-refresh报文不会改变BGP状态。</li>
+<li>如果收到Notification报文，那么BGP转至Idle状态。</li>
+<li>如果收到TCP拆链通知，那么BGP断开连接，转至Idle状态。</li>
+</ul>
+</li>
+</ol>
+<p>BGP对等体双方的状态必须都为Established，BGP对等体（也可以称为BGP邻居）关系才能成立，双方通过Update报文交换路由信息。</p>
+<h1 id="BGP路由的生成"><a href="#BGP路由的生成" class="headerlink" title="BGP路由的生成"></a>BGP路由的生成</h1><p>1）network：逐条在BGP协议中注入路由（其中origin属性位“i”）</p>
+<p>注意：network注入的路由必须是路由器的路由表存在的路由</p>
+<p>2）import-route：将某个协议的路由引入到路由表中，直连路由、静态路由、OSPF路由、IS-IS路由等（origin属性位“incomplete”）<br>3）路由聚合</p>
+<p>bgp 200<br>aggregate 10.1.0.0 22 detail-suppressed</p>
+<p>（detail-suppressed：BGP只会向对等体通告聚合后的路由，而不通告聚合前的明细路由）</p>
+<p>自动聚合：summary automatic</p>
+<ul>
+<li>自动聚合：对BGP引入的路由进行聚合。配置自动聚合后，对参加聚合的具体路由进行抑制。配置自动聚合后，BGP将按照自然网段聚合路由（如10.1.1.1&#x2F;24和10.2.1.1&#x2F;24将聚合为A类地址10.0.0.0&#x2F;8），并且BGP向对等体只发送聚合后的路由。</li>
+</ul>
+<p>（自动聚合只能聚合import引入的路由）</p>
+<p>优先级：手动＞自动＞network＞import＞从对等体学到</p>
+<h1 id="BGP对等体通告原则"><a href="#BGP对等体通告原则" class="headerlink" title="BGP对等体通告原则"></a>BGP对等体通告原则</h1><p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/image-20240511134752905.png" alt="image-20240511134752905"></p>
+<p>只发布最优路由—下一跳可达、最优路由</p>
+<p>从EBGP对等体获取的路由，会发布给所有对等体。</p>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps1.jpg" alt="img"> </p>
+<ol start="3">
+<li>IBGP水平分割：从IBGP对等体获取的路由，不会发送给IBGP对等体。</li>
+</ol>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps2.jpg" alt="img"> </p>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps3.jpg" alt="img"> </p>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps4.jpg" alt="img"> </p>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps5.jpg" alt="img"> </p>
+<ol start="4">
+<li>BGP同步规则指的是：当一台路由器从自己的IBGP对等体学习到一条BGP路由时（这类路由被称为IBGP路由），它将不能使用该条路由或把这条路由通告给自己的EBGP对等体，除非它又从IGP协议（例如OSPF等，此处也包含静态路由）学习到这条路由，也就是要求IBGP路由与IGP路由同步。同步规则主要用于规避BGP路由黑洞问题。</li>
+</ol>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps6.jpg" alt="img"> </p>
+<p>路由黑洞：解决办法：</p>
+<p>①BGP–IGP互相引入   该方法不建议</p>
+<p>②IBGP全互联</p>
+<p>③MPLS</p>
+<h1 id="BGP属性"><a href="#BGP属性" class="headerlink" title="BGP属性"></a>BGP属性</h1><p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/image-20240511135334705.png" alt="image-20240511135334705"></p>
+<h1 id="AS-path属性："><a href="#AS-path属性：" class="headerlink" title="AS_path属性："></a>AS_path属性：</h1><p>该属性为公认必遵属性，是前往目标网络的路由经过的AS号列表；<br>作用：确保路由在EBGP对等体之间传递无环；另外也作为路由优选的衡量标准之一；<br>路由在被通告给EBGP对等体时，路由器会在该路由的AS_Path中追加上本地的AS号；路由被通告给IBGP对等体时，AS_Path不会发生改变。</p>
+<p><strong>AS_path防环机制</strong>：路由每经过一个AS就会在AS_path中记录经过的AS 号，当路由器收到update报文，检查发现AS_path中含有本AS号，不接收该路由，从而防止了路由环路的产生。</p>
+<p>AS_path影响路由优选：收到同一个网段多条路，比较AS_path属性，哪条路由的AS_Path属性值较短，也即AS号的个数更少，就优选哪条路由。</p>
+<p><strong>AS-PATH类型：</strong></p>
+<p>AS_SEQENCE：AS在传递时是有序的，默认就是该类型<br>AS_SET：无序的，在做路由聚合时可以使用该类型。路由聚合解决了两类问题，一是减轻了设备的负担，二是隐藏了明细的路由信息，减少了路由震荡的影响。但是路由聚合后，AS_Path属性丢失，存在产生环路的风险，为此可以通过AS_SET类型的AS_Path属性携带聚合前的AS路径信息。</p>
+<p>修改AS_path：</p>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps7.jpg" alt="img"> </p>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps8.jpg" alt="img"> </p>
+<p>①additive</p>
+<p>#</p>
+<p> acl number 2000  </p>
+<p> rule 5 permit source 10.10.10.10 0 </p>
+<p>#</p>
+<p>route-policy aa permit node 10 </p>
+<p> if-match acl 2000 </p>
+<p> apply as-path 500 additive</p>
+<p>#</p>
+<p>bgp 200</p>
+<p> peer 5.5.5.5 route-policy aa export</p>
+<p>②overwrite</p>
+<p>#</p>
+<p> acl number 2000  </p>
+<p> rule 5 permit source 10.10.10.10 0 </p>
+<p>#</p>
+<p>route-policy aa permit node 10 </p>
+<p> if-match acl 2000 </p>
+<p> apply as-path 500 overwrite</p>
+<p>#</p>
+<p>bgp 200</p>
+<p> peer 5.5.5.5 route-policy aa export</p>
+<h1 id="Origin属性"><a href="#Origin属性" class="headerlink" title="Origin属性"></a>Origin属性</h1><p>Origin属性用来定义路径信息的来源，标记一条路由是怎么成为BGP路由的。它有以下3种类型：</p>
+<ul>
+<li>IGP：具有最高的优先级。通过路由始发AS的IGP得到的路由信息，比如通过<strong>network</strong>命令注入到BGP路由表的路由，其Origin属性为IGP。</li>
+<li>EGP：优先级次之。通过EGP得到的路由信息，其Origin属性为EGP。</li>
+<li>Incomplete：优先级最低。通过其他方式学习到的路由信息。比如BGP通过<strong>import-route</strong>命令引入的路由，其Origin属性为Incomplete。</li>
+</ul>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/image-20240511140106339.png" alt="image-20240511140106339"></p>
+<p>当去往同一个目的地存在多条不同Origin属性的路由时，在其他条件都相同的情况下，BGP将按如Origin的下顺序优选路由：IGP &gt; EGP &gt; Incomplete。也就是i &gt; e &gt; ?</p>
+<h1 id="Next-Hop"><a href="#Next-Hop" class="headerlink" title="Next-Hop"></a>Next-Hop</h1><ul>
+<li><p>BGP的下一跳属性和IGP的有所不同，不一定就是邻居的IP地址。通常情况下，Next_Hop属性遵循下面的规则：</p>
+<ul>
+<li>BGP Speaker在向EBGP对等体发布某条路由时，会把该路由信息的下一跳属性设置为本地与对端建立BGP邻居关系的接口地址。</li>
+<li>BGP Speaker将本地始发路由发布给IBGP对等体时，会把该路由信息的下一跳属性设置为本地与对端建立BGP邻居关系的接口地址。</li>
+<li>BGP Speaker在向IBGP对等体发布从EBGP对等体学来的路由时，并不改变该路由信息的下一跳属性。</li>
+</ul>
+</li>
+</ul>
+<p>IBGP在进行路由传递时，下一跳地址 不变会造成路由不可达这种情况，可以使用一下命令修改</p>
+<p>[AR2-bgp]peer 4.4.4.4 next-hop-local</p>
+<h1 id="Local-Preference"><a href="#Local-Preference" class="headerlink" title="Local_Preference"></a>Local_Preference</h1><p>Local_Preference即本地优先级属性，是公认任意属性，可以用于告诉AS中的路由器，哪条路径是离开本AS的首选路径。<br>Local_Preference属性值越大则BGP路由越优。缺省的Local_Preference值为<strong>100</strong>。<br>该属性<strong>只能被传递给IBGP对等体</strong>，而不能传递给EBGP对等体。<strong>越大越优。</strong></p>
+<p>注意事项：</p>
+<p>Local_Preference属性只能在IBGP对等体间传递（除非做了策略否则Local_Preference值在IBGP对等体间传递过程中不会丢失），而不能在EBGP对等体间传递，如果在EBGP对等体间收到的路由的路径属性中携带了Local_Preference，则会进行错误处理。<br>但是可以在AS边界路由器上使用Import方向的策略来修改Local_Preference属性值。也就是在收到路由之后，在本地为路由赋予Local_Preference。<br>使用bgp default local-preference命令修改缺省Local_Preference值，该值缺省为100。<br>路由器在向其EBGP对等体发送路由更新时，不能携带Local_Preference属性，但是对方接收路由之后，会在本地为这条路由赋一个缺省Local_Preference值（100），然后再将路由传递给自己的IBGP对等体。<br>本地使用network命令及import-route命令引入的路由， Local_Preference为缺省值100，并能在AS内向其他IBGP对等体传递，传递过程中除非受路由策略影响，否则Local_Preference不变</p>
+<h1 id="Community（团体）"><a href="#Community（团体）" class="headerlink" title="Community（团体）"></a>Community（团体）</h1><p>Community属性为可选过渡属性，是一种路由标记，用于简化路由策略的执行。<br>可以将某些路由分配一个特定的Community属性值，之后就可以基于Community值而不是网络前缀&#x2F;掩码信息来匹配路由并执行相应的策略了。</p>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps9.jpg" alt="img"> </p>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps10.jpg" alt="img"> </p>
+<h1 id="MED"><a href="#MED" class="headerlink" title="MED"></a>MED</h1><p>（Multi-Exit Discriminator，多出口鉴别器）是可选非过渡属性，是一种度量值，用于向外部对等体指出进入本AS的首选路径，即当进入本AS的入口有多个时，AS可以使用MED动态地影响其他AS选择进入的路径。<br>MED属性值<strong>越小则BGP路由越优</strong>。<br>MED主要用于在AS之间影响BGP的选路。MED被传递给EBGP对等体后，对等体在其AS内传递路由时，携带该MED值，但将路由再次传递给其EBGP对等体时，<strong>缺省不会携带MED属性</strong>。0-4294967295</p>
+<p>注意事项：</p>
+<p>缺省情况下，<strong>路由器只比较来自同一相邻AS的BGP路由的MED值</strong>，也就是说如果去往同一个目的地的两条路由来自不同的相邻AS，则不进行MED值的比较。<br>一台BGP路由器将路由通告给EBGP对等体时，是否携带MED属性，需要根据以下条件进行判断（不对EBGP对等体使用策略的情况下）：<br>如果该BGP路由是本地始发（本地通过network或import-route命令引入）的，则缺省携带MED属性发送给EBGP对等体。<br>如果该BGP路由为从BGP对等体学习到，那么该路由传递给EBGP对等体时缺省不会携带MED属性。<br>在IBGP对等体之间传递路由时，MED值会被保留并传递，除非部署了策略，否则MED值在传递过程中不发生改变也不会丢失。<br>如果路由器通过IGP学习到一条路由，并通过network或import-route的方式将路由引入BGP，产生的BGP路由的MED值继承路由在IGP中的metric。</p>
+<p>可以使用default med命令修改缺省的MED值，default med命令只对本设备上用import-route命令引入的路由和BGP的聚合路由生效。</p>
+<h1 id="Preferred-Value（协议首选值）"><a href="#Preferred-Value（协议首选值）" class="headerlink" title="Preferred-Value（协议首选值）"></a>Preferred-Value（协议首选值）</h1><p>是华为设备的特有属性，该属性仅在本地有效。当BGP路由表中存在到相同目的地的路由时，将优先选择Preferred-Value值高的路由。<br>取值范围：0~65535；该值越大，则路由越优先。<br>Preferred-Value只能在路由器本地配置，而且只影响本设备的路由优选。该属性不会传递给任何BGP对等体。</p>
+<h1 id="路由反射器"><a href="#路由反射器" class="headerlink" title="路由反射器"></a>路由反射器</h1><p>作用：解决IBGP全互联的问题</p>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps1-1715409454233-11.jpg" alt="img"> </p>
+<p>1、RR从EBGP学习到的，会发送给client和非client</p>
+<p>2、RR从非client学习到的路由，会反射给自己的client，但是不会给非client</p>
+<p>3、RR从client学习到的路由，会反射非自己的非client和client</p>
+<p>非非不传</p>
+<p>路由反射器中的防环：<strong>Originator_ID，Cluster_List</strong><br>RR将一条BGP路由进行反射时会在反射出去的路由中增加Originator_ID，其值为本地AS中通告该路由的BGP路由器Router ID。<br>若AS内存在多个RR，则Originator_ID属性由第一个RR创建，并且不被后续的RR（若有）所更改。<br>当BGP路由器收到一条携带Originator_ID属性的IBGP路由，并且Originator_ID属性值与自身的Router ID相同，则它会忽略关于该条路由的更新。</p>
+<p>路由反射簇包括反射器RR及其Client。一个AS内允许存在多个路由反射簇（如下图）。<br>每一个簇都有唯一的簇ID（Cluster_ID，缺省时为RR的BGP Router ID ）。<br>当一条路由被反射器反射后，该RR（该簇）的Cluster_ID就会被添加至路由的Cluster_list属性中。<br>当RR收到一条携带Cluster_list属性的BGP路由，且该属性值中包含该簇的Cluster_ID时，RR认为该条路由存在环路，因此将忽略关于该条路由的更新。</p>
+<p>配置：</p>
+<p>在RR路由器上配置：</p>
+<p>Bgp 200</p>
+<p>   peer 6.6.6.6 reflect-client  –谁是client，就peer谁</p>
+<p>缺省情况下，每个路由反射器使用自己的Router ID作为集群ID。<br>[Huawei-bgp] reflector cluster-id  20.2.2.2</p>
+<h1 id="路由优选原则："><a href="#路由优选原则：" class="headerlink" title="路由优选原则："></a>路由优选原则：</h1><p>P   L  L  A  O  M  E  N 漂亮老男人</p>
+<p>p—Preference Value (越大越优，仅限路由器本地)</p>
+<p>L— Local Preference，本地优先级 (越大越优，同一AS内的路由器）</p>
+<p>L— 手动聚合-&gt;自动聚合-&gt;network-&gt;import，为本地始发</p>
+<p>A —AS Path (短的优先)</p>
+<p>O —Origin，起源i(network)&gt;e(EBGP)&gt;? (import-route)</p>
+<p>M—MED (值越小越优，本AS内或上游AS内所有路由器，EBGP邻居上设置)</p>
+<p>E— EBGP优于IBGP (前面都一样，比不出最优路径时)</p>
+<p>N— Next-Hop，下一跳(BGP选择IGP下一跳cost值最小的)</p>
+<p>9.优选Cluster-List最短的路由</p>
+<p>10.优选Router-ID（Origintor- ID）最小的设备通告的路由</p>
+<p>11.优选具有最小的IP地址的对等体通告的路由</p>
+<p>前八条全部相同形成路由负载分担</p>
+]]></content>
+      <categories>
+        <category>基础知识</category>
+      </categories>
+      <tags>
+        <tag>BGP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>BGP路由优选</title>
+    <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/</url>
+    <content><![CDATA[<h1 id="BGP路由优选"><a href="#BGP路由优选" class="headerlink" title="BGP路由优选"></a>BGP路由优选</h1><h2 id="实验背景"><a href="#实验背景" class="headerlink" title="实验背景"></a>实验背景</h2><p>你是公司的网络管理员。公司的网络采用了BGP协议接入了两个服务运营商。公司自己采用了私有的AS号64512，ISP1的AS号为100，ISP2的AS号为200。通过AS100、AS200都可以到达相同的网络，你通过改变BGP的各种属性达到了调整路由走向的目的。</p>
+<span id="more"></span>
+
+<p>实验介绍：</p>
+<p>设备互联方式、互联接口地址如图所示，所有设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号，所有设备都使用Loopback0地址作为BGP Router ID。</p>
+<p>R1在AS100，R5在AS200，R2、R3、R4在AS64512。AS64512内运行OSPF，在互联接口（不包括连接外部AS的接口）、Loopback0接口上激活OSPF。</p>
+<p>EBGP对等体关系基于直连接口建立，IBGP对等体关系基于Loopback0接口建立。</p>
+<p>R1、R5上存在相同的网段172.16.1.0&#x2F;24、172.16.2.0&#x2F;24、172.16.3.0&#x2F;24、172.16.4.0&#x2F;24，在R1、R5上将其发布到BGP，以用于BGP路由优选。</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/tuopu22sd182306.png" alt="tuopu22sd182306"></p>
+<p>配置ip，配置bgp：略</p>
+<p>#在R1、R5上将Loopback1、Loopback2、Loopback3、Loopback4接口路由发布到BGP中</p>
+<p>[R1]bgp 100</p>
+<p>[R1-bgp] network 172.16.1.0 24</p>
+<p>[R1-bgp] network 172.16.2.0 24</p>
+<p>[R1-bgp] network 172.16.3.0 24</p>
+<p>[R1-bgp] network 172.16.4.0 24</p>
+<p>[R5]bgp 200</p>
+<p>[R5-bgp] network 172.16.1.0 24</p>
+<p>[R5-bgp] network 172.16.2.0 24</p>
+<p>[R5-bgp] network 172.16.3.0 24</p>
+<p>[R5-bgp] network 172.16.4.0 24</p>
+<p>#在R3上查看BGP路由表，检查BGP路由是否成功学习</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/r3chakandp128185306.png" alt="r3chakandp128185306"></p>
+<p>R3已经成功学习R1、R5发布的路由，此时所有路由都优选由R2通告的。</p>
+<h2 id="修改AS-Path属性"><a href="#修改AS-Path属性" class="headerlink" title="修改AS_Path属性"></a>修改AS_Path属性</h2><p>在R1上通过路由策略修改BGP路由172.16.1.0&#x2F;24的 AS_Path属性值，使得R3优选R5发布的BGP路由172.16.1.0&#x2F;24。</p>
+<p>#创建IP前缀列表1，匹配Loopback1接口路由</p>
+<p>[R1]ip ip-prefix 1 permit 172.16.1.0 24 greater-equal 24 less-equal 24</p>
+<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改AS_Path属性值</p>
+<p>[R1]route-policy hcip permit node 10</p>
+<p>[R1-route-policy] if-match ip-prefix 1</p>
+<p>[R1-route-policy] apply as-path 300 400 additive</p>
+<p>[R1-route-policy] quit</p>
+<p>[R1]route-policy hcip permit node 20</p>
+<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
+<p>#对向BGP对等体R2通告的BGP路由应用Route-Policy</p>
+<p>[R1]bgp 100</p>
+<p>[R1-bgp] peer 10.0.12.2 route-policy hcip export</p>
+<p>#在R1上触发出方向的软复位，刷新对外通告的BGP路由</p>
+<p><R1>refresh bgp all export</R1></p>
+<p>#在R3上查看BGP路由172.16.1.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/as5cs28190005.png" alt="as5cs28190005"></p>
+<p>此时R3优选R4通告的BGP路由172.16.1.0&#x2F;24，R2通告的未被优选的原因是AS_Path长度。</p>
+<h2 id="修改Local-Preference属性"><a href="#修改Local-Preference属性" class="headerlink" title="修改Local_Preference属性"></a>修改Local_Preference属性</h2><p>local_Preference：默认100，越大越优先，只能在ibgp对等体之间传递</p>
+<p>在R4上通过路由策略修改BGP路由172.16.2.0&#x2F;24的Local_Preference属性值，使得R3优选R4通告的BGP路由172.16.2.0&#x2F;24。</p>
+<p>#创建IP前缀列表1，匹配BGP路由172.16.2.0&#x2F;24</p>
+<p>[R4]ip ip-prefix 1 permit 172.16.2.0 24 greater-equal 24 less-equal 24</p>
+<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改Local_Preference属性值</p>
+<p>[R4]route-policy hcip permit node 10</p>
+<p>[R4-route-policy] if-match ip-prefix 1</p>
+<p>[R4-route-policy] apply local-preference 200</p>
+<p>[R4-route-policy] quit</p>
+<p>[R4]route-policy hcip permit node 20</p>
+<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
+<p>#对向BGP对等体R3通告的BGP路由应用Route-Policy</p>
+<p>[R4]bgp 64512</p>
+<p>[R4-bgp] peer 10.0.3.3 route-policy hcip export</p>
+<p>#在R4上触发出方向的软复位，刷新对外通告的BGP路由</p>
+<p><R4>refresh bgp all export</R4></p>
+<p>#在R3上查看BGP路由172.16.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/local55chakan192014.png" alt="local55chakan192014"></p>
+<p>此时R3优选R4通告的BGP路由172.16.2.0&#x2F;24，R2通告的BGP路由其Local_Preference值为100，小于R3通告的BGP路由Local_Preference值200，因此R2通告的BGP路由未被优选。</p>
+<h2 id="修改MED属性"><a href="#修改MED属性" class="headerlink" title="修改MED属性"></a>修改MED属性</h2><p>在R2上通过路由策略修改BGP路由172.16.3.0&#x2F;24的MED属性值，使得R3优选R5发布的BGP路由172.16.3.0&#x2F;24。</p>
+<p>#创建IP前缀列表1，匹配BGP路由172.16.3.0&#x2F;24</p>
+<p>[R2]ip ip-prefix 1 permit 172.16.3.0 24 greater-equal 24 less-equal 24</p>
+<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改MED属性值</p>
+<p>[R2]route-policy hcip permit node 10</p>
+<p>[R2-route-policy] if-match ip-prefix 1</p>
+<p>[R2-route-policy] apply cost 200</p>
+<p>[R2-route-policy] quit</p>
+<p>[R2]route-policy hcip permit node 20</p>
+<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
+<p>#对来自BGP对等体R1的BGP路由应用Route-Policy</p>
+<p>[R2]bgp 64512</p>
+<p>[R2-bgp] peer 10.0.12.1 route-policy hcip import</p>
+<p>#在R2上触发入方向的软复位，刷新接收到的BGP路由</p>
+<p><R2>refresh bgp all import</R2></p>
+<p>#在R3上配置允许比较来自不同AS的BGP路由的MED值</p>
+<p>[R3]bgp 64512</p>
+<p>[R3-bgp] compare-different-as-med  </p>
+<p>缺省情况下，不比较来自不同AS邻居的BGP的MED属性值。</p>
+<p>#在R3上查看BGP路由172.16.3.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/medchakanf2735.png" alt="medchakanf2735"></p>
+<p>R2通告的BGP路由172.16.3.0&#x2F;24其MED值为200，而R4通告BGP路由MED值为0，R3优选MED值较小的BGP路由，因此R2通告的BGP路由未被优选。</p>
+<h2 id="修改preferred-value属性"><a href="#修改preferred-value属性" class="headerlink" title="修改preferred-value属性"></a>修改preferred-value属性</h2><p>preferred-value：华为特有的属性值，仅在本地有效，当bgp存在到相同的路由时，将优选prefeerred-value大的路由。只能在路由器本地配置，只影响本设备的路由优选，不会传递给任何bgp对等体。</p>
+<p>在R3上通过路由策略修改BGP路由172.16.4.0&#x2F;24的preferred-value属性值，使得R3优选R4通告的BGP路由172.16.4.0&#x2F;24。</p>
+<p>#创建IP前缀列表1，匹配BGP路由172.16.4.0&#x2F;24</p>
+<p>[R3]ip ip-prefix 1 permit 172.16.4.0 24 greater-equal 24 less-equal 24</p>
+<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改preferred-value属性值</p>
+<p>[R3]route-policy hcip permit node 10</p>
+<p>[R3-route-policy] if-match ip-prefix 1</p>
+<p>[R3-route-policy] apply preferred-value 300</p>
+<p>[R3-route-policy] quit</p>
+<p>[R3]route-policy hcip permit node 20</p>
+<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
+<p>#对来自BGP对等体R4的BGP路由应用Route-Policy</p>
+<p>[R3]bgp 64512</p>
+<p>[R3-bgp] peer 10.0.4.4 route-policy hcip import</p>
+<p>#在R3上触发入方向的软复位，刷新收到的BGP路由</p>
+<p><R3>refresh bgp all import</R3></p>
+<p>#在R3上查看BGP路由172.16.4.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/prexiiuhai8193458.png" alt="prexiiuhai8193458"></p>
+<p>R4通告的BGP路由172.16.3.0&#x2F;24其preferred-value值为300，而R2通告的preferred-value值为0，R3优选preferred-value值较大的BGP路由，因此R3优选R4通告的BGP路由。</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>BGP路由优选</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>BGP路由反射器</title>
     <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/</url>
     <content><![CDATA[<h1 id="BGP路由反射器"><a href="#BGP路由反射器" class="headerlink" title="BGP路由反射器"></a>BGP路由反射器</h1><p>由于水平分割的原因，为了保证AS内所有的BGP路由器都能学习到完整的BGP路由，就必须在AS内实现IBGP全互联。</p>
@@ -870,219 +1199,172 @@
       </tags>
   </entry>
   <entry>
-    <title>BGP总结</title>
-    <url>/2024/05/11/BGP%E6%80%BB%E7%BB%93/</url>
-    <content><![CDATA[<p>BGP使用<strong>TCP</strong>作为其传输层协议（端口号为<strong>179</strong>），使用<strong>触发式路由更新</strong>，而不是周期性路由更新。—BGP要想建立邻居关系，必须保证建立邻居关系的两端能够ping通<br>BGP能够承载大批量的路由信息，能够支撑大规模网络。<br>BGP提供了丰富的路由策略，能够灵活的进行路由选路，并能指导对等体按策略发布路由。<br>BGP能够支撑MPLS&#x2F;VPN的应用，传递客户VPN路由。<br>BGP提供了路由聚合和路由衰减功能用于防止路由振荡，通过这两项功能有效地提高了网络稳定性。</p>
-<p>AS范围：1-65535</p>
-<p>BGP版本：BGP4+</p>
-<p>一台路由器不能配置多个BGP进程</p>
-<p>只传递路由信息，不会暴露AS内拓扑信息</p>
-<h1 id="BGP对等体"><a href="#BGP对等体" class="headerlink" title="BGP对等体"></a>BGP对等体</h1><p>EBGP：对等体两端属于不同的AS</p>
-<p>IBGP：对等体两端属于同一个AS</p>
-<p>建立BGP对等体的时候可以使用物理接口建立，也可以使用loopback接口建立</p>
-<p><strong>EBGP对等体</strong>：建议使用物理接口建立 </p>
-<p>①使用物理接口建立：<br>[AR1]bgp 100</p>
-<p>[AR1-bgp]router-id 1.1.1.1  </p>
-<p>[AR1-bgp]peer 10.0.12.2 as-number 200</p>
-<p>②使用loopback接口建立：</p>
-<p>[Ar4]bgp 200    </p>
-<p>[Ar4-bgp]peer 5.5.5.5 as-number 300   </p>
-<p>[Ar4-bgp]peer 5.5.5.5 connect-interface loopback0     <strong>如果使用loopback接口建立对等体，必须要指明建立对等体的接口</strong></p>
-<p>[Ar4-bgp]router-id 4.4.4.4  指定router id</p>
-<p>[Ar4-bgp]peer 5.5.5.5  ebgp-max-hop   EBGP建立对等体关系默认发出报文TTL值为1，如果用loopback接口建立，到达loopback接口TTL值变成0，此时报文会丢弃，所以需要更改接口的TTL，peer 5.5.5.5  ebgp-max-hop命令可以直接设置TTL，至少设置为2，如果不设置，此时TTL值为255</p>
-<p>I<strong>BGP对等体</strong>：建议使用loopback接口建立（更稳定）</p>
-<p>IBGP建立对等体关系，发送报文TTL值为255，所以不用考虑TTL不可达问题</p>
-<p>①使用loopback接口建立：</p>
-<p>[Ar4]bgp 200   </p>
-<p>[Ar4-bgp]peer 2.2.2.2 as-number 200  </p>
-<p>[Ar4-bgp]peer 2.2.2.2 connect-interface loopback0</p>
-<p>②使用物理接口建立：</p>
-<p>[Ar4]bgp 200    </p>
-<p>[Ar4-bgp]peer 10.0.34.4 as-number 200</p>
-<h1 id="BGP对等体关系建立"><a href="#BGP对等体关系建立" class="headerlink" title="BGP对等体关系建立"></a>BGP对等体关系建立</h1><p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/image-20240511132855207.png" alt="image-20240511132855207"></p>
+    <title>SSH</title>
+    <url>/2024/05/22/SSH/</url>
+    <content><![CDATA[<p><img src="/2024/05/22/SSH/QQ%E6%88%AA%E5%9B%BE20240522163645.png" alt="QQ截图20240522163645"></p>
+<p><img src="/2024/05/22/SSH/QQ%E6%88%AA%E5%9B%BE20240522163801.png" alt="QQ截图20240522163801"></p>
+<p><img src="/2024/05/22/SSH/QQ%E6%88%AA%E5%9B%BE20240522170905.png" alt="QQ截图20240522170905"></p>
+<p>1.server配置rsa<br>[server]rsa local-key-pair create<br>[server]dis rsa local-key-pair public（查看）<br>2.全局开启stelnet<br>[server]stelnet server enable<br>3.vty接口配置<br>[server]user-interface vty 0 4	<br>[server-ui-vty0-4]authentication-mode aaa	<br>[server-ui-vty0-4]protocol inbound ssh<br>4.创建用户名和密码<br>[server]aaa<br>[server-aaa]local-user client01 password cipher huawei123<br>[server-aaa]local-user client01 service-type ssh	<br>[server-aaa]local-user client01 privilege level 3<br>（同理创建client02）<br>5.设置服务端口号<br>[server]ssh server port 1025<br>6.客户端上创建rsa本地密钥<br>[client01]rsa local-key-pair create<br>7.将客户端密钥复制到服务器<br>[server]rsa peer-public-key client01<br>[server-rsa-public-key]public-key-code begin<br>Enter “RSA key code” view, return last view with “public-key-code end”.<br>[server-rsa-key-code]<br>[server-rsa-key-code]3047<br>[server-rsa-key-code]  0240<br>[server-rsa-key-code]    BB44D49F 0A455501 33FC2A58 9EA52FF3 7C3A29A5<br>[server-rsa-key-code]    43A29D63 1D74F975 FAF91466 EF0D2222 A8AE038B<br>[server-rsa-key-code]    2DAA1CE0 5F22B5D9 F6D0F2F0 EB0747B9 4D916AE1<br>[server-rsa-key-code]    5B83DE2D<br>[server-rsa-key-code]  0203<br>[server-rsa-key-code]    010001	<br>[server-rsa-key-code]public-key-code end<br>[server-rsa-public-key]peer-public-key end		<br>[server]ssh user client01 assign rsa-key client01<br>8.客户端上开启SSH首次登录验证<br>[client01]ssh client first-time enable </p>
+<p>[client01]stelnet 2.2.2.2 1025（登录）</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>SSH</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>STP拓扑变更机制</title>
+    <url>/2024/05/08/STP%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4%E6%9C%BA%E5%88%B6/</url>
+    <content><![CDATA[<h1 id="为什么要有STP拓扑变化机制"><a href="#为什么要有STP拓扑变化机制" class="headerlink" title="为什么要有STP拓扑变化机制"></a>为什么要有STP拓扑变化机制</h1><p>网络中发生拓扑变化时，例如链路中断或接口异常Down等情况，由于MAC地址老化时间的存在（缺省为5分钟），如果不及时通知上游设备，则可能会导致上游设备的报文在这段时间内一直向一个不可达的链路发送。</p>
+<h5 id="拓扑改变导致MAC地址表错误"><a href="#拓扑改变导致MAC地址表错误" class="headerlink" title="拓扑改变导致MAC地址表错误"></a>拓扑改变导致MAC地址表错误</h5><p><img src="/2024/05/08/STP%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4%E6%9C%BA%E5%88%B6/1stp3434.png" alt="1stp3434"></p>
+<p> 本例中，SW3中的MAC地址表项定义了通过端口GigabitEthernet 0&#x2F;0&#x2F;2可以到达主机1，通过端口GigabitEthernet 0&#x2F;0&#x2F;3可以到达主机2。由于SW2的根端口产生故障，导致生成树拓扑重新收敛，在生成树拓扑完成收敛之后，从主机1到主机2的帧仍然不能到达目的地。这是因为MAC地址表项老化时间是300秒，主机2发往主机1的帧到达SW3后，SW3会继续通过端口GigabitEthernet 0&#x2F;0&#x2F;2转发该数据帧。那么该怎么快速恢复转发？</p>
+<p><img src="/2024/05/08/STP%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4%E6%9C%BA%E5%88%B6/2stp821462.png" alt="2stp821462"></p>
+<p>   拓扑变更以及MAC地址表项更新的具体过程如下：</p>
+<p>SW2感知到网络拓扑发生变化后，会立即向SW3发送TCN BPDU报文。<br>SW3收到SW2发来的TCN BPDU报文后，会把配置BPDU报文中的Flags的TCA位设置1，然后发送给SW2，告知SW2我已经收到你发送的TCN BPDU。<br>SW3向根桥转发TCN BPDU报文。<br>SW1把配置BPDU报文中的Flags的TC位和TCA位设置为1后发送，通知下游设备我已经收到你发送的TCN BPDU，并通知下游交换机把MAC地址表项的老化时间由默认的300 s修改为Forward Delay的时间（默认为15 s），之后会持续不断的发送TC bit &#x3D; 1的BPDU持续35s。<br>最多等待15 s之后，SW3中的错误MAC地址表项会被自动清除。此后，SW3就能重新开始MAC表项的学习及转发操作。</p>
+<p>说明：</p>
 <ul>
-<li><p>Open消息：是TCP连接建立后发送的第一个消息，用于建立BGP对等体之间的连接关系。对等体在接收到Open消息并协商成功后，将发送Keepalive消息确认并保持连接的有效性。确认后，对等体间可以进行Update、Notification、Keepalive和Route-refresh消息的交换。</p>
+<li>TCN BPDU报文主要用来向上游设备乃至根桥通知拓扑变化。</li>
+<li>TCA标记置位的配置BPDU报文主要是上游设备用来告知下游设备已经知道拓扑变化，通知下游设备停止发送TCN BPDU报文。</li>
+<li>置位的TC标记的配置BPDU报文主要是上游设备用来告知下游设备拓扑发生变化，请下游设备直接删除桥MAC地址表项，从而达到快速收敛的目的。</li>
+</ul>
+<h5 id="感知拓扑改变"><a href="#感知拓扑改变" class="headerlink" title="感知拓扑改变"></a>感知拓扑改变</h5><p>什么情况下STP会感知到拓扑发生了改变呢？有下面四种！</p>
+<p>（1）当DP端口进入到Forwarding状态认为拓扑发生了改变。</p>
+<p><img src="/2024/05/08/STP%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4%E6%9C%BA%E5%88%B6/bian1014293.png" alt="bian1014293"></p>
+<p>如上图当S2的g0&#x2F;0&#x2F;3接口(与主机直接相连的接口都是DP端口)经过大概30s进入到Forwarding状态之后，S2的RP端口会立即向根桥发送一个TCN BPDU告知根桥拓扑发生了改变，根桥也会向S2交换机回复一个TC bit &#x3D; 1和TCA bit &#x3D; 1的BPDU，并且根桥会将TC bit &#x3D; 1的报文泛洪到全网交换机，持续35s。 S3的DP接口从shutdown重新进入到Forwarding状态与此情况类似。</p>
+<p>（2）根桥的DP失效直接发送TC BPDU。<br><img src="/2024/05/08/STP%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4%E6%9C%BA%E5%88%B6/bian272946542.png" alt="bian272946542"></p>
+<p> 如上图，当根桥的DP失效之后，S3交换机的RP也随即失效，DP立即成为RP并向S2的AP持续不断的发送TCN BPDU。当S2的AP经过大概30s进入到Forwarding状态之后会向S3的DP回复一个TCA bit &#x3D; 1的BPDU，告知S3我已收到你发送的TCN BPDU并且通过自己的RP将TCN BPDU发送给根桥，根桥也会向S2交换机回复一个TC bit &#x3D; 1和TCA bit &#x3D; 1的BPDU，并且根桥会将TC bit &#x3D; 1的报文泛洪到全网交换机持续35s。</p>
+<p>(3)RP失效或者RP进入到Forwarding状态。<br>        S3的RP失效其实等同于根桥的DP失效导致S3的RP失效。S2的RP失效等同于 1.拓扑改变导致MAC地址表错误。<br>(4)非根桥的DP端口失效不认为拓扑发生了改变。<br><img src="/2024/05/08/STP%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4%E6%9C%BA%E5%88%B6/bian44841788.png" alt="bian44841788"></p>
+<p>如上图两种情况，非根桥的DP失效都不会认为拓扑发生了改变。</p>
+<p>总结：<strong>stp发生拓扑变更的条件</strong>：<br>1、处于转发状态或者监听状态的端口过渡到阻塞状态，这个状态通常是链路故障<br>2、处于未启用状态的端口进入转发状态，这个状态通常是增加了新的链路<br>3、交换机从指定端口收到TCNBPDU报文。</p>
+<p><strong>stp缺点</strong>：1.收敛速度慢，故障切换时间太长（30-50秒）2.网络中大量主机频繁上下线，会导致TCN BPDU大量发送，导致Mac地址表不稳定</p>
+<h1 id="RSTP对STP的改进："><a href="#RSTP对STP的改进：" class="headerlink" title="RSTP对STP的改进："></a>RSTP对STP的改进：</h1><ul>
+<li>RSTP对STP的改进：<ul>
+<li>通过端口角色的增补，简化了生成树协议的理解及部署；</li>
+<li>端口状态的重新划分；</li>
+<li>配置BPDU格式的改变，充分利用了STP协议报文中的Flag字段，明确了端口角色；</li>
+<li>配置BPDU的处理发生变化；</li>
+<li>快速收敛；</li>
+<li>增加保护功能。</li>
+</ul>
 </li>
-<li><p>Update消息：用于在对等体之间交换路由信息。Update消息可以发布多条属性相同的可达路由信息，也可以撤销多条不可达路由信息。</p>
+</ul>
+<h5 id="改进点1：端口角色的改进："><a href="#改进点1：端口角色的改进：" class="headerlink" title="改进点1：端口角色的改进："></a>改进点1：端口角色的改进：</h5><p>RSTP的端口角色共有4种：根端口、指定端口、Alternate端口和Backup端口。</p>
+<p> 根端口和指定端口的作用同STP中定义，Alternate端口和Backup端口的描述如下：  </p>
 <ul>
-<li>一条Update消息可以发布多条具有相同路由属性的可达路由，这些路由可共享一组路由属性。所有包含在一个给定的Update消息里的路由属性适用于该Update消息中的NLRI（Network Layer Reachability Information）字段里的所有目的地（用IP前缀表示）。</li>
-<li>一条Update消息可以撤销多条不可达路由。每一个路由通过目的地（用IP前缀表示）清楚的定义了BGP Speaker之间先前通告过的路由。</li>
-<li>一条Update消息可以同时发布可达路由，并且撤销另一部分不可达路由。一条Update消息也可以只用于撤销路由，这样就不需要包括路径属性或者NLRI。相反，也可以只用于通告可达路由，就不需要携带撤销路由信息了。</li>
+<li>从配置BPDU报文发送角度来看：<ul>
+<li>Alternate端口就是由于学习到其它网桥发送的配置BPDU报文而阻塞的端口</li>
+<li>Backup端口就是由于学习到自己发送的配置BPDU报文而阻塞的端口</li>
 </ul>
 </li>
-<li><p>Notification消息：当BGP检测到错误状态时，就向对等体发出Notification消息，之后BGP连接会立即中断。</p>
-</li>
-<li><p>Keepalive消息：BGP会周期性的向对等体发出Keepalive消息，用来保持连接的有效性。缺省情况下，间隔60s，保持180s</p>
-</li>
-<li><p>Route-refresh消息：Route-refresh消息用来请求对等体重新发送所有的可达路由信息。</p>
-<p>在所有BGP设备使能Route-refresh能力的情况下，如果BGP的入口路由策略发生了变化，本地BGP设备会向对等体发布Route-refresh消息，收到此消息的对等体会将其路由信息重新发给本地BGP设备。这样，可以在不中断BGP连接的情况下，对BGP路由表进行动态刷新，并应用新的路由策略。</p>
+<li>从用户流量角度来看：<ul>
+<li>Alternate端口提供了从指定桥到根的另一条可切换路径，作为根端口的备份端口</li>
+<li>Backup端口作为指定端口的备份，提供了另一条从根桥到相应网段的备份通路</li>
+</ul>
 </li>
 </ul>
-<h1 id="BGP状态机"><a href="#BGP状态机" class="headerlink" title="BGP状态机"></a>BGP状态机</h1><p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/image-20240511133639233.png" alt="image-20240511133639233"></p>
-<ol>
-<li><p>Idle状态是BGP初始状态。在Idle状态下，BGP拒绝邻居发送的连接请求。只有在收到本设备的Start事件后，BGP才开始尝试和其他BGP对等体进行TCP连接，并转至Connect状态。</p>
-<p> <strong>注意：</strong></p>
+<blockquote>
+<p> 给一个RSTP域内所有端口分配角色的过程就是整个拓扑收敛的过程 </p>
+</blockquote>
+<h5 id="改进点2：端口状态的改进"><a href="#改进点2：端口状态的改进" class="headerlink" title="改进点2：端口状态的改进"></a>改进点2：端口状态的改进</h5><p>RSTP的状态规范缩减为3种，根据端口是否转发用户流量和学习MAC地址来划分:</p>
 <ul>
-<li>Start事件是由一个操作者配置一个BGP进程，或者重置一个已经存在的进程或者设备软件重置BGP进程引起的。</li>
-<li>任何状态中收到Notification报文或TCP拆链通知等Error事件后，BGP都会转至Idle状态。</li>
+<li>Discarding状态：不转发用户流量也不学习MAC地址</li>
+<li>Learning状态：不转发用户流量但是学习MAC地址</li>
+<li>Forwarding状：既转发用户流量又学习MAC地址。</li>
 </ul>
-</li>
-<li><p>在Connect状态下，BGP启动连接重传定时器（Connect Retry），等待TCP完成连接。</p>
+<table>
+<thead>
+<tr>
+<th align="left">STP端口状态</th>
+<th align="left">RSTP端口状态</th>
+<th align="left">端口在拓扑中的角色</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">Forwarding</td>
+<td align="left">Forwarding</td>
+<td align="left">包括根端口、指定端口</td>
+</tr>
+<tr>
+<td align="left">Learning</td>
+<td align="left">Learning</td>
+<td align="left">包括根端口、指定端口</td>
+</tr>
+<tr>
+<td align="left">Listening</td>
+<td align="left">Discarding</td>
+<td align="left">包括根端口、指定端口</td>
+</tr>
+<tr>
+<td align="left">Blocking</td>
+<td align="left">Discarding</td>
+<td align="left">包括Alternate端口、Backup端口</td>
+</tr>
+<tr>
+<td align="left">Disabled</td>
+<td align="left">Discarding</td>
+<td align="left">包括Disable端口</td>
+</tr>
+</tbody></table>
+<h5 id="改进点3：配置BPDU-RST-BPDU"><a href="#改进点3：配置BPDU-RST-BPDU" class="headerlink" title="改进点3：配置BPDU - RST BPDU"></a>改进点3：配置BPDU - RST BPDU</h5><p><strong>RSTP的配置BPDU充分利用了STP报文中的Flag字段，明确了端口角色</strong></p>
 <ul>
-<li>如果TCP连接成功，那么BGP向对等体发送Open报文，并转至OpenSent状态。</li>
-<li>如果TCP连接失败，那么BGP转至Active状态。</li>
-<li>如果连接重传定时器超时，BGP仍没有收到BGP对等体的响应，那么BGP继续尝试和对等体进行TCP连接，停留在Connect状态。</li>
-</ul>
-</li>
-<li><p>在Active状态下，BGP总是在试图建立TCP连接。</p>
-<ul>
-<li>如果TCP连接成功，那么BGP向对等体发送Open报文，关闭连接重传定时器，并转至OpenSent状态。</li>
-<li>如果TCP连接失败，那么BGP停留在Active状态。</li>
-<li>如果连接重传定时器超时，BGP仍没有收到BGP对等体的响应，那么BGP转至Connect状态。</li>
-</ul>
-</li>
-<li><p>在OpenSent状态下，BGP等待对等体的Open报文，并对收到的Open报文中的AS号、版本号、认证码等进行检查。</p>
-<ul>
-<li>如果收到的Open报文正确，那么BGP发送Keepalive报文，并转至OpenConfirm状态。</li>
-<li>如果发现收到的Open报文有错误，那么BGP发送Notification报文给对等体，并转至Idle状态。</li>
-</ul>
-</li>
-<li><p>在OpenConfirm状态下，BGP等待Keepalive或Notification报文。如果收到Keepalive报文，则转至Established状态，如果收到Notification报文，则转至Idle状态。</p>
-</li>
-<li><p>在Established状态下，BGP可以和对等体交换Update、Keepalive、Route-refresh报文和Notification报文。</p>
-<ul>
-<li>如果收到正确的Update或Keepalive报文，那么BGP就认为对端处于正常运行状态，将保持BGP连接。</li>
-<li>如果收到错误的Update或Keepalive报文，那么BGP发送Notification报文通知对端，并转至Idle状态。</li>
-<li>Route-refresh报文不会改变BGP状态。</li>
-<li>如果收到Notification报文，那么BGP转至Idle状态。</li>
-<li>如果收到TCP拆链通知，那么BGP断开连接，转至Idle状态。</li>
-</ul>
-</li>
-</ol>
-<p>BGP对等体双方的状态必须都为Established，BGP对等体（也可以称为BGP邻居）关系才能成立，双方通过Update报文交换路由信息。</p>
-<h1 id="BGP路由的生成"><a href="#BGP路由的生成" class="headerlink" title="BGP路由的生成"></a>BGP路由的生成</h1><p>1）network：逐条在BGP协议中注入路由（其中origin属性位“i”）</p>
-<p>注意：network注入的路由必须是路由器的路由表存在的路由</p>
-<p>2）import-route：将某个协议的路由引入到路由表中，直连路由、静态路由、OSPF路由、IS-IS路由等（origin属性位“incomplete”）<br>3）路由聚合</p>
-<p>bgp 200<br>aggregate 10.1.0.0 22 detail-suppressed</p>
-<p>（detail-suppressed：BGP只会向对等体通告聚合后的路由，而不通告聚合前的明细路由）</p>
-<p>自动聚合：summary automatic</p>
-<ul>
-<li>自动聚合：对BGP引入的路由进行聚合。配置自动聚合后，对参加聚合的具体路由进行抑制。配置自动聚合后，BGP将按照自然网段聚合路由（如10.1.1.1&#x2F;24和10.2.1.1&#x2F;24将聚合为A类地址10.0.0.0&#x2F;8），并且BGP向对等体只发送聚合后的路由。</li>
-</ul>
-<p>（自动聚合只能聚合import引入的路由）</p>
-<p>优先级：手动＞自动＞network＞import＞从对等体学到</p>
-<h1 id="BGP对等体通告原则"><a href="#BGP对等体通告原则" class="headerlink" title="BGP对等体通告原则"></a>BGP对等体通告原则</h1><p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/image-20240511134752905.png" alt="image-20240511134752905"></p>
-<p>只发布最优路由—下一跳可达、最优路由</p>
-<p>从EBGP对等体获取的路由，会发布给所有对等体。</p>
-<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps1.jpg" alt="img"> </p>
-<ol start="3">
-<li>IBGP水平分割：从IBGP对等体获取的路由，不会发送给IBGP对等体。</li>
-</ol>
-<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps2.jpg" alt="img"> </p>
-<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps3.jpg" alt="img"> </p>
-<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps4.jpg" alt="img"> </p>
-<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps5.jpg" alt="img"> </p>
-<ol start="4">
-<li>BGP同步规则指的是：当一台路由器从自己的IBGP对等体学习到一条BGP路由时（这类路由被称为IBGP路由），它将不能使用该条路由或把这条路由通告给自己的EBGP对等体，除非它又从IGP协议（例如OSPF等，此处也包含静态路由）学习到这条路由，也就是要求IBGP路由与IGP路由同步。同步规则主要用于规避BGP路由黑洞问题。</li>
-</ol>
-<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps6.jpg" alt="img"> </p>
-<p>路由黑洞：解决办法：</p>
-<p>①BGP–IGP互相引入   该方法不建议</p>
-<p>②IBGP全互联</p>
-<p>③MPLS</p>
-<h1 id="BGP属性"><a href="#BGP属性" class="headerlink" title="BGP属性"></a>BGP属性</h1><p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/image-20240511135334705.png" alt="image-20240511135334705"></p>
-<h1 id="AS-path属性："><a href="#AS-path属性：" class="headerlink" title="AS_path属性："></a>AS_path属性：</h1><p>该属性为公认必遵属性，是前往目标网络的路由经过的AS号列表；<br>作用：确保路由在EBGP对等体之间传递无环；另外也作为路由优选的衡量标准之一；<br>路由在被通告给EBGP对等体时，路由器会在该路由的AS_Path中追加上本地的AS号；路由被通告给IBGP对等体时，AS_Path不会发生改变。</p>
-<p><strong>AS_path防环机制</strong>：路由每经过一个AS就会在AS_path中记录经过的AS 号，当路由器收到update报文，检查发现AS_path中含有本AS号，不接收该路由，从而防止了路由环路的产生。</p>
-<p>AS_path影响路由优选：收到同一个网段多条路，比较AS_path属性，哪条路由的AS_Path属性值较短，也即AS号的个数更少，就优选哪条路由。</p>
-<p><strong>AS-PATH类型：</strong></p>
-<p>AS_SEQENCE：AS在传递时是有序的，默认就是该类型<br>AS_SET：无序的，在做路由聚合时可以使用该类型。路由聚合解决了两类问题，一是减轻了设备的负担，二是隐藏了明细的路由信息，减少了路由震荡的影响。但是路由聚合后，AS_Path属性丢失，存在产生环路的风险，为此可以通过AS_SET类型的AS_Path属性携带聚合前的AS路径信息。</p>
-<p>修改AS_path：</p>
-<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps7.jpg" alt="img"> </p>
-<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps8.jpg" alt="img"> </p>
-<p>①additive</p>
-<p>#</p>
-<p> acl number 2000  </p>
-<p> rule 5 permit source 10.10.10.10 0 </p>
-<p>#</p>
-<p>route-policy aa permit node 10 </p>
-<p> if-match acl 2000 </p>
-<p> apply as-path 500 additive</p>
-<p>#</p>
-<p>bgp 200</p>
-<p> peer 5.5.5.5 route-policy aa export</p>
-<p>②overwrite</p>
-<p>#</p>
-<p> acl number 2000  </p>
-<p> rule 5 permit source 10.10.10.10 0 </p>
-<p>#</p>
-<p>route-policy aa permit node 10 </p>
-<p> if-match acl 2000 </p>
-<p> apply as-path 500 overwrite</p>
-<p>#</p>
-<p>bgp 200</p>
-<p> peer 5.5.5.5 route-policy aa export</p>
-<h1 id="Origin属性"><a href="#Origin属性" class="headerlink" title="Origin属性"></a>Origin属性</h1><p>Origin属性用来定义路径信息的来源，标记一条路由是怎么成为BGP路由的。它有以下3种类型：</p>
-<ul>
-<li>IGP：具有最高的优先级。通过路由始发AS的IGP得到的路由信息，比如通过<strong>network</strong>命令注入到BGP路由表的路由，其Origin属性为IGP。</li>
-<li>EGP：优先级次之。通过EGP得到的路由信息，其Origin属性为EGP。</li>
-<li>Incomplete：优先级最低。通过其他方式学习到的路由信息。比如BGP通过<strong>import-route</strong>命令引入的路由，其Origin属性为Incomplete。</li>
-</ul>
-<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/image-20240511140106339.png" alt="image-20240511140106339"></p>
-<p>当去往同一个目的地存在多条不同Origin属性的路由时，在其他条件都相同的情况下，BGP将按如Origin的下顺序优选路由：IGP &gt; EGP &gt; Incomplete。也就是i &gt; e &gt; ?</p>
-<h1 id="Next-Hop"><a href="#Next-Hop" class="headerlink" title="Next-Hop"></a>Next-Hop</h1><ul>
-<li><p>BGP的下一跳属性和IGP的有所不同，不一定就是邻居的IP地址。通常情况下，Next_Hop属性遵循下面的规则：</p>
-<ul>
-<li>BGP Speaker在向EBGP对等体发布某条路由时，会把该路由信息的下一跳属性设置为本地与对端建立BGP邻居关系的接口地址。</li>
-<li>BGP Speaker将本地始发路由发布给IBGP对等体时，会把该路由信息的下一跳属性设置为本地与对端建立BGP邻居关系的接口地址。</li>
-<li>BGP Speaker在向IBGP对等体发布从EBGP对等体学来的路由时，并不改变该路由信息的下一跳属性。</li>
+<li>除了保证和STP格式基本一致之外，RSTP作了如下变化：<ul>
+<li>Type字段：配置BPDU类型不再是0而是2，所以运行STP的设备收到RSTP的配置BPDU时会丢弃</li>
+<li>Flag字段：使用了原来保留的中间6位，这样改变的配置BPDU叫做RST BPDU</li>
 </ul>
 </li>
 </ul>
-<p>IBGP在进行路由传递时，下一跳地址 不变会造成路由不可达这种情况，可以使用一下命令修改</p>
-<p>[AR2-bgp]peer 4.4.4.4 next-hop-local</p>
-<h1 id="Local-Preference"><a href="#Local-Preference" class="headerlink" title="Local_Preference"></a>Local_Preference</h1><p>Local_Preference即本地优先级属性，是公认任意属性，可以用于告诉AS中的路由器，哪条路径是离开本AS的首选路径。<br>Local_Preference属性值越大则BGP路由越优。缺省的Local_Preference值为<strong>100</strong>。<br>该属性<strong>只能被传递给IBGP对等体</strong>，而不能传递给EBGP对等体。<strong>越大越优。</strong></p>
-<p>注意事项：</p>
-<p>Local_Preference属性只能在IBGP对等体间传递（除非做了策略否则Local_Preference值在IBGP对等体间传递过程中不会丢失），而不能在EBGP对等体间传递，如果在EBGP对等体间收到的路由的路径属性中携带了Local_Preference，则会进行错误处理。<br>但是可以在AS边界路由器上使用Import方向的策略来修改Local_Preference属性值。也就是在收到路由之后，在本地为路由赋予Local_Preference。<br>使用bgp default local-preference命令修改缺省Local_Preference值，该值缺省为100。<br>路由器在向其EBGP对等体发送路由更新时，不能携带Local_Preference属性，但是对方接收路由之后，会在本地为这条路由赋一个缺省Local_Preference值（100），然后再将路由传递给自己的IBGP对等体。<br>本地使用network命令及import-route命令引入的路由， Local_Preference为缺省值100，并能在AS内向其他IBGP对等体传递，传递过程中除非受路由策略影响，否则Local_Preference不变</p>
-<h1 id="Community（团体）"><a href="#Community（团体）" class="headerlink" title="Community（团体）"></a>Community（团体）</h1><p>Community属性为可选过渡属性，是一种路由标记，用于简化路由策略的执行。<br>可以将某些路由分配一个特定的Community属性值，之后就可以基于Community值而不是网络前缀&#x2F;掩码信息来匹配路由并执行相应的策略了。</p>
-<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps9.jpg" alt="img"> </p>
-<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps10.jpg" alt="img"> </p>
-<h1 id="MED"><a href="#MED" class="headerlink" title="MED"></a>MED</h1><p>（Multi-Exit Discriminator，多出口鉴别器）是可选非过渡属性，是一种度量值，用于向外部对等体指出进入本AS的首选路径，即当进入本AS的入口有多个时，AS可以使用MED动态地影响其他AS选择进入的路径。<br>MED属性值<strong>越小则BGP路由越优</strong>。<br>MED主要用于在AS之间影响BGP的选路。MED被传递给EBGP对等体后，对等体在其AS内传递路由时，携带该MED值，但将路由再次传递给其EBGP对等体时，<strong>缺省不会携带MED属性</strong>。0-4294967295</p>
-<p>注意事项：</p>
-<p>缺省情况下，<strong>路由器只比较来自同一相邻AS的BGP路由的MED值</strong>，也就是说如果去往同一个目的地的两条路由来自不同的相邻AS，则不进行MED值的比较。<br>一台BGP路由器将路由通告给EBGP对等体时，是否携带MED属性，需要根据以下条件进行判断（不对EBGP对等体使用策略的情况下）：<br>如果该BGP路由是本地始发（本地通过network或import-route命令引入）的，则缺省携带MED属性发送给EBGP对等体。<br>如果该BGP路由为从BGP对等体学习到，那么该路由传递给EBGP对等体时缺省不会携带MED属性。<br>在IBGP对等体之间传递路由时，MED值会被保留并传递，除非部署了策略，否则MED值在传递过程中不发生改变也不会丢失。<br>如果路由器通过IGP学习到一条路由，并通过network或import-route的方式将路由引入BGP，产生的BGP路由的MED值继承路由在IGP中的metric。</p>
-<p>可以使用default med命令修改缺省的MED值，default med命令只对本设备上用import-route命令引入的路由和BGP的聚合路由生效。</p>
-<h1 id="Preferred-Value（协议首选值）"><a href="#Preferred-Value（协议首选值）" class="headerlink" title="Preferred-Value（协议首选值）"></a>Preferred-Value（协议首选值）</h1><p>是华为设备的特有属性，该属性仅在本地有效。当BGP路由表中存在到相同目的地的路由时，将优先选择Preferred-Value值高的路由。<br>取值范围：0~65535；该值越大，则路由越优先。<br>Preferred-Value只能在路由器本地配置，而且只影响本设备的路由优选。该属性不会传递给任何BGP对等体。</p>
-<h1 id="路由反射器"><a href="#路由反射器" class="headerlink" title="路由反射器"></a>路由反射器</h1><p>作用：解决IBGP全互联的问题</p>
-<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps1-1715409454233-11.jpg" alt="img"> </p>
-<p>1、RR从EBGP学习到的，会发送给client和非client</p>
-<p>2、RR从非client学习到的路由，会反射给自己的client，但是不会给非client</p>
-<p>3、RR从client学习到的路由，会反射非自己的非client和client</p>
-<p>非非不传</p>
-<p>路由反射器中的防环：<strong>Originator_ID，Cluster_List</strong><br>RR将一条BGP路由进行反射时会在反射出去的路由中增加Originator_ID，其值为本地AS中通告该路由的BGP路由器Router ID。<br>若AS内存在多个RR，则Originator_ID属性由第一个RR创建，并且不被后续的RR（若有）所更改。<br>当BGP路由器收到一条携带Originator_ID属性的IBGP路由，并且Originator_ID属性值与自身的Router ID相同，则它会忽略关于该条路由的更新。</p>
-<p>路由反射簇包括反射器RR及其Client。一个AS内允许存在多个路由反射簇（如下图）。<br>每一个簇都有唯一的簇ID（Cluster_ID，缺省时为RR的BGP Router ID ）。<br>当一条路由被反射器反射后，该RR（该簇）的Cluster_ID就会被添加至路由的Cluster_list属性中。<br>当RR收到一条携带Cluster_list属性的BGP路由，且该属性值中包含该簇的Cluster_ID时，RR认为该条路由存在环路，因此将忽略关于该条路由的更新。</p>
-<p>配置：</p>
-<p>在RR路由器上配置：</p>
-<p>Bgp 200</p>
-<p>   peer 6.6.6.6 reflect-client  –谁是client，就peer谁</p>
-<p>缺省情况下，每个路由反射器使用自己的Router ID作为集群ID。<br>[Huawei-bgp] reflector cluster-id  20.2.2.2</p>
-<h1 id="路由优选原则："><a href="#路由优选原则：" class="headerlink" title="路由优选原则："></a>路由优选原则：</h1><p>P   L  L  A  O  M  E  N 漂亮老男人</p>
-<p>p—Preference Value (越大越优，仅限路由器本地)</p>
-<p>L— Local Preference，本地优先级 (越大越优，同一AS内的路由器）</p>
-<p>L— 手动聚合-&gt;自动聚合-&gt;network-&gt;import，为本地始发</p>
-<p>A —AS Path (短的优先)</p>
-<p>O —Origin，起源i(network)&gt;e(EBGP)&gt;? (import-route)</p>
-<p>M—MED (值越小越优，本AS内或上游AS内所有路由器，EBGP邻居上设置)</p>
-<p>E— EBGP优于IBGP (前面都一样，比不出最优路径时)</p>
-<p>N— Next-Hop，下一跳(BGP选择IGP下一跳cost值最小的)</p>
-<p>9.优选Cluster-List最短的路由</p>
-<p>10.优选Router-ID（Origintor- ID）最小的设备通告的路由</p>
-<p>11.优选具有最小的IP地址的对等体通告的路由</p>
-<p>前八条全部相同形成路由负载分担</p>
+<h6 id="RST-BPDU报文格式："><a href="#RST-BPDU报文格式：" class="headerlink" title="RST BPDU报文格式："></a>RST BPDU报文格式：</h6><h6 id="RST-BPDU与STP配置BPDU报文格式不同点"><a href="#RST-BPDU与STP配置BPDU报文格式不同点" class="headerlink" title="RST BPDU与STP配置BPDU报文格式不同点"></a>RST BPDU与STP配置BPDU报文格式不同点</h6><ul>
+<li>BPDU类型，1 Byte，RST BPDU的类型值为0x02。</li>
+<li>标志，1 Byte，包括：<ul>
+<li>bit 7：TCA，表示拓扑变化确认；</li>
+<li>bit 6：Agreement，表示同意，用于P&#x2F;A机制；</li>
+<li>bit 5：Forwarding，表示转发状态；</li>
+<li>bit 4：Learning，表示学习状态；</li>
+<li>bit 3和bit 2：表示端口角色, 00表示未知端口, 01表示替代或备份端口, 10表示根端口, 11表示指定端口</li>
+<li>bit 1：Proposal，表示提议，用于P&#x2F;A机制；</li>
+<li>bit 0：TC，表示拓扑变化。</li>
+</ul>
+</li>
+</ul>
+<h5 id="改进点4：配置BPDU的处理"><a href="#改进点4：配置BPDU的处理" class="headerlink" title="改进点4：配置BPDU的处理"></a>改进点4：配置BPDU的处理</h5><h6 id="RSTP对配置BPDU的发送方式进行了改进"><a href="#RSTP对配置BPDU的发送方式进行了改进" class="headerlink" title="RSTP对配置BPDU的发送方式进行了改进"></a>RSTP对配置BPDU的发送方式进行了改进</h6><blockquote>
+<p> 在拓扑稳定后，无论非根桥设备是否接收到根桥传来的配置BPDU报文，非根桥设备仍然按照Hello Time规定的时间间隔发送配置BPDU，该行为完全由每台设备自主进行 </p>
+</blockquote>
+<h6 id="更短的BPDU超时时间"><a href="#更短的BPDU超时时间" class="headerlink" title="更短的BPDU超时时间"></a>更短的BPDU超时时间</h6><p>如果一个端口在超时时间（即三个周期，超时时间＝Hello Time×3）内没有收到上游设备发送过来的配置BPDU，那么该设备认为与此邻居之间的协商失败</p>
+<blockquote>
+<p> STP需要先等待一个Max Age </p>
+</blockquote>
+<h6 id="处理次优BPDU"><a href="#处理次优BPDU" class="headerlink" title="处理次优BPDU"></a>处理次优BPDU</h6><p>当一个端口收到上游的指定桥发来的RST BPDU报文时，该端口会将自身缓存的RST BPDU与收到的RST BPDU进行比较如果该端口缓存的RST BPDU优于收到的RST BPDU，那么该端口会直接丢弃收到的RST BPDU，立即回应自身缓存的RST BPDU，从而加快收敛速度</p>
+<ul>
+<li>STP：      STP只有指定端口会立即处理次优BPDU，其他端口会忽略次优BPDU，等到Max Age计时器超时后，缓存的次优BPDU才会老化，然后发送自身更优的BPDU，进行新一轮的拓扑收敛。 </li>
+<li>RSTP：   RSTP处理次优BPDU报文不再依赖于任何定时器，解决拓扑收敛，同时RSTP的任何端口角色都会处理次优BPDU，从而加快了拓扑收敛。</li>
+</ul>
+<h5 id="改进点5：快速收敛机制"><a href="#改进点5：快速收敛机制" class="headerlink" title="改进点5：快速收敛机制"></a>改进点5：快速收敛机制</h5><h6 id="快速收敛机制："><a href="#快速收敛机制：" class="headerlink" title="快速收敛机制："></a>快速收敛机制：</h6><ul>
+<li>如果网络中一个根端口失效，那么网络中最优的Alternate端口将成为根端口，进入Forwarding状态。因为通过这个Alternate端口连接的网段上必然有个指定端口可以通往根桥 </li>
+<li>如果网络中一指定端口失效，那么网络中最优的Backup端口将成为指定端口，进入Forwarding状态。因为Backup端口作为指定端口的备份，提供了另一条从根桥到相应网段的备份通路</li>
+</ul>
+<p> ##### 边缘端口 (Edge Port)机制：  </p>
+<blockquote>
+<p> 在RSTP里面，如果某一个端口位于整个网络的边缘，即不再与其他交换设备连接，而是直接与终端设备直连，这种端口可以设置为边缘端口 </p>
+</blockquote>
+<p>边缘端口不参与RSTP计算，可以由Discarding直接进入Forwarding状态，同时边缘端口的UP和Down，不会引起网络拓扑的变动</p>
+<p>但是一旦边缘端口收到配置BPDU，就丧失了边缘端口属性，成为普通STP端口，并重新进行生成树计算，从而引起网络震荡</p>
+<h6 id="Proposal-Agreement机制："><a href="#Proposal-Agreement机制：" class="headerlink" title="Proposal&#x2F;Agreement机制："></a>Proposal&#x2F;Agreement机制：</h6><p>简称P&#x2F;A机制，RSTP通过P&#x2F;A机制加快了上游端口进入Forwarding状态的速度。 当一个端口被选举成为指定端口之后,会先进入Discarding状态，再通过P&#x2F;A机制快速进入Forwarding状态</p>
+<p>事实上对于STP，指定端口的选择可以很快完成，主要的速度瓶颈在于：为了避免环路，必须等待足够长的时间，使全网的端口状态全部确定，也就是说必须要等待至少一个Forward Delay所有端口才能进行转发。 而RSTP的主要目的就是消除这个瓶颈，通过阻塞自己的非根端口来保证不会出现环路。而使用P&#x2F;A机制加快了上游端口进入Forwarding状态的速度。</p>
+<h5 id="改进点6：拓扑变更机制"><a href="#改进点6：拓扑变更机制" class="headerlink" title="改进点6：拓扑变更机制"></a>改进点6：拓扑变更机制</h5><p>在RSTP中检测拓扑是否发生变化只有一个标准：一个非边缘端口迁移到Forwarding状态。</p>
+<p>一旦检测到拓扑发生变化，将进行如下处理： 为本交换设备的所有非边缘指定端口和根端口启动一个TC While Timer，该计时器值是Hello Time的两倍。在这个时间内，清空状态发生变化的端口上学习到的MAC地址。 同时，由非边缘指定端口和根端口向外发送RST BPDU，其中TC置位。一旦TC While Timer超时，则停止发送RST BPDU。 其他交换设备接收到RST BPDU后，清空所有端口（除了收到RST BPDU的端口和边缘端口）学习到MAC地址，然后也为自己所有的非边缘指定端口和根端口启动TC While Timer，重复上述过程。 如此，网络中就会产生RST BPDU的泛洪。</p>
+<h4 id="RSTP与STP的兼容"><a href="#RSTP与STP的兼容" class="headerlink" title="RSTP与STP的兼容"></a>RSTP与STP的兼容</h4><blockquote>
+<p> RSTP可以兼容STP：RSTP可以和STP互操作，但是此时会丧失快速收敛等RSTP优势。 </p>
+</blockquote>
+<p>当一个网段里既有运行STP的交换设备又有运行RSTP的交换设备，STP交换设备会忽略RSTP的BPDU</p>
+<p>运行RSTP的交换设备在某端口上接收到运行STP的交换设备发出的配置BPDU，在两个Hello Time时间之后，便把自己的端口转换到STP工作模式，发送配置BPDU，从而实现了互操作。</p>
 ]]></content>
       <categories>
         <category>基础知识</category>
       </categories>
       <tags>
-        <tag>BGP</tag>
+        <tag>stp拓扑变更</tag>
       </tags>
   </entry>
   <entry>
@@ -1351,156 +1633,50 @@
       </tags>
   </entry>
   <entry>
-    <title>STP拓扑变更机制</title>
-    <url>/2024/05/08/STP%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4%E6%9C%BA%E5%88%B6/</url>
-    <content><![CDATA[<h1 id="为什么要有STP拓扑变化机制"><a href="#为什么要有STP拓扑变化机制" class="headerlink" title="为什么要有STP拓扑变化机制"></a>为什么要有STP拓扑变化机制</h1><p>网络中发生拓扑变化时，例如链路中断或接口异常Down等情况，由于MAC地址老化时间的存在（缺省为5分钟），如果不及时通知上游设备，则可能会导致上游设备的报文在这段时间内一直向一个不可达的链路发送。</p>
-<h5 id="拓扑改变导致MAC地址表错误"><a href="#拓扑改变导致MAC地址表错误" class="headerlink" title="拓扑改变导致MAC地址表错误"></a>拓扑改变导致MAC地址表错误</h5><p><img src="/2024/05/08/STP%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4%E6%9C%BA%E5%88%B6/1stp3434.png" alt="1stp3434"></p>
-<p> 本例中，SW3中的MAC地址表项定义了通过端口GigabitEthernet 0&#x2F;0&#x2F;2可以到达主机1，通过端口GigabitEthernet 0&#x2F;0&#x2F;3可以到达主机2。由于SW2的根端口产生故障，导致生成树拓扑重新收敛，在生成树拓扑完成收敛之后，从主机1到主机2的帧仍然不能到达目的地。这是因为MAC地址表项老化时间是300秒，主机2发往主机1的帧到达SW3后，SW3会继续通过端口GigabitEthernet 0&#x2F;0&#x2F;2转发该数据帧。那么该怎么快速恢复转发？</p>
-<p><img src="/2024/05/08/STP%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4%E6%9C%BA%E5%88%B6/2stp821462.png" alt="2stp821462"></p>
-<p>   拓扑变更以及MAC地址表项更新的具体过程如下：</p>
-<p>SW2感知到网络拓扑发生变化后，会立即向SW3发送TCN BPDU报文。<br>SW3收到SW2发来的TCN BPDU报文后，会把配置BPDU报文中的Flags的TCA位设置1，然后发送给SW2，告知SW2我已经收到你发送的TCN BPDU。<br>SW3向根桥转发TCN BPDU报文。<br>SW1把配置BPDU报文中的Flags的TC位和TCA位设置为1后发送，通知下游设备我已经收到你发送的TCN BPDU，并通知下游交换机把MAC地址表项的老化时间由默认的300 s修改为Forward Delay的时间（默认为15 s），之后会持续不断的发送TC bit &#x3D; 1的BPDU持续35s。<br>最多等待15 s之后，SW3中的错误MAC地址表项会被自动清除。此后，SW3就能重新开始MAC表项的学习及转发操作。</p>
-<p>说明：</p>
+    <title>WLAN基础配置（ap上线）</title>
+    <url>/2023/12/20/WLAN%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE%EF%BC%88ap%E4%B8%8A%E7%BA%BF%EF%BC%89/</url>
+    <content><![CDATA[<h1 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h1><h2 id="CAPWAP协议"><a href="#CAPWAP协议" class="headerlink" title="CAPWAP协议"></a>CAPWAP协议</h2><p>CAPWAP是基于UDP进行传输的应用层协议，CAPWAP协议在传输层运输两种类型的消息：</p>
 <ul>
-<li>TCN BPDU报文主要用来向上游设备乃至根桥通知拓扑变化。</li>
-<li>TCA标记置位的配置BPDU报文主要是上游设备用来告知下游设备已经知道拓扑变化，通知下游设备停止发送TCN BPDU报文。</li>
-<li>置位的TC标记的配置BPDU报文主要是上游设备用来告知下游设备拓扑发生变化，请下游设备直接删除桥MAC地址表项，从而达到快速收敛的目的。</li>
+<li>业务数据流量，封装转发无线数据帧 。——通过CAPWAP数据隧道。</li>
+<li>管理流量，管理AP和AC之间交换的管理消息 。——通过CAPWAP控制隧道。</li>
 </ul>
-<h5 id="感知拓扑改变"><a href="#感知拓扑改变" class="headerlink" title="感知拓扑改变"></a>感知拓扑改变</h5><p>什么情况下STP会感知到拓扑发生了改变呢？有下面四种！</p>
-<p>（1）当DP端口进入到Forwarding状态认为拓扑发生了改变。</p>
-<p><img src="/2024/05/08/STP%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4%E6%9C%BA%E5%88%B6/bian1014293.png" alt="bian1014293"></p>
-<p>如上图当S2的g0&#x2F;0&#x2F;3接口(与主机直接相连的接口都是DP端口)经过大概30s进入到Forwarding状态之后，S2的RP端口会立即向根桥发送一个TCN BPDU告知根桥拓扑发生了改变，根桥也会向S2交换机回复一个TC bit &#x3D; 1和TCA bit &#x3D; 1的BPDU，并且根桥会将TC bit &#x3D; 1的报文泛洪到全网交换机，持续35s。 S3的DP接口从shutdown重新进入到Forwarding状态与此情况类似。</p>
-<p>（2）根桥的DP失效直接发送TC BPDU。<br><img src="/2024/05/08/STP%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4%E6%9C%BA%E5%88%B6/bian272946542.png" alt="bian272946542"></p>
-<p> 如上图，当根桥的DP失效之后，S3交换机的RP也随即失效，DP立即成为RP并向S2的AP持续不断的发送TCN BPDU。当S2的AP经过大概30s进入到Forwarding状态之后会向S3的DP回复一个TCA bit &#x3D; 1的BPDU，告知S3我已收到你发送的TCN BPDU并且通过自己的RP将TCN BPDU发送给根桥，根桥也会向S2交换机回复一个TC bit &#x3D; 1和TCA bit &#x3D; 1的BPDU，并且根桥会将TC bit &#x3D; 1的报文泛洪到全网交换机持续35s。</p>
-<p>(3)RP失效或者RP进入到Forwarding状态。<br>        S3的RP失效其实等同于根桥的DP失效导致S3的RP失效。S2的RP失效等同于 1.拓扑改变导致MAC地址表错误。<br>(4)非根桥的DP端口失效不认为拓扑发生了改变。<br><img src="/2024/05/08/STP%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4%E6%9C%BA%E5%88%B6/bian44841788.png" alt="bian44841788"></p>
-<p>如上图两种情况，非根桥的DP失效都不会认为拓扑发生了改变。</p>
-<p>总结：<strong>stp发生拓扑变更的条件</strong>：<br>1、处于转发状态或者监听状态的端口过渡到阻塞状态，这个状态通常是链路故障<br>2、处于未启用状态的端口进入转发状态，这个状态通常是增加了新的链路<br>3、交换机从指定端口收到TCNBPDU报文。</p>
-<p><strong>stp缺点</strong>：1.收敛速度慢，故障切换时间太长（30-50秒）2.网络中大量主机频繁上下线，会导致TCN BPDU大量发送，导致Mac地址表不稳定</p>
-<h1 id="RSTP对STP的改进："><a href="#RSTP对STP的改进：" class="headerlink" title="RSTP对STP的改进："></a>RSTP对STP的改进：</h1><ul>
-<li>RSTP对STP的改进：<ul>
-<li>通过端口角色的增补，简化了生成树协议的理解及部署；</li>
-<li>端口状态的重新划分；</li>
-<li>配置BPDU格式的改变，充分利用了STP协议报文中的Flag字段，明确了端口角色；</li>
-<li>配置BPDU的处理发生变化；</li>
-<li>快速收敛；</li>
-<li>增加保护功能。</li>
-</ul>
-</li>
-</ul>
-<h5 id="改进点1：端口角色的改进："><a href="#改进点1：端口角色的改进：" class="headerlink" title="改进点1：端口角色的改进："></a>改进点1：端口角色的改进：</h5><p>RSTP的端口角色共有4种：根端口、指定端口、Alternate端口和Backup端口。</p>
-<p> 根端口和指定端口的作用同STP中定义，Alternate端口和Backup端口的描述如下：  </p>
+<p>CAPWAP数据和控制报文基于不同的UDP端口发送：</p>
 <ul>
-<li>从配置BPDU报文发送角度来看：<ul>
-<li>Alternate端口就是由于学习到其它网桥发送的配置BPDU报文而阻塞的端口</li>
-<li>Backup端口就是由于学习到自己发送的配置BPDU报文而阻塞的端口</li>
+<li>管理流量端口为UDP端口5246。</li>
+<li>业务数据流量端口为UDP端口5247。</li>
 </ul>
+<h2 id="AC连接方式"><a href="#AC连接方式" class="headerlink" title="AC连接方式"></a>AC连接方式</h2><p>直连模式下AC部署在用户的转发路径上，采用这种组网方式，对AC的吞吐量以及处理数据能力要求比较高，否则AC会是整个无线网络带宽的瓶颈。但用此种组网，组网架构清晰，组网实施起来简单</p>
+<p>在旁挂式组网中，AC只承载对AP的管理功能，管理流封装在CAPWAP隧道中传输。数据业务流可以通过CAPWAP数据隧道经AC转发，也可以不经过AC转发直接转发，后者无线用户业务流经汇聚交换机由汇聚交换机传输至上层网络。</p>
+<h2 id="WLAN的基本概念"><a href="#WLAN的基本概念" class="headerlink" title="WLAN的基本概念"></a>WLAN的基本概念</h2><ol>
+<li><p>BSS：一个AP所覆盖的范围，在一个BSS的服务区域内，STA可以相互通信。</p>
 </li>
-<li>从用户流量角度来看：<ul>
-<li>Alternate端口提供了从指定桥到根的另一条可切换路径，作为根端口的备份端口</li>
-<li>Backup端口作为指定端口的备份，提供了另一条从根桥到相应网段的备份通路</li>
-</ul>
+<li><p>BSSID：是无线网络的一个身份标识，用AP的MAC地址表示。</p>
 </li>
-</ul>
-<blockquote>
-<p> 给一个RSTP域内所有端口分配角色的过程就是整个拓扑收敛的过程 </p>
-</blockquote>
-<h5 id="改进点2：端口状态的改进"><a href="#改进点2：端口状态的改进" class="headerlink" title="改进点2：端口状态的改进"></a>改进点2：端口状态的改进</h5><p>RSTP的状态规范缩减为3种，根据端口是否转发用户流量和学习MAC地址来划分:</p>
-<ul>
-<li>Discarding状态：不转发用户流量也不学习MAC地址</li>
-<li>Learning状态：不转发用户流量但是学习MAC地址</li>
-<li>Forwarding状：既转发用户流量又学习MAC地址。</li>
-</ul>
-<table>
-<thead>
-<tr>
-<th align="left">STP端口状态</th>
-<th align="left">RSTP端口状态</th>
-<th align="left">端口在拓扑中的角色</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left">Forwarding</td>
-<td align="left">Forwarding</td>
-<td align="left">包括根端口、指定端口</td>
-</tr>
-<tr>
-<td align="left">Learning</td>
-<td align="left">Learning</td>
-<td align="left">包括根端口、指定端口</td>
-</tr>
-<tr>
-<td align="left">Listening</td>
-<td align="left">Discarding</td>
-<td align="left">包括根端口、指定端口</td>
-</tr>
-<tr>
-<td align="left">Blocking</td>
-<td align="left">Discarding</td>
-<td align="left">包括Alternate端口、Backup端口</td>
-</tr>
-<tr>
-<td align="left">Disabled</td>
-<td align="left">Discarding</td>
-<td align="left">包括Disable端口</td>
-</tr>
-</tbody></table>
-<h5 id="改进点3：配置BPDU-RST-BPDU"><a href="#改进点3：配置BPDU-RST-BPDU" class="headerlink" title="改进点3：配置BPDU - RST BPDU"></a>改进点3：配置BPDU - RST BPDU</h5><p><strong>RSTP的配置BPDU充分利用了STP报文中的Flag字段，明确了端口角色</strong></p>
-<ul>
-<li>除了保证和STP格式基本一致之外，RSTP作了如下变化：<ul>
-<li>Type字段：配置BPDU类型不再是0而是2，所以运行STP的设备收到RSTP的配置BPDU时会丢弃</li>
-<li>Flag字段：使用了原来保留的中间6位，这样改变的配置BPDU叫做RST BPDU</li>
-</ul>
+<li><p>SSID：表示无线网络的标识，用来区分不同的无线网络。例如，当我们在笔记本电脑上搜索可接入无线网络时，显示出来的网络名称就是SSID。</p>
 </li>
-</ul>
-<h6 id="RST-BPDU报文格式："><a href="#RST-BPDU报文格式：" class="headerlink" title="RST BPDU报文格式："></a>RST BPDU报文格式：</h6><h6 id="RST-BPDU与STP配置BPDU报文格式不同点"><a href="#RST-BPDU与STP配置BPDU报文格式不同点" class="headerlink" title="RST BPDU与STP配置BPDU报文格式不同点"></a>RST BPDU与STP配置BPDU报文格式不同点</h6><ul>
-<li>BPDU类型，1 Byte，RST BPDU的类型值为0x02。</li>
-<li>标志，1 Byte，包括：<ul>
-<li>bit 7：TCA，表示拓扑变化确认；</li>
-<li>bit 6：Agreement，表示同意，用于P&#x2F;A机制；</li>
-<li>bit 5：Forwarding，表示转发状态；</li>
-<li>bit 4：Learning，表示学习状态；</li>
-<li>bit 3和bit 2：表示端口角色, 00表示未知端口, 01表示替代或备份端口, 10表示根端口, 11表示指定端口</li>
-<li>bit 1：Proposal，表示提议，用于P&#x2F;A机制；</li>
-<li>bit 0：TC，表示拓扑变化。</li>
-</ul>
+<li><p>VAP<br>早期的AP只支持1个BSS，如果要在同一空间内部署多个BSS，则需要安放多个AP，这不但增加了成本，还占用了信道资源。为了改善这种状况，现在的AP通常支持创建出多个虚拟AP (Virtual Access Point, VAP)。如图16-13所示，它相当于交换机中的VLAN</p>
 </li>
-</ul>
-<h5 id="改进点4：配置BPDU的处理"><a href="#改进点4：配置BPDU的处理" class="headerlink" title="改进点4：配置BPDU的处理"></a>改进点4：配置BPDU的处理</h5><h6 id="RSTP对配置BPDU的发送方式进行了改进"><a href="#RSTP对配置BPDU的发送方式进行了改进" class="headerlink" title="RSTP对配置BPDU的发送方式进行了改进"></a>RSTP对配置BPDU的发送方式进行了改进</h6><blockquote>
-<p> 在拓扑稳定后，无论非根桥设备是否接收到根桥传来的配置BPDU报文，非根桥设备仍然按照Hello Time规定的时间间隔发送配置BPDU，该行为完全由每台设备自主进行 </p>
-</blockquote>
-<h6 id="更短的BPDU超时时间"><a href="#更短的BPDU超时时间" class="headerlink" title="更短的BPDU超时时间"></a>更短的BPDU超时时间</h6><p>如果一个端口在超时时间（即三个周期，超时时间＝Hello Time×3）内没有收到上游设备发送过来的配置BPDU，那么该设备认为与此邻居之间的协商失败</p>
-<blockquote>
-<p> STP需要先等待一个Max Age </p>
-</blockquote>
-<h6 id="处理次优BPDU"><a href="#处理次优BPDU" class="headerlink" title="处理次优BPDU"></a>处理次优BPDU</h6><p>当一个端口收到上游的指定桥发来的RST BPDU报文时，该端口会将自身缓存的RST BPDU与收到的RST BPDU进行比较如果该端口缓存的RST BPDU优于收到的RST BPDU，那么该端口会直接丢弃收到的RST BPDU，立即回应自身缓存的RST BPDU，从而加快收敛速度</p>
-<ul>
-<li>STP：      STP只有指定端口会立即处理次优BPDU，其他端口会忽略次优BPDU，等到Max Age计时器超时后，缓存的次优BPDU才会老化，然后发送自身更优的BPDU，进行新一轮的拓扑收敛。 </li>
-<li>RSTP：   RSTP处理次优BPDU报文不再依赖于任何定时器，解决拓扑收敛，同时RSTP的任何端口角色都会处理次优BPDU，从而加快了拓扑收敛。</li>
-</ul>
-<h5 id="改进点5：快速收敛机制"><a href="#改进点5：快速收敛机制" class="headerlink" title="改进点5：快速收敛机制"></a>改进点5：快速收敛机制</h5><h6 id="快速收敛机制："><a href="#快速收敛机制：" class="headerlink" title="快速收敛机制："></a>快速收敛机制：</h6><ul>
-<li>如果网络中一个根端口失效，那么网络中最优的Alternate端口将成为根端口，进入Forwarding状态。因为通过这个Alternate端口连接的网段上必然有个指定端口可以通往根桥 </li>
-<li>如果网络中一指定端口失效，那么网络中最优的Backup端口将成为指定端口，进入Forwarding状态。因为Backup端口作为指定端口的备份，提供了另一条从根桥到相应网段的备份通路</li>
-</ul>
-<p> ##### 边缘端口 (Edge Port)机制：  </p>
-<blockquote>
-<p> 在RSTP里面，如果某一个端口位于整个网络的边缘，即不再与其他交换设备连接，而是直接与终端设备直连，这种端口可以设置为边缘端口 </p>
-</blockquote>
-<p>边缘端口不参与RSTP计算，可以由Discarding直接进入Forwarding状态，同时边缘端口的UP和Down，不会引起网络拓扑的变动</p>
-<p>但是一旦边缘端口收到配置BPDU，就丧失了边缘端口属性，成为普通STP端口，并重新进行生成树计算，从而引起网络震荡</p>
-<h6 id="Proposal-Agreement机制："><a href="#Proposal-Agreement机制：" class="headerlink" title="Proposal&#x2F;Agreement机制："></a>Proposal&#x2F;Agreement机制：</h6><p>简称P&#x2F;A机制，RSTP通过P&#x2F;A机制加快了上游端口进入Forwarding状态的速度。 当一个端口被选举成为指定端口之后,会先进入Discarding状态，再通过P&#x2F;A机制快速进入Forwarding状态</p>
-<p>事实上对于STP，指定端口的选择可以很快完成，主要的速度瓶颈在于：为了避免环路，必须等待足够长的时间，使全网的端口状态全部确定，也就是说必须要等待至少一个Forward Delay所有端口才能进行转发。 而RSTP的主要目的就是消除这个瓶颈，通过阻塞自己的非根端口来保证不会出现环路。而使用P&#x2F;A机制加快了上游端口进入Forwarding状态的速度。</p>
-<h5 id="改进点6：拓扑变更机制"><a href="#改进点6：拓扑变更机制" class="headerlink" title="改进点6：拓扑变更机制"></a>改进点6：拓扑变更机制</h5><p>在RSTP中检测拓扑是否发生变化只有一个标准：一个非边缘端口迁移到Forwarding状态。</p>
-<p>一旦检测到拓扑发生变化，将进行如下处理： 为本交换设备的所有非边缘指定端口和根端口启动一个TC While Timer，该计时器值是Hello Time的两倍。在这个时间内，清空状态发生变化的端口上学习到的MAC地址。 同时，由非边缘指定端口和根端口向外发送RST BPDU，其中TC置位。一旦TC While Timer超时，则停止发送RST BPDU。 其他交换设备接收到RST BPDU后，清空所有端口（除了收到RST BPDU的端口和边缘端口）学习到MAC地址，然后也为自己所有的非边缘指定端口和根端口启动TC While Timer，重复上述过程。 如此，网络中就会产生RST BPDU的泛洪。</p>
-<h4 id="RSTP与STP的兼容"><a href="#RSTP与STP的兼容" class="headerlink" title="RSTP与STP的兼容"></a>RSTP与STP的兼容</h4><blockquote>
-<p> RSTP可以兼容STP：RSTP可以和STP互操作，但是此时会丧失快速收敛等RSTP优势。 </p>
-</blockquote>
-<p>当一个网段里既有运行STP的交换设备又有运行RSTP的交换设备，STP交换设备会忽略RSTP的BPDU</p>
-<p>运行RSTP的交换设备在某端口上接收到运行STP的交换设备发出的配置BPDU，在两个Hello Time时间之后，便把自己的端口转换到STP工作模式，发送配置BPDU，从而实现了互操作。</p>
+<li><p>ESS</p>
+</li>
+</ol>
+<p>为了满足实际业务的需求，需要对BSS的覆盖范围进行扩展。同时用户从一个BSS移动到另一个BSS时，不能感知到SSID的变化，则可以通过扩展服务集ESS (Extend Service Set)实现。如图6-14所示，这是由多个使用相同SSID的BSS组成，是采用相同的SSID的多个BSS组成的更大规模的虚拟BSS。</p>
+<h1 id="实验"><a href="#实验" class="headerlink" title="实验"></a>实验</h1><p><img src="/2023/12/20/WLAN%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE%EF%BC%88ap%E4%B8%8A%E7%BA%BF%EF%BC%89/tuopoa182409.png" alt="tuopoa182409"></p>
+<ol>
+<li>实验步骤</li>
+<li>步骤1：基本配置<br>LSW2的配置<br><Huawei>system-view<br>[Huawei]undo info-center enable<br>[Huawei]sysname LSW2<br>[LSW2]vlan 100<br>[LSW2-vlan100]quit<br>[LSW2]interface e0&#x2F;0&#x2F;1<br>[LSW2-Ethernet0&#x2F;0&#x2F;1]port link-type trunk<br>[LSW2-Ethernet0&#x2F;0&#x2F;1]port trunk allow-pass vlan 100<br>[LSW2-Ethernet0&#x2F;0&#x2F;1]port trunk pvid vlan 100<br>[LSW2-Ethernet0&#x2F;0&#x2F;1]quit<br>[LSW2]interface e0&#x2F;0&#x2F;2<br>[LSW2-Ethernet0&#x2F;0&#x2F;2]port link-type trunk<br>[LSW2-Ethernet0&#x2F;0&#x2F;2]port trunk allow-pass vlan 100<br>[LSW2-Ethernet0&#x2F;0&#x2F;2]port trunk pvid vlan 100<br>[LSW2-Ethernet0&#x2F;0&#x2F;2]quit<br>[LSW2]interface e0&#x2F;0&#x2F;3<br>[LSW2-Ethernet0&#x2F;0&#x2F;3]port link-type trunk<br>[LSW2-Ethernet0&#x2F;0&#x2F;3]port trunk allow-pass vlan 100<br>[LSW2-Ethernet0&#x2F;0&#x2F;3]quit<br>【思考1】：为什么LSW2只创建VLAN100，不用创建VLAN101？<br>解析：因为我们用的是隧道转发，数据到达AC1后，才会打上101标记然后发给LSW1<br>【思考2】：为什么连接AP的接口要打port trunk pvid vlan 100?<br>解析：交换机收到AP的数据帧打上100的tag发送<br>把带上100tag的数据帧去掉然后发给AP<br>LSW1的配置<br><Huawei>system-view<br>[Huawei]undo info-center enable<br>[Huawei]sysname LSW1<br>[LSW1]vlan batch 100 101<br>[LSW1]interface g0&#x2F;0&#x2F;1<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;1]port link-type trunk<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;1]port trunk allow-pass vlan 100<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;1]quit<br>[LSW1]interface g0&#x2F;0&#x2F;3<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;3]port link-type trunk<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;3]port trunk allow-pass vlan 100 101<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;3]quit<br>[LSW1]interface g0&#x2F;0&#x2F;2<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;2]port link-type access<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;2]port default vlan 101<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;2]quit<br>[LSW1]interface Vlanif 101<br>[LSW1-Vlanif101]ip address 192.168.101.1 24<br>[LSW1-Vlanif101]undo shutdown<br>[LSW1-Vlanif101]quit<br>AC1的配置<br><AC6005>system-view<br>[AC6005]undo info-center enable<br>[AC6005]sysname AC1<br>[AC1]vlan batch 100 101<br>[AC1]interface g0&#x2F;0&#x2F;1<br>[AC1-GigabitEthernet0&#x2F;0&#x2F;1]port link-type trunk<br>[AC1-GigabitEthernet0&#x2F;0&#x2F;1]port trunk allow-pass vlan 100 101<br>[AC1-GigabitEthernet0&#x2F;0&#x2F;1]quit<br>[AC1]interface Vlanif 100<br>[AC1-Vlanif100]ip address 192.168.100.1 24<br>[AC1-Vlanif100]undo shutdown<br>[AC1-Vlanif100]quit<br>R1的配置<br><Huawei>system-view<br>[Huawei]undo info-center enable<br>[Huawei]sysname R1<br>[R1]interface g0&#x2F;0&#x2F;0<br>[R1-GigabitEthernet0&#x2F;0&#x2F;0]ip address 192.168.101.2 24<br>[R1-GigabitEthernet0&#x2F;0&#x2F;0]undo shutdown<br>[R1-GigabitEthernet0&#x2F;0&#x2F;0]quit</Huawei></AC6005></Huawei></Huawei></li>
+<li>步骤2：设置DHCP<br>创建VLAN设置TRUNK<br>业务DHCP-让STA获得IP地址<br>[LSW1]dhcp enable<br>[LSW1]interface Vlanif 101<br>[LSW1-Vlanif101]dhcp select interface<br>[LSW1-Vlanif101]quit<br>管理DHCP-让AP获得IP地址<br><AC1>system-view<br>[AC1]dhcp enable<br>[AC1]interface Vlanif 100<br>[AC1-Vlanif100]dhcp select interface<br>[AC1-Vlanif100]quit</AC1></li>
+<li>步骤3：AC的配置</li>
+<li>AP上线<br>第一步：创建AP组<br><AC1>system-view<br>[AC1]wlan<br>[AC1-wlan-view]ap-group name x &#x2F;&#x2F;创建AP组名字叫x<br>[AC1-wlan-ap-group-x]quit<br>第二步：创建域管理模板并关联到AP组<br>[AC1]wlan<br>[AC1-wlan-view]regulatory-domain-profile name x1 &#x2F;&#x2F;创建域管理模板，名字叫x1<br>[AC1-wlan-regulate-domain-x1]country-code cn &#x2F;&#x2F;国家代码选择中国<br>[AC1-wlan-regulate-domain-x1]quit<br>[AC1-wlan-view]ap-group name x<br>[AC1-wlan-ap-group-x]regulatory-domain-profile x1 &#x2F;&#x2F;AP组的域管理模板是x1<br>Warning: Modifying the country code will clear channel, power and antenna gain c<br>onfigurations of the radio and reset the AP. Continue?[Y&#x2F;N]:y<br>[AC1-wlan-ap-group-x]quit<br>第三步：配置AC的接口源地址<br>[AC1]capwap source interface Vlanif 100 &#x2F;&#x2F;AC的接口源地址为VLAN100<br>第四步：离线导入AP<br>[AC1]wlan<br>[AC1-wlan-view]ap auth-mode mac-auth &#x2F;&#x2F;AP的认证模式为MAC认证<br>[AC1-wlan-view]ap-id 1 ap-mac 00e0-fcd5-1c70 &#x2F;&#x2F;AP的编号和MAC地址<br>[AC1-wlan-ap-1]ap-name ds &#x2F;&#x2F;AP的名字为ds<br>[AC1-wlan-ap-1]ap-group x &#x2F;&#x2F;AP属于AP组x<br>[AC1-wlan-view]ap-id 2 ap-mac 00e0-fc1e-3670 &#x2F;&#x2F;AP的编号和MAC地址<br>[AC1-wlan-ap-2]ap-name xs &#x2F;&#x2F;Ap的名字<br>[AC1-wlan-ap-2]ap-group x &#x2F;&#x2F;AP属于AP组x<br>Warning: This operation may cause AP reset. If the country code changes, it will<br>clear channel, power and antenna gain configurations of the radio, Whether to c<br>ontinue? [Y&#x2F;N]:y<br>思考：AP的MAC地址是怎么知道的？<br>读者可以通过在ap上使用命令“display interface Vlanif 1”查看当前ap的mac地址，然后再将mac地址进行绑定。<br>查看命令：<br>[AC1]display ap all<br>Info: This operation may take a few seconds. Please wait for a moment.done.<br>Total AP information:<br>nor : normal [2]<br>-—————————————————————————————–<br>ID MAC Name Group IP Type State STA Uptime<br>-—————————————————————————————–<br>1 00e0-fcd5-1c70 ds x 192.168.100.137 AP2050DN nor 0 11M:2S<br>2 00e0-fc1e-3670 xs x 192.168.100.42 AP2050DN nor 0 54S<br>-—————————————————————————————–<br>可以看到两个AP都获取了IP地址，<br>思考：以上过程一共几包？<br>AP获取IP地址4个包：discovery、offer、request、ack<br>CAPWAP的建立2个包：discovery request(udp 目的端口5246广播找AC) discovery response(单播回应AP)<br>AP接入控制2个包：join request(udp 5246端口 单播) join response<br>隧道维持2个包：数据隧道：keepalive(udp 5247) 控制隧道：echo(udp 5246)</AC1></li>
+<li>配置VLAN业务参数<br>第一步：创建安全模板<br>[AC1]wlan<br>[AC1-wlan-view]security-profile name y1 &#x2F;&#x2F;安全模板的名字叫y1<br>[AC1-wlan-sec-prof-y1]security wpa-wpa2 psk pass-phrase huawei@123 aes &#x2F;&#x2F;密码是huawei@123，用AES加密。<br>[AC1-wlan-sec-prof-y1]quit<br>第二步：创建SSID模板<br>[AC1]wlan<br>[AC1-wlan-view]ssid-profile name y2 &#x2F;&#x2F;ssid的模板名字叫y2<br>[AC1-wlan-ssid-prof-y2]ssid hcia &#x2F;&#x2F;ssid的名称叫hcia<br>[AC1-wlan-ssid-prof-y2]quit<br>[AC1-wlan-view]quit<br>第三步：创建VAP模板<br>[AC1]wlan<br>[AC1-wlan-view]vap-profile name y &#x2F;&#x2F;vap模板的名字叫y<br>[AC1-wlan-vap-prof-y]forward-mode tunnel &#x2F;&#x2F;转发模式为隧道<br>[AC1-wlan-vap-prof-y]service-vlan vlan-id 101 &#x2F;&#x2F;服务的VLAN为101<br>[AC1-wlan-vap-prof-y]security-profile y1 &#x2F;&#x2F;调用安全模板y1<br>[AC1-wlan-vap-prof-y]ssid-profile y2 &#x2F;&#x2F;调用SSID模板y2<br>[AC1-wlan-vap-prof-y]quit<br>第四步：在AP组里面调用VAP模板<br>[AC1-wlan-view]ap-group name x<br>[AC1-wlan-ap-group-x]vap-profile y wlan 1 radio 0 &#x2F;&#x2F;调用VAP模板y<br>[AC1-wlan-ap-group-x]vap-profile y wlan 1 radio 1 &#x2F;&#x2F;<br>思考：radio0 1 2 是什么意思？<br>思考：这相过程要几个包？<br>WLAN业务配置下发2个包：Configuration Update Request Configuration Update Response</li>
+<li>STA接入，可以看到有两个ssid为hcia的无线网络，在之前的配置中配置了radio 0 、1就是为了释放两个不同的射频信号，选择其中一个，输入之前创建的密码huawei@123</li>
+</ol>
 ]]></content>
       <categories>
-        <category>基础知识</category>
+        <category>ip实验</category>
       </categories>
       <tags>
-        <tag>stp拓扑变更</tag>
+        <tag>ap上线</tag>
+        <tag>wlan</tag>
       </tags>
   </entry>
   <entry>
@@ -1724,119 +1900,6 @@
       </tags>
   </entry>
   <entry>
-    <title>BGP路由优选</title>
-    <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/</url>
-    <content><![CDATA[<h1 id="BGP路由优选"><a href="#BGP路由优选" class="headerlink" title="BGP路由优选"></a>BGP路由优选</h1><h2 id="实验背景"><a href="#实验背景" class="headerlink" title="实验背景"></a>实验背景</h2><p>你是公司的网络管理员。公司的网络采用了BGP协议接入了两个服务运营商。公司自己采用了私有的AS号64512，ISP1的AS号为100，ISP2的AS号为200。通过AS100、AS200都可以到达相同的网络，你通过改变BGP的各种属性达到了调整路由走向的目的。</p>
-<span id="more"></span>
-
-<p>实验介绍：</p>
-<p>设备互联方式、互联接口地址如图所示，所有设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号，所有设备都使用Loopback0地址作为BGP Router ID。</p>
-<p>R1在AS100，R5在AS200，R2、R3、R4在AS64512。AS64512内运行OSPF，在互联接口（不包括连接外部AS的接口）、Loopback0接口上激活OSPF。</p>
-<p>EBGP对等体关系基于直连接口建立，IBGP对等体关系基于Loopback0接口建立。</p>
-<p>R1、R5上存在相同的网段172.16.1.0&#x2F;24、172.16.2.0&#x2F;24、172.16.3.0&#x2F;24、172.16.4.0&#x2F;24，在R1、R5上将其发布到BGP，以用于BGP路由优选。</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/tuopu22sd182306.png" alt="tuopu22sd182306"></p>
-<p>配置ip，配置bgp：略</p>
-<p>#在R1、R5上将Loopback1、Loopback2、Loopback3、Loopback4接口路由发布到BGP中</p>
-<p>[R1]bgp 100</p>
-<p>[R1-bgp] network 172.16.1.0 24</p>
-<p>[R1-bgp] network 172.16.2.0 24</p>
-<p>[R1-bgp] network 172.16.3.0 24</p>
-<p>[R1-bgp] network 172.16.4.0 24</p>
-<p>[R5]bgp 200</p>
-<p>[R5-bgp] network 172.16.1.0 24</p>
-<p>[R5-bgp] network 172.16.2.0 24</p>
-<p>[R5-bgp] network 172.16.3.0 24</p>
-<p>[R5-bgp] network 172.16.4.0 24</p>
-<p>#在R3上查看BGP路由表，检查BGP路由是否成功学习</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/r3chakandp128185306.png" alt="r3chakandp128185306"></p>
-<p>R3已经成功学习R1、R5发布的路由，此时所有路由都优选由R2通告的。</p>
-<h2 id="修改AS-Path属性"><a href="#修改AS-Path属性" class="headerlink" title="修改AS_Path属性"></a>修改AS_Path属性</h2><p>在R1上通过路由策略修改BGP路由172.16.1.0&#x2F;24的 AS_Path属性值，使得R3优选R5发布的BGP路由172.16.1.0&#x2F;24。</p>
-<p>#创建IP前缀列表1，匹配Loopback1接口路由</p>
-<p>[R1]ip ip-prefix 1 permit 172.16.1.0 24 greater-equal 24 less-equal 24</p>
-<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改AS_Path属性值</p>
-<p>[R1]route-policy hcip permit node 10</p>
-<p>[R1-route-policy] if-match ip-prefix 1</p>
-<p>[R1-route-policy] apply as-path 300 400 additive</p>
-<p>[R1-route-policy] quit</p>
-<p>[R1]route-policy hcip permit node 20</p>
-<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
-<p>#对向BGP对等体R2通告的BGP路由应用Route-Policy</p>
-<p>[R1]bgp 100</p>
-<p>[R1-bgp] peer 10.0.12.2 route-policy hcip export</p>
-<p>#在R1上触发出方向的软复位，刷新对外通告的BGP路由</p>
-<p><R1>refresh bgp all export</R1></p>
-<p>#在R3上查看BGP路由172.16.1.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/as5cs28190005.png" alt="as5cs28190005"></p>
-<p>此时R3优选R4通告的BGP路由172.16.1.0&#x2F;24，R2通告的未被优选的原因是AS_Path长度。</p>
-<h2 id="修改Local-Preference属性"><a href="#修改Local-Preference属性" class="headerlink" title="修改Local_Preference属性"></a>修改Local_Preference属性</h2><p>local_Preference：默认100，越大越优先，只能在ibgp对等体之间传递</p>
-<p>在R4上通过路由策略修改BGP路由172.16.2.0&#x2F;24的Local_Preference属性值，使得R3优选R4通告的BGP路由172.16.2.0&#x2F;24。</p>
-<p>#创建IP前缀列表1，匹配BGP路由172.16.2.0&#x2F;24</p>
-<p>[R4]ip ip-prefix 1 permit 172.16.2.0 24 greater-equal 24 less-equal 24</p>
-<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改Local_Preference属性值</p>
-<p>[R4]route-policy hcip permit node 10</p>
-<p>[R4-route-policy] if-match ip-prefix 1</p>
-<p>[R4-route-policy] apply local-preference 200</p>
-<p>[R4-route-policy] quit</p>
-<p>[R4]route-policy hcip permit node 20</p>
-<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
-<p>#对向BGP对等体R3通告的BGP路由应用Route-Policy</p>
-<p>[R4]bgp 64512</p>
-<p>[R4-bgp] peer 10.0.3.3 route-policy hcip export</p>
-<p>#在R4上触发出方向的软复位，刷新对外通告的BGP路由</p>
-<p><R4>refresh bgp all export</R4></p>
-<p>#在R3上查看BGP路由172.16.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/local55chakan192014.png" alt="local55chakan192014"></p>
-<p>此时R3优选R4通告的BGP路由172.16.2.0&#x2F;24，R2通告的BGP路由其Local_Preference值为100，小于R3通告的BGP路由Local_Preference值200，因此R2通告的BGP路由未被优选。</p>
-<h2 id="修改MED属性"><a href="#修改MED属性" class="headerlink" title="修改MED属性"></a>修改MED属性</h2><p>在R2上通过路由策略修改BGP路由172.16.3.0&#x2F;24的MED属性值，使得R3优选R5发布的BGP路由172.16.3.0&#x2F;24。</p>
-<p>#创建IP前缀列表1，匹配BGP路由172.16.3.0&#x2F;24</p>
-<p>[R2]ip ip-prefix 1 permit 172.16.3.0 24 greater-equal 24 less-equal 24</p>
-<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改MED属性值</p>
-<p>[R2]route-policy hcip permit node 10</p>
-<p>[R2-route-policy] if-match ip-prefix 1</p>
-<p>[R2-route-policy] apply cost 200</p>
-<p>[R2-route-policy] quit</p>
-<p>[R2]route-policy hcip permit node 20</p>
-<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
-<p>#对来自BGP对等体R1的BGP路由应用Route-Policy</p>
-<p>[R2]bgp 64512</p>
-<p>[R2-bgp] peer 10.0.12.1 route-policy hcip import</p>
-<p>#在R2上触发入方向的软复位，刷新接收到的BGP路由</p>
-<p><R2>refresh bgp all import</R2></p>
-<p>#在R3上配置允许比较来自不同AS的BGP路由的MED值</p>
-<p>[R3]bgp 64512</p>
-<p>[R3-bgp] compare-different-as-med  </p>
-<p>缺省情况下，不比较来自不同AS邻居的BGP的MED属性值。</p>
-<p>#在R3上查看BGP路由172.16.3.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/medchakanf2735.png" alt="medchakanf2735"></p>
-<p>R2通告的BGP路由172.16.3.0&#x2F;24其MED值为200，而R4通告BGP路由MED值为0，R3优选MED值较小的BGP路由，因此R2通告的BGP路由未被优选。</p>
-<h2 id="修改preferred-value属性"><a href="#修改preferred-value属性" class="headerlink" title="修改preferred-value属性"></a>修改preferred-value属性</h2><p>preferred-value：华为特有的属性值，仅在本地有效，当bgp存在到相同的路由时，将优选prefeerred-value大的路由。只能在路由器本地配置，只影响本设备的路由优选，不会传递给任何bgp对等体。</p>
-<p>在R3上通过路由策略修改BGP路由172.16.4.0&#x2F;24的preferred-value属性值，使得R3优选R4通告的BGP路由172.16.4.0&#x2F;24。</p>
-<p>#创建IP前缀列表1，匹配BGP路由172.16.4.0&#x2F;24</p>
-<p>[R3]ip ip-prefix 1 permit 172.16.4.0 24 greater-equal 24 less-equal 24</p>
-<p>#创建Route-Policy hcip，并创建节点10，在其中调用IP前缀列表1，修改preferred-value属性值</p>
-<p>[R3]route-policy hcip permit node 10</p>
-<p>[R3-route-policy] if-match ip-prefix 1</p>
-<p>[R3-route-policy] apply preferred-value 300</p>
-<p>[R3-route-policy] quit</p>
-<p>[R3]route-policy hcip permit node 20</p>
-<p>注意创建一个空节点，对于另外3条BGP路由不执行任何操作。</p>
-<p>#对来自BGP对等体R4的BGP路由应用Route-Policy</p>
-<p>[R3]bgp 64512</p>
-<p>[R3-bgp] peer 10.0.4.4 route-policy hcip import</p>
-<p>#在R3上触发入方向的软复位，刷新收到的BGP路由</p>
-<p><R3>refresh bgp all import</R3></p>
-<p>#在R3上查看BGP路由172.16.4.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/prexiiuhai8193458.png" alt="prexiiuhai8193458"></p>
-<p>R4通告的BGP路由172.16.3.0&#x2F;24其preferred-value值为300，而R2通告的preferred-value值为0，R3优选preferred-value值较大的BGP路由，因此R3优选R4通告的BGP路由。</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>BGP路由优选</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>nat实验</title>
     <url>/2023/11/25/nat%E5%AE%9E%E9%AA%8C/</url>
     <content><![CDATA[<h1 id="静态nat"><a href="#静态nat" class="headerlink" title="静态nat"></a>静态nat</h1><p>静态NAT实现了私有地址和公有地址的一对一映射。如果希望一台主机优先使用某个关联地址，或者想要外部网络使用一个指定的公网地址访问内部服务器时，可以使用静态NAT。但是在大型网络中，这种一对一的IP地址映射无法缓解公用地址短缺的问题。</p>
@@ -1899,6 +1962,96 @@
       </categories>
       <tags>
         <tag>nat</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>opsf总结</title>
+    <url>/2024/04/18/opsf%E6%80%BB%E7%BB%93/</url>
+    <content><![CDATA[<h1 id="ospf协议工作原理"><a href="#ospf协议工作原理" class="headerlink" title="ospf协议工作原理"></a>ospf协议工作原理</h1><p>工作过程：①建立邻居关系（hello   2-way状态）每台路由器都会产生lsa，路由器将接收到的lsa放入自己的lsdb中；②同步LSDB（DD、LSR、LSU、LSACK    full状态）；③计算路由（本路由器通过自己的LSDB，以自己为根节点，计算最短路径树，最终得到路由）SPF算法；</p>
+<p>ospf支持的网络类型：广播、NBMA、点到点、点到多点</p>
+<p>ospf计算；计算路由+计算拓扑</p>
+<p>ospf报文采用IP封装，协议号89，</p>
+<p>ospfv2（ipv4），ospfv3（ipv6）</p>
+<p>ospf组播更新</p>
+<p>224.0.0.5（所有运行ospf协议的路由器侦听）</p>
+<p>224.0.0.6（DR和BDR侦听）</p>
+<h1 id="Router-id"><a href="#Router-id" class="headerlink" title="Router id"></a>Router id</h1><p>在自治系统中唯一标识一台运行ospf的路由器，32位无符号整数</p>
+<p>选举规则：手动配置（建议），如果没有手动配置，则路由器使用Loopback接口中最大的IP地址作为Router id，如果没有配置Loopback接口，则使用物理接口中最大的IP地址</p>
+<h1 id="Cost值"><a href="#Cost值" class="headerlink" title="Cost值"></a>Cost值</h1><p>缺省接口cost&#x3D;（100mib&#x2F;s）&#x2F; 接口带宽，修改100mid&#x2F;s改变cost</p>
+<p>也可以直接修改</p>
+<p>累计cost作为开销值，流量从源网络到目的网络所经过所有路由器的出接口的cost总和</p>
+<h1 id="Hello报文"><a href="#Hello报文" class="headerlink" title="Hello报文"></a>Hello报文</h1><p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/%E5%9B%BE%E7%89%871.png" alt="图片1"></p>
+<p>发送间隔10s，失效40s，修改发送，失效也变，失效始终为发送的4倍</p>
+<p>命令：接口视图下，ospf timer hello 10</p>
+<p>ospf邻居建立失败 ，可能原因：①物理链路故障；②ospf版本不一致；③区域ID不一致；④认证类型不一致；⑤认证数据不一致；⑥掩码不一致；（只出现在广播型网络中，点到点网络不检查掩码信息）⑦hello报文间隔不一致；⑧router id一致；（华为设备遇到router id一致，会重新配置router id）</p>
+<h1 id="DD报文"><a href="#DD报文" class="headerlink" title="DD报文"></a>DD报文</h1><p>DD报文部分字段解释<br>I：当发送连续多个DD报文时，如果这是第一个DD报文，则置为1，否则置为0。<br>M (More)：当发送连续多个DD报文时，如果这是最后一个DD报文，则置为0。否则置为1，表示后面还有其他的DD报文。<br>MS (Master&#x2F;Slave)：当两台OSPF路由器交换DD报文时，首先需要确定双方的主从关系，Router ID大的一方会成为Master。当值为1时表示发送方为Master。<br>DD sequence number：DD报文序列号。主从双方利用序列号来保证DD报文传输的可靠性和完整性。</p>
+<p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/%E5%9B%BE%E7%89%872.png" alt="图片2"></p>
+<p>链路状态类型、链路状态ID、通告路由器三元组唯一地标识了一个LSA。<br>链路状态老化时间 、链路状态序列号 、校验和用于判断LSA的新旧</p>
+<h1 id="ospf状态机"><a href="#ospf状态机" class="headerlink" title="ospf状态机"></a>ospf状态机</h1><p>之前的手写笔记😍</p>
+<p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/QQ%E5%9B%BE%E7%89%8720240418204859.jpg" alt="QQ图片20240418204859"></p>
+<p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/QQ%E5%9B%BE%E7%89%8720240418204932.jpg" alt="QQ图片20240418204932"></p>
+<p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/QQ%E5%9B%BE%E7%89%8720240418204926.jpg" alt="QQ图片20240418204926"></p>
+<h1 id="DR和BDR"><a href="#DR和BDR" class="headerlink" title="DR和BDR"></a>DR和BDR</h1><p>既侦听224.0.0.5也侦听224.0.0.6</p>
+<p>每个网段选举一个</p>
+<p>DR：指定路由器，负责在MA网络中建立和维护邻接关系，并负责lsa同步</p>
+<p>DR和其他所有路由器形成邻接关系，其他路由器之间不直接交换链路状态信息</p>
+<p>在DR失效时候，BDR接替</p>
+<p>DR默认优先级1（0-255）越大越优，非抢占，优先级为0的不参与选举</p>
+<h1 id="Router-LSA（1类）"><a href="#Router-LSA（1类）" class="headerlink" title="Router LSA（1类）"></a>Router LSA（1类）</h1><p>单区域中会用到1类、2类LSA</p>
+<p>Router LSA—1类LSA  <strong>所有的路由器都会产生</strong>，描述本路由器的信息  泛洪区域：本区域</p>
+<p>Router LSA使用Link来承载路由器直连接口的信息。<br>每条Link均包含“链路类型”、“链路ID”、“链路数据”以及“度量值”这几个关键信息。<br>路由器可能会采用一个或者多个Link来描述某个接口。<img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/%E5%9B%BE%E7%89%873.png" alt="图片3"></p>
+<p>广播型网络中链路类型：TransNet</p>
+<p>点到点网络中链路类型：point-to-point  （拓扑信息）、stubnet（网络信息）</p>
+<p>Router LSA中链路状态类型、链路状态ID、通告路由器用谁表示：</p>
+<p>链路状态类型：router</p>
+<p>链路状态ID：本路由器的router id</p>
+<p>通告路由器：本路由</p>
+<h1 id="Network-LSA（2类）"><a href="#Network-LSA（2类）" class="headerlink" title="Network LSA（2类）"></a>Network LSA（2类）</h1><p>Network  LSA–2类LSA  DR路由器   泛洪区域：本区域</p>
+<p>Network LSA中链路状态类型、链路状态ID、通告路由器用谁表示：</p>
+<p>链路状态类型：network</p>
+<p>链路状态ID：DR路由器的接口IP地址</p>
+<p>通告路由器：DR路由器的router id</p>
+<h1 id="Network-LSA（3类）"><a href="#Network-LSA（3类）" class="headerlink" title="Network LSA（3类）"></a>Network LSA（3类）</h1><p>3类LSA   ABR产生，泛洪范围本区域  作用：用于向一个区域通告到达另一个区域的路由</p>
+<p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/%E5%9B%BE%E7%89%874.png" alt="图片4"></p>
+<p><strong>区域间防环</strong>：</p>
+<p>1）非骨干区必须和骨干区area0相连，非骨干区不能直接进行通信</p>
+<p>2）三类LSA传递是 单向的</p>
+<p>3）从非骨干区域收到的3类LSA不能用于区域间路由的计算。</p>
+<h1 id="AS-External-LSA（5类）"><a href="#AS-External-LSA（5类）" class="headerlink" title="AS External LSA（5类）"></a>AS External LSA（5类）</h1><p>AS-external LSA（5类LSA）：由ASBR产生，描述到达AS外部的路由，该LSA会被通告到所有的区域</p>
+<p>LS Type：取值5，代表AS-external-LSA。<br>Link State ID：外部路由的目的网络地址。<br>Advertising Router：生成该LSA的Router ID。<br>Network Mask：网络掩码。</p>
+<h1 id="ASBR-Summary-LSA（4类）"><a href="#ASBR-Summary-LSA（4类）" class="headerlink" title="ASBR-Summary LSA（4类）"></a>ASBR-Summary LSA（4类）</h1><p>ASBR-Summary LSA（4类LSA）：由ABR产生，描述到ASBR的路由，通告给除ASBR所在区域的其他相关区域。</p>
+<p>LS Type：取值4，代表ASBR-Summary LSA。<br>Link State ID ：ASBR的Router ID。<br>Advertising Router:生成LSA的Router ID。 </p>
+<p>ospf外部路由在引入时，开销值类型有两种：默认情况是type-2</p>
+<p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/wps1.jpg" alt="img"> </p>
+<p>配置：[R7-ospf-1]import-route direct type 1</p>
+<p>OSPF路由遵循以下优先级顺序，区域内路由&gt;区域间路由&gt;Metric-Type-1外部路由&gt;Metric-Type-2外部路由。</p>
+<h1 id="ospf路由汇总"><a href="#ospf路由汇总" class="headerlink" title="ospf路由汇总"></a>ospf路由汇总</h1><p>OSPF路由汇总的类型：<br>在ABR执行路由汇总：对区域间的路由执行路由汇总。<br>在ASBR执行路由汇总：对引入的外部路由执行路由汇总。</p>
+<p>区域间路由汇总在ABR设备上配置：</p>
+<p>[R6-ospf-1-area-0.0.0.3]abr-summary 172.16.0.0 255.255.252.0</p>
+<p>外部路由汇总在ASBR上配置：</p>
+<p>[R8-ospf-1]asbr-summary 10.1.0.0 255.255.240.0</p>
+<h1 id="ospf认证"><a href="#ospf认证" class="headerlink" title="ospf认证"></a>ospf认证</h1><p>OSPF支持报文认证功能，只有通过认证的OSPF报文才能被接收。<br>路由器支持两种OSPF报文认证方式，当两种认证方式都存在时，优先使用接口认证方式：<br>区域认证方式：一个OSPF区域中所有的路由器在该区域下的认证模式和口令必须一致。</p>
+<p>[R6-ospf-1-area-0.0.0.3]authentication-mode md5 1 cipher huawei</p>
+<p>该区域中所有路由器都要配置<br>接口认证方式：相邻路由器直连接口下的认证模式和口令必须一致。<br>[R2-GigabitEthernet0&#x2F;0&#x2F;0]ospf authentication-mode md5 1 cipher huawei</p>
+<p>在一条链路上的所有接口下配置</p>
+<h1 id="stub区域"><a href="#stub区域" class="headerlink" title="stub区域"></a>stub区域</h1><p>1、2、3、3类缺省LSA（ABR产生的）</p>
+<p>Stub区域的ABR不向Stub区域内传播它接收到的AS外部路由（也就是4类、5类LSA），Stub区域中路由器的LSDB、路由表规模都会大大减小。<br>为保证Stub区域能够到达AS外部，Stub区域的ABR将生成一条缺省路由（使用3类LSA描述）。</p>
+<p>配置Stub区域时需要注意下列几点：<br>骨干区域不能被配置为Stub区域。<br>Stub区域中的所有路由器都必须将该区域配置为Stub。<br>Stub区域内不能引入也不接收AS外部路由。<br>虚连接不能穿越Stub区域。</p>
+<h1 id="Totally-Stub区域"><a href="#Totally-Stub区域" class="headerlink" title="Totally Stub区域"></a>Totally Stub区域</h1><p>1、2、3类缺省LSA（ABR产生的）</p>
+<p>Totally Stub区域既不允许AS外部路由在本区域内传播，也不允许区域间路由在本区域内传播。<br>Totally Stub区域内的路由器通过本区域ABR下发的缺省路由（使用3类LSA描述）到达其他区域，以及AS外部<br>配置Totally Stub区域时需要注意：<br>与Stub区域配置的区别在于，在ABR上需要追加no-summary关键字。</p>
+<h1 id="NSSA"><a href="#NSSA" class="headerlink" title="NSSA"></a>NSSA</h1><p>1、2、3、7类、7类缺省LSA（ABR产生的）</p>
+<p>NSSA区域 相对于stub区别在于，可以引入外部路由，外部路由引入后，会以7类LSA在NSSA区域中泛洪，然后 在ABR设备上将7类LSA转化成5类LSA在其他区域 泛洪</p>
+<p>Totally  NSSA：1、2、3缺省（ABR产生）、7类、7类缺省LSA（ABR产生的）</p>
+<h1 id="Silent-Interface"><a href="#Silent-Interface" class="headerlink" title="Silent-Interface"></a>Silent-Interface</h1><p>Silent-Interface有以下特性：<br>Silent-Interface不会接收和发送OSPF报文。<br>Silent-Interface的直连路由仍可以发布出去。</p>
+<p>通常我们会 将连接终端或者服务器的接口设置成Silent-Interface</p>
+<p>[R1]ospf<br>[R1-ospf-1]area 0<br>[R1-ospf-1-area-0.0.0.0]network 192.168.4.0 0.0.0.255<br>[R1-ospf-1]silent-interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
+<h1 id="路由器对lsa处理流程"><a href="#路由器对lsa处理流程" class="headerlink" title="路由器对lsa处理流程"></a>路由器对lsa处理流程</h1><p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/QQ%E5%9B%BE%E7%89%8720240418211229.jpg" alt="QQ图片20240418211229"></p>
+]]></content>
+      <categories>
+        <category>基础知识</category>
+      </categories>
+      <tags>
+        <tag>ospf</tag>
       </tags>
   </entry>
   <entry>
@@ -2070,143 +2223,6 @@
       </tags>
   </entry>
   <entry>
-    <title>WLAN基础配置（ap上线）</title>
-    <url>/2023/12/20/WLAN%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE%EF%BC%88ap%E4%B8%8A%E7%BA%BF%EF%BC%89/</url>
-    <content><![CDATA[<h1 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h1><h2 id="CAPWAP协议"><a href="#CAPWAP协议" class="headerlink" title="CAPWAP协议"></a>CAPWAP协议</h2><p>CAPWAP是基于UDP进行传输的应用层协议，CAPWAP协议在传输层运输两种类型的消息：</p>
-<ul>
-<li>业务数据流量，封装转发无线数据帧 。——通过CAPWAP数据隧道。</li>
-<li>管理流量，管理AP和AC之间交换的管理消息 。——通过CAPWAP控制隧道。</li>
-</ul>
-<p>CAPWAP数据和控制报文基于不同的UDP端口发送：</p>
-<ul>
-<li>管理流量端口为UDP端口5246。</li>
-<li>业务数据流量端口为UDP端口5247。</li>
-</ul>
-<h2 id="AC连接方式"><a href="#AC连接方式" class="headerlink" title="AC连接方式"></a>AC连接方式</h2><p>直连模式下AC部署在用户的转发路径上，采用这种组网方式，对AC的吞吐量以及处理数据能力要求比较高，否则AC会是整个无线网络带宽的瓶颈。但用此种组网，组网架构清晰，组网实施起来简单</p>
-<p>在旁挂式组网中，AC只承载对AP的管理功能，管理流封装在CAPWAP隧道中传输。数据业务流可以通过CAPWAP数据隧道经AC转发，也可以不经过AC转发直接转发，后者无线用户业务流经汇聚交换机由汇聚交换机传输至上层网络。</p>
-<h2 id="WLAN的基本概念"><a href="#WLAN的基本概念" class="headerlink" title="WLAN的基本概念"></a>WLAN的基本概念</h2><ol>
-<li><p>BSS：一个AP所覆盖的范围，在一个BSS的服务区域内，STA可以相互通信。</p>
-</li>
-<li><p>BSSID：是无线网络的一个身份标识，用AP的MAC地址表示。</p>
-</li>
-<li><p>SSID：表示无线网络的标识，用来区分不同的无线网络。例如，当我们在笔记本电脑上搜索可接入无线网络时，显示出来的网络名称就是SSID。</p>
-</li>
-<li><p>VAP<br>早期的AP只支持1个BSS，如果要在同一空间内部署多个BSS，则需要安放多个AP，这不但增加了成本，还占用了信道资源。为了改善这种状况，现在的AP通常支持创建出多个虚拟AP (Virtual Access Point, VAP)。如图16-13所示，它相当于交换机中的VLAN</p>
-</li>
-<li><p>ESS</p>
-</li>
-</ol>
-<p>为了满足实际业务的需求，需要对BSS的覆盖范围进行扩展。同时用户从一个BSS移动到另一个BSS时，不能感知到SSID的变化，则可以通过扩展服务集ESS (Extend Service Set)实现。如图6-14所示，这是由多个使用相同SSID的BSS组成，是采用相同的SSID的多个BSS组成的更大规模的虚拟BSS。</p>
-<h1 id="实验"><a href="#实验" class="headerlink" title="实验"></a>实验</h1><p><img src="/2023/12/20/WLAN%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE%EF%BC%88ap%E4%B8%8A%E7%BA%BF%EF%BC%89/tuopoa182409.png" alt="tuopoa182409"></p>
-<ol>
-<li>实验步骤</li>
-<li>步骤1：基本配置<br>LSW2的配置<br><Huawei>system-view<br>[Huawei]undo info-center enable<br>[Huawei]sysname LSW2<br>[LSW2]vlan 100<br>[LSW2-vlan100]quit<br>[LSW2]interface e0&#x2F;0&#x2F;1<br>[LSW2-Ethernet0&#x2F;0&#x2F;1]port link-type trunk<br>[LSW2-Ethernet0&#x2F;0&#x2F;1]port trunk allow-pass vlan 100<br>[LSW2-Ethernet0&#x2F;0&#x2F;1]port trunk pvid vlan 100<br>[LSW2-Ethernet0&#x2F;0&#x2F;1]quit<br>[LSW2]interface e0&#x2F;0&#x2F;2<br>[LSW2-Ethernet0&#x2F;0&#x2F;2]port link-type trunk<br>[LSW2-Ethernet0&#x2F;0&#x2F;2]port trunk allow-pass vlan 100<br>[LSW2-Ethernet0&#x2F;0&#x2F;2]port trunk pvid vlan 100<br>[LSW2-Ethernet0&#x2F;0&#x2F;2]quit<br>[LSW2]interface e0&#x2F;0&#x2F;3<br>[LSW2-Ethernet0&#x2F;0&#x2F;3]port link-type trunk<br>[LSW2-Ethernet0&#x2F;0&#x2F;3]port trunk allow-pass vlan 100<br>[LSW2-Ethernet0&#x2F;0&#x2F;3]quit<br>【思考1】：为什么LSW2只创建VLAN100，不用创建VLAN101？<br>解析：因为我们用的是隧道转发，数据到达AC1后，才会打上101标记然后发给LSW1<br>【思考2】：为什么连接AP的接口要打port trunk pvid vlan 100?<br>解析：交换机收到AP的数据帧打上100的tag发送<br>把带上100tag的数据帧去掉然后发给AP<br>LSW1的配置<br><Huawei>system-view<br>[Huawei]undo info-center enable<br>[Huawei]sysname LSW1<br>[LSW1]vlan batch 100 101<br>[LSW1]interface g0&#x2F;0&#x2F;1<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;1]port link-type trunk<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;1]port trunk allow-pass vlan 100<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;1]quit<br>[LSW1]interface g0&#x2F;0&#x2F;3<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;3]port link-type trunk<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;3]port trunk allow-pass vlan 100 101<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;3]quit<br>[LSW1]interface g0&#x2F;0&#x2F;2<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;2]port link-type access<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;2]port default vlan 101<br>[LSW1-GigabitEthernet0&#x2F;0&#x2F;2]quit<br>[LSW1]interface Vlanif 101<br>[LSW1-Vlanif101]ip address 192.168.101.1 24<br>[LSW1-Vlanif101]undo shutdown<br>[LSW1-Vlanif101]quit<br>AC1的配置<br><AC6005>system-view<br>[AC6005]undo info-center enable<br>[AC6005]sysname AC1<br>[AC1]vlan batch 100 101<br>[AC1]interface g0&#x2F;0&#x2F;1<br>[AC1-GigabitEthernet0&#x2F;0&#x2F;1]port link-type trunk<br>[AC1-GigabitEthernet0&#x2F;0&#x2F;1]port trunk allow-pass vlan 100 101<br>[AC1-GigabitEthernet0&#x2F;0&#x2F;1]quit<br>[AC1]interface Vlanif 100<br>[AC1-Vlanif100]ip address 192.168.100.1 24<br>[AC1-Vlanif100]undo shutdown<br>[AC1-Vlanif100]quit<br>R1的配置<br><Huawei>system-view<br>[Huawei]undo info-center enable<br>[Huawei]sysname R1<br>[R1]interface g0&#x2F;0&#x2F;0<br>[R1-GigabitEthernet0&#x2F;0&#x2F;0]ip address 192.168.101.2 24<br>[R1-GigabitEthernet0&#x2F;0&#x2F;0]undo shutdown<br>[R1-GigabitEthernet0&#x2F;0&#x2F;0]quit</Huawei></AC6005></Huawei></Huawei></li>
-<li>步骤2：设置DHCP<br>创建VLAN设置TRUNK<br>业务DHCP-让STA获得IP地址<br>[LSW1]dhcp enable<br>[LSW1]interface Vlanif 101<br>[LSW1-Vlanif101]dhcp select interface<br>[LSW1-Vlanif101]quit<br>管理DHCP-让AP获得IP地址<br><AC1>system-view<br>[AC1]dhcp enable<br>[AC1]interface Vlanif 100<br>[AC1-Vlanif100]dhcp select interface<br>[AC1-Vlanif100]quit</AC1></li>
-<li>步骤3：AC的配置</li>
-<li>AP上线<br>第一步：创建AP组<br><AC1>system-view<br>[AC1]wlan<br>[AC1-wlan-view]ap-group name x &#x2F;&#x2F;创建AP组名字叫x<br>[AC1-wlan-ap-group-x]quit<br>第二步：创建域管理模板并关联到AP组<br>[AC1]wlan<br>[AC1-wlan-view]regulatory-domain-profile name x1 &#x2F;&#x2F;创建域管理模板，名字叫x1<br>[AC1-wlan-regulate-domain-x1]country-code cn &#x2F;&#x2F;国家代码选择中国<br>[AC1-wlan-regulate-domain-x1]quit<br>[AC1-wlan-view]ap-group name x<br>[AC1-wlan-ap-group-x]regulatory-domain-profile x1 &#x2F;&#x2F;AP组的域管理模板是x1<br>Warning: Modifying the country code will clear channel, power and antenna gain c<br>onfigurations of the radio and reset the AP. Continue?[Y&#x2F;N]:y<br>[AC1-wlan-ap-group-x]quit<br>第三步：配置AC的接口源地址<br>[AC1]capwap source interface Vlanif 100 &#x2F;&#x2F;AC的接口源地址为VLAN100<br>第四步：离线导入AP<br>[AC1]wlan<br>[AC1-wlan-view]ap auth-mode mac-auth &#x2F;&#x2F;AP的认证模式为MAC认证<br>[AC1-wlan-view]ap-id 1 ap-mac 00e0-fcd5-1c70 &#x2F;&#x2F;AP的编号和MAC地址<br>[AC1-wlan-ap-1]ap-name ds &#x2F;&#x2F;AP的名字为ds<br>[AC1-wlan-ap-1]ap-group x &#x2F;&#x2F;AP属于AP组x<br>[AC1-wlan-view]ap-id 2 ap-mac 00e0-fc1e-3670 &#x2F;&#x2F;AP的编号和MAC地址<br>[AC1-wlan-ap-2]ap-name xs &#x2F;&#x2F;Ap的名字<br>[AC1-wlan-ap-2]ap-group x &#x2F;&#x2F;AP属于AP组x<br>Warning: This operation may cause AP reset. If the country code changes, it will<br>clear channel, power and antenna gain configurations of the radio, Whether to c<br>ontinue? [Y&#x2F;N]:y<br>思考：AP的MAC地址是怎么知道的？<br>读者可以通过在ap上使用命令“display interface Vlanif 1”查看当前ap的mac地址，然后再将mac地址进行绑定。<br>查看命令：<br>[AC1]display ap all<br>Info: This operation may take a few seconds. Please wait for a moment.done.<br>Total AP information:<br>nor : normal [2]<br>-—————————————————————————————–<br>ID MAC Name Group IP Type State STA Uptime<br>-—————————————————————————————–<br>1 00e0-fcd5-1c70 ds x 192.168.100.137 AP2050DN nor 0 11M:2S<br>2 00e0-fc1e-3670 xs x 192.168.100.42 AP2050DN nor 0 54S<br>-—————————————————————————————–<br>可以看到两个AP都获取了IP地址，<br>思考：以上过程一共几包？<br>AP获取IP地址4个包：discovery、offer、request、ack<br>CAPWAP的建立2个包：discovery request(udp 目的端口5246广播找AC) discovery response(单播回应AP)<br>AP接入控制2个包：join request(udp 5246端口 单播) join response<br>隧道维持2个包：数据隧道：keepalive(udp 5247) 控制隧道：echo(udp 5246)</AC1></li>
-<li>配置VLAN业务参数<br>第一步：创建安全模板<br>[AC1]wlan<br>[AC1-wlan-view]security-profile name y1 &#x2F;&#x2F;安全模板的名字叫y1<br>[AC1-wlan-sec-prof-y1]security wpa-wpa2 psk pass-phrase huawei@123 aes &#x2F;&#x2F;密码是huawei@123，用AES加密。<br>[AC1-wlan-sec-prof-y1]quit<br>第二步：创建SSID模板<br>[AC1]wlan<br>[AC1-wlan-view]ssid-profile name y2 &#x2F;&#x2F;ssid的模板名字叫y2<br>[AC1-wlan-ssid-prof-y2]ssid hcia &#x2F;&#x2F;ssid的名称叫hcia<br>[AC1-wlan-ssid-prof-y2]quit<br>[AC1-wlan-view]quit<br>第三步：创建VAP模板<br>[AC1]wlan<br>[AC1-wlan-view]vap-profile name y &#x2F;&#x2F;vap模板的名字叫y<br>[AC1-wlan-vap-prof-y]forward-mode tunnel &#x2F;&#x2F;转发模式为隧道<br>[AC1-wlan-vap-prof-y]service-vlan vlan-id 101 &#x2F;&#x2F;服务的VLAN为101<br>[AC1-wlan-vap-prof-y]security-profile y1 &#x2F;&#x2F;调用安全模板y1<br>[AC1-wlan-vap-prof-y]ssid-profile y2 &#x2F;&#x2F;调用SSID模板y2<br>[AC1-wlan-vap-prof-y]quit<br>第四步：在AP组里面调用VAP模板<br>[AC1-wlan-view]ap-group name x<br>[AC1-wlan-ap-group-x]vap-profile y wlan 1 radio 0 &#x2F;&#x2F;调用VAP模板y<br>[AC1-wlan-ap-group-x]vap-profile y wlan 1 radio 1 &#x2F;&#x2F;<br>思考：radio0 1 2 是什么意思？<br>思考：这相过程要几个包？<br>WLAN业务配置下发2个包：Configuration Update Request Configuration Update Response</li>
-<li>STA接入，可以看到有两个ssid为hcia的无线网络，在之前的配置中配置了radio 0 、1就是为了释放两个不同的射频信号，选择其中一个，输入之前创建的密码huawei@123</li>
-</ol>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>ap上线</tag>
-        <tag>wlan</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>opsf总结</title>
-    <url>/2024/04/18/opsf%E6%80%BB%E7%BB%93/</url>
-    <content><![CDATA[<h1 id="ospf协议工作原理"><a href="#ospf协议工作原理" class="headerlink" title="ospf协议工作原理"></a>ospf协议工作原理</h1><p>工作过程：①建立邻居关系（hello   2-way状态）每台路由器都会产生lsa，路由器将接收到的lsa放入自己的lsdb中；②同步LSDB（DD、LSR、LSU、LSACK    full状态）；③计算路由（本路由器通过自己的LSDB，以自己为根节点，计算最短路径树，最终得到路由）SPF算法；</p>
-<p>ospf支持的网络类型：广播、NBMA、点到点、点到多点</p>
-<p>ospf计算；计算路由+计算拓扑</p>
-<p>ospf报文采用IP封装，协议号89，</p>
-<p>ospfv2（ipv4），ospfv3（ipv6）</p>
-<p>ospf组播更新</p>
-<p>224.0.0.5（所有运行ospf协议的路由器侦听）</p>
-<p>224.0.0.6（DR和BDR侦听）</p>
-<h1 id="Router-id"><a href="#Router-id" class="headerlink" title="Router id"></a>Router id</h1><p>在自治系统中唯一标识一台运行ospf的路由器，32位无符号整数</p>
-<p>选举规则：手动配置（建议），如果没有手动配置，则路由器使用Loopback接口中最大的IP地址作为Router id，如果没有配置Loopback接口，则使用物理接口中最大的IP地址</p>
-<h1 id="Cost值"><a href="#Cost值" class="headerlink" title="Cost值"></a>Cost值</h1><p>缺省接口cost&#x3D;（100mib&#x2F;s）&#x2F; 接口带宽，修改100mid&#x2F;s改变cost</p>
-<p>也可以直接修改</p>
-<p>累计cost作为开销值，流量从源网络到目的网络所经过所有路由器的出接口的cost总和</p>
-<h1 id="Hello报文"><a href="#Hello报文" class="headerlink" title="Hello报文"></a>Hello报文</h1><p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/%E5%9B%BE%E7%89%871.png" alt="图片1"></p>
-<p>发送间隔10s，失效40s，修改发送，失效也变，失效始终为发送的4倍</p>
-<p>命令：接口视图下，ospf timer hello 10</p>
-<p>ospf邻居建立失败 ，可能原因：①物理链路故障；②ospf版本不一致；③区域ID不一致；④认证类型不一致；⑤认证数据不一致；⑥掩码不一致；（只出现在广播型网络中，点到点网络不检查掩码信息）⑦hello报文间隔不一致；⑧router id一致；（华为设备遇到router id一致，会重新配置router id）</p>
-<h1 id="DD报文"><a href="#DD报文" class="headerlink" title="DD报文"></a>DD报文</h1><p>DD报文部分字段解释<br>I：当发送连续多个DD报文时，如果这是第一个DD报文，则置为1，否则置为0。<br>M (More)：当发送连续多个DD报文时，如果这是最后一个DD报文，则置为0。否则置为1，表示后面还有其他的DD报文。<br>MS (Master&#x2F;Slave)：当两台OSPF路由器交换DD报文时，首先需要确定双方的主从关系，Router ID大的一方会成为Master。当值为1时表示发送方为Master。<br>DD sequence number：DD报文序列号。主从双方利用序列号来保证DD报文传输的可靠性和完整性。</p>
-<p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/%E5%9B%BE%E7%89%872.png" alt="图片2"></p>
-<p>链路状态类型、链路状态ID、通告路由器三元组唯一地标识了一个LSA。<br>链路状态老化时间 、链路状态序列号 、校验和用于判断LSA的新旧</p>
-<h1 id="ospf状态机"><a href="#ospf状态机" class="headerlink" title="ospf状态机"></a>ospf状态机</h1><p>之前的手写笔记😍</p>
-<p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/QQ%E5%9B%BE%E7%89%8720240418204859.jpg" alt="QQ图片20240418204859"></p>
-<p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/QQ%E5%9B%BE%E7%89%8720240418204932.jpg" alt="QQ图片20240418204932"></p>
-<p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/QQ%E5%9B%BE%E7%89%8720240418204926.jpg" alt="QQ图片20240418204926"></p>
-<h1 id="DR和BDR"><a href="#DR和BDR" class="headerlink" title="DR和BDR"></a>DR和BDR</h1><p>既侦听224.0.0.5也侦听224.0.0.6</p>
-<p>每个网段选举一个</p>
-<p>DR：指定路由器，负责在MA网络中建立和维护邻接关系，并负责lsa同步</p>
-<p>DR和其他所有路由器形成邻接关系，其他路由器之间不直接交换链路状态信息</p>
-<p>在DR失效时候，BDR接替</p>
-<p>DR默认优先级1（0-255）越大越优，非抢占，优先级为0的不参与选举</p>
-<h1 id="Router-LSA（1类）"><a href="#Router-LSA（1类）" class="headerlink" title="Router LSA（1类）"></a>Router LSA（1类）</h1><p>单区域中会用到1类、2类LSA</p>
-<p>Router LSA—1类LSA  <strong>所有的路由器都会产生</strong>，描述本路由器的信息  泛洪区域：本区域</p>
-<p>Router LSA使用Link来承载路由器直连接口的信息。<br>每条Link均包含“链路类型”、“链路ID”、“链路数据”以及“度量值”这几个关键信息。<br>路由器可能会采用一个或者多个Link来描述某个接口。<img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/%E5%9B%BE%E7%89%873.png" alt="图片3"></p>
-<p>广播型网络中链路类型：TransNet</p>
-<p>点到点网络中链路类型：point-to-point  （拓扑信息）、stubnet（网络信息）</p>
-<p>Router LSA中链路状态类型、链路状态ID、通告路由器用谁表示：</p>
-<p>链路状态类型：router</p>
-<p>链路状态ID：本路由器的router id</p>
-<p>通告路由器：本路由</p>
-<h1 id="Network-LSA（2类）"><a href="#Network-LSA（2类）" class="headerlink" title="Network LSA（2类）"></a>Network LSA（2类）</h1><p>Network  LSA–2类LSA  DR路由器   泛洪区域：本区域</p>
-<p>Network LSA中链路状态类型、链路状态ID、通告路由器用谁表示：</p>
-<p>链路状态类型：network</p>
-<p>链路状态ID：DR路由器的接口IP地址</p>
-<p>通告路由器：DR路由器的router id</p>
-<h1 id="Network-LSA（3类）"><a href="#Network-LSA（3类）" class="headerlink" title="Network LSA（3类）"></a>Network LSA（3类）</h1><p>3类LSA   ABR产生，泛洪范围本区域  作用：用于向一个区域通告到达另一个区域的路由</p>
-<p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/%E5%9B%BE%E7%89%874.png" alt="图片4"></p>
-<p><strong>区域间防环</strong>：</p>
-<p>1）非骨干区必须和骨干区area0相连，非骨干区不能直接进行通信</p>
-<p>2）三类LSA传递是 单向的</p>
-<p>3）从非骨干区域收到的3类LSA不能用于区域间路由的计算。</p>
-<h1 id="AS-External-LSA（5类）"><a href="#AS-External-LSA（5类）" class="headerlink" title="AS External LSA（5类）"></a>AS External LSA（5类）</h1><p>AS-external LSA（5类LSA）：由ASBR产生，描述到达AS外部的路由，该LSA会被通告到所有的区域</p>
-<p>LS Type：取值5，代表AS-external-LSA。<br>Link State ID：外部路由的目的网络地址。<br>Advertising Router：生成该LSA的Router ID。<br>Network Mask：网络掩码。</p>
-<h1 id="ASBR-Summary-LSA（4类）"><a href="#ASBR-Summary-LSA（4类）" class="headerlink" title="ASBR-Summary LSA（4类）"></a>ASBR-Summary LSA（4类）</h1><p>ASBR-Summary LSA（4类LSA）：由ABR产生，描述到ASBR的路由，通告给除ASBR所在区域的其他相关区域。</p>
-<p>LS Type：取值4，代表ASBR-Summary LSA。<br>Link State ID ：ASBR的Router ID。<br>Advertising Router:生成LSA的Router ID。 </p>
-<p>ospf外部路由在引入时，开销值类型有两种：默认情况是type-2</p>
-<p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/wps1.jpg" alt="img"> </p>
-<p>配置：[R7-ospf-1]import-route direct type 1</p>
-<p>OSPF路由遵循以下优先级顺序，区域内路由&gt;区域间路由&gt;Metric-Type-1外部路由&gt;Metric-Type-2外部路由。</p>
-<h1 id="ospf路由汇总"><a href="#ospf路由汇总" class="headerlink" title="ospf路由汇总"></a>ospf路由汇总</h1><p>OSPF路由汇总的类型：<br>在ABR执行路由汇总：对区域间的路由执行路由汇总。<br>在ASBR执行路由汇总：对引入的外部路由执行路由汇总。</p>
-<p>区域间路由汇总在ABR设备上配置：</p>
-<p>[R6-ospf-1-area-0.0.0.3]abr-summary 172.16.0.0 255.255.252.0</p>
-<p>外部路由汇总在ASBR上配置：</p>
-<p>[R8-ospf-1]asbr-summary 10.1.0.0 255.255.240.0</p>
-<h1 id="ospf认证"><a href="#ospf认证" class="headerlink" title="ospf认证"></a>ospf认证</h1><p>OSPF支持报文认证功能，只有通过认证的OSPF报文才能被接收。<br>路由器支持两种OSPF报文认证方式，当两种认证方式都存在时，优先使用接口认证方式：<br>区域认证方式：一个OSPF区域中所有的路由器在该区域下的认证模式和口令必须一致。</p>
-<p>[R6-ospf-1-area-0.0.0.3]authentication-mode md5 1 cipher huawei</p>
-<p>该区域中所有路由器都要配置<br>接口认证方式：相邻路由器直连接口下的认证模式和口令必须一致。<br>[R2-GigabitEthernet0&#x2F;0&#x2F;0]ospf authentication-mode md5 1 cipher huawei</p>
-<p>在一条链路上的所有接口下配置</p>
-<h1 id="stub区域"><a href="#stub区域" class="headerlink" title="stub区域"></a>stub区域</h1><p>1、2、3、3类缺省LSA（ABR产生的）</p>
-<p>Stub区域的ABR不向Stub区域内传播它接收到的AS外部路由（也就是4类、5类LSA），Stub区域中路由器的LSDB、路由表规模都会大大减小。<br>为保证Stub区域能够到达AS外部，Stub区域的ABR将生成一条缺省路由（使用3类LSA描述）。</p>
-<p>配置Stub区域时需要注意下列几点：<br>骨干区域不能被配置为Stub区域。<br>Stub区域中的所有路由器都必须将该区域配置为Stub。<br>Stub区域内不能引入也不接收AS外部路由。<br>虚连接不能穿越Stub区域。</p>
-<h1 id="Totally-Stub区域"><a href="#Totally-Stub区域" class="headerlink" title="Totally Stub区域"></a>Totally Stub区域</h1><p>1、2、3类缺省LSA（ABR产生的）</p>
-<p>Totally Stub区域既不允许AS外部路由在本区域内传播，也不允许区域间路由在本区域内传播。<br>Totally Stub区域内的路由器通过本区域ABR下发的缺省路由（使用3类LSA描述）到达其他区域，以及AS外部<br>配置Totally Stub区域时需要注意：<br>与Stub区域配置的区别在于，在ABR上需要追加no-summary关键字。</p>
-<h1 id="NSSA"><a href="#NSSA" class="headerlink" title="NSSA"></a>NSSA</h1><p>1、2、3、7类、7类缺省LSA（ABR产生的）</p>
-<p>NSSA区域 相对于stub区别在于，可以引入外部路由，外部路由引入后，会以7类LSA在NSSA区域中泛洪，然后 在ABR设备上将7类LSA转化成5类LSA在其他区域 泛洪</p>
-<p>Totally  NSSA：1、2、3缺省（ABR产生）、7类、7类缺省LSA（ABR产生的）</p>
-<h1 id="Silent-Interface"><a href="#Silent-Interface" class="headerlink" title="Silent-Interface"></a>Silent-Interface</h1><p>Silent-Interface有以下特性：<br>Silent-Interface不会接收和发送OSPF报文。<br>Silent-Interface的直连路由仍可以发布出去。</p>
-<p>通常我们会 将连接终端或者服务器的接口设置成Silent-Interface</p>
-<p>[R1]ospf<br>[R1-ospf-1]area 0<br>[R1-ospf-1-area-0.0.0.0]network 192.168.4.0 0.0.0.255<br>[R1-ospf-1]silent-interface GigabitEthernet 0&#x2F;0&#x2F;1</p>
-<h1 id="路由器对lsa处理流程"><a href="#路由器对lsa处理流程" class="headerlink" title="路由器对lsa处理流程"></a>路由器对lsa处理流程</h1><p><img src="/2024/04/18/opsf%E6%80%BB%E7%BB%93/QQ%E5%9B%BE%E7%89%8720240418211229.jpg" alt="QQ图片20240418211229"></p>
-]]></content>
-      <categories>
-        <category>基础知识</category>
-      </categories>
-      <tags>
-        <tag>ospf</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>vlan间通信</title>
     <url>/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/</url>
     <content><![CDATA[<h1 id="VLAN间通信"><a href="#VLAN间通信" class="headerlink" title="VLAN间通信"></a>VLAN间通信</h1><h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>划分VLAN后，不同VLAN的用户间不能二层互访，这样能起到隔离广播的作用。但实际应用中，不同VLAN的用户又常有互访的需求，此时就需要实现不同VLAN的用户互访，简称VLAN间互访。</p>
@@ -2347,208 +2363,23 @@
       </tags>
   </entry>
   <entry>
-    <title>路由策略</title>
-    <url>/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/</url>
-    <content><![CDATA[<p><img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/luyouceltuopu126203917.png" alt="luyouceltuopu126203917"></p>
-<p>设备互联方式、互联地址如图所示，所有设备均创建Loopback0，其IP地址为10.0.x.x&#x2F;32，其中x为设备编号，R1、R2、R3在互联接口、Loopback0接口上激活OSPF。</p>
-<p>R3、R4属于IS-IS Area 49.0001，两者都是Level-1路由器，R3、R4的系统ID采用0000.0000.000x格式，其中x为设备编号。</p>
-<span id="more"></span>
-
-<p>R1上存在三个业务网段A、B、C（使用Loopback1、2、3接口路由模拟），在R1上将直连路由引入到OSPF，但是OSPF域内的路由器上不需要C业务的路由，为此在R1上引入直连路由时通过Route-Policy过滤引入的路由。</p>
-<p>R2上不需要A业务网段的路由，但是R3上需要A、B业务网段的路由，为此在R2上配置Filter-Policy对OSPF接收的路由进行过滤。</p>
-<p>IS-IS域内的路由器需要访问A业务，因此需要在R3上执行路由重分发，将OSPF路由引入到IS-IS，但是IS-IS域内的路由器不需要访问B业务，为此在R1上引入直连路由时为A、B业务网段路由打上不同的路由标记，R3上执行重分发时根据路由标记过滤B业务网段路由。</p>
-<h1 id="任务思路"><a href="#任务思路" class="headerlink" title="任务思路"></a>任务思路</h1><ol>
-<li>设备基础IP地址配置。</li>
-<li>配置R1、R2、R3之间的OSPF，在互联接口、Loopback0接口上激活OSPF。在R3、R4之间配置IS-IS。</li>
-<li>在R1上将直连路由引入到OSPF中，同时配置路由策略不引入C业务网段的路由，将A、B业务网段路由分别打上路由标记10、20。</li>
-<li>在R2上配置Filter-Policy对接收的OSPF路由进行过滤，只接收B业务网段的路由。</li>
-<li>在R3上将OSPF路由引入到IS-IS中，通过Route-Policy匹配路由标记，只引入A业务网段的OSPF外部路由。</li>
-</ol>
-<h1 id="1-配置ip"><a href="#1-配置ip" class="headerlink" title="1.配置ip"></a>1.配置ip</h1><p>#配置R1的GE0&#x2F;0&#x2F;2、Loopback0接口IP地址</p>
-<p>[R1]interface GigabitEthernet0&#x2F;0&#x2F;2</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;2] ip address 10.0.12.1 255.255.255.0</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;2] quit</p>
-<p>[R1]interface LoopBack0</p>
-<p>[R1-LoopBack0] ip address 10.0.1.1 255.255.255.255</p>
-<p>[R1-LoopBack0] quit</p>
-<p>#在R1上创建多个环回口，用于模拟业务网段A、B、C</p>
-<p>[R1]interface LoopBack1</p>
-<p>[R1-LoopBack1] ip address 172.16.1.1 255.255.255.0</p>
-<p>[R1-LoopBack1] quit</p>
-<p>[R1]interface LoopBack2</p>
-<p>[R1-LoopBack2] ip address 172.16.2.1 255.255.255.0</p>
-<p>[R1-LoopBack2] quit</p>
-<p>[R1]interface LoopBack3</p>
-<p>[R1-LoopBack3] ip address 172.16.3.1 255.255.255.0</p>
-<p>[R1-LoopBack3] quit</p>
-<p>#配置R2的GE0&#x2F;0&#x2F;2、GE0&#x2F;0&#x2F;3、Loopback0接口IP地址</p>
-<p>[R2]interface LoopBack0</p>
-<p>[R2-LoopBack0] ip address 10.0.2.2 255.255.255.255</p>
-<p>[R2-LoopBack0] quit</p>
-<p>[R2]interface GigabitEthernet0&#x2F;0&#x2F;2</p>
-<p>[R2-GigabitEthernet0&#x2F;0&#x2F;2] ip address 10.0.23.2 255.255.255.0</p>
-<p>[R2-GigabitEthernet0&#x2F;0&#x2F;2] quit</p>
-<p>[R2]interface GigabitEthernet0&#x2F;0&#x2F;3</p>
-<p>[R2-GigabitEthernet0&#x2F;0&#x2F;3] ip address 10.0.12.2 255.255.255.0</p>
-<p>[R2-GigabitEthernet0&#x2F;0&#x2F;3] quit</p>
-<p>#配置R3的GE0&#x2F;0&#x2F;2、GE0&#x2F;0&#x2F;3、Loopback0接口IP地址</p>
-<p>[R3]interface LoopBack0</p>
-<p>[R3-LoopBack0] ip address 10.0.3.3 255.255.255.255</p>
-<p>[R3-LoopBack0] quit</p>
-<p>[R3]interface GigabitEthernet0&#x2F;0&#x2F;2</p>
-<p>[R3-GigabitEthernet0&#x2F;0&#x2F;2] ip address 10.0.34.3 255.255.255.0</p>
-<p>[R3-GigabitEthernet0&#x2F;0&#x2F;2] quit</p>
-<p>[R3]interface GigabitEthernet0&#x2F;0&#x2F;3</p>
-<p>[R3-GigabitEthernet0&#x2F;0&#x2F;3] ip address 10.0.23.3 255.255.255.0</p>
-<p>[R3-GigabitEthernet0&#x2F;0&#x2F;3] quit</p>
-<p>#配置R4的GE0&#x2F;0&#x2F;3、Loopback0接口IP地址</p>
-<p>[R4]interface GigabitEthernet0&#x2F;0&#x2F;3</p>
-<p>[R4-GigabitEthernet0&#x2F;0&#x2F;3] ip address 10.0.34.4 255.255.255.0</p>
-<p>[R4-GigabitEthernet0&#x2F;0&#x2F;3] quit</p>
-<p>[R4]interface LoopBack0</p>
-<p>[R4-LoopBack0] ip address 10.0.4.4 255.255.255.255</p>
-<p>[R4-LoopBack0] quit</p>
-<p>#在R2、R4上检查IP地址连通性</p>
-<h1 id="2-配置ospf和isis"><a href="#2-配置ospf和isis" class="headerlink" title="2.配置ospf和isis"></a>2.配置ospf和isis</h1><p>#配置R1</p>
-<p>[R1]ospf 1 router-id 10.0.1.1</p>
-<p>[R1-ospf-1] area 0</p>
-<p>[R1-ospf-1-area-0.0.0.0] network 10.0.1.1 0.0.0.0</p>
-<p>[R1-ospf-1-area-0.0.0.0] network 10.0.12.1 0.0.0.0</p>
-<p>[R1-ospf-1-area-0.0.0.0] quit</p>
-<p>[R1-ospf-1] quit</p>
-<p>#配置R2</p>
-<p>[R2]ospf 1 router-id 10.0.2.2</p>
-<p>[R2-ospf-1] area 0.0.0.0</p>
-<p>[R2-ospf-1-area-0.0.0.0] network 10.0.2.2 0.0.0.0</p>
-<p>[R2-ospf-1-area-0.0.0.0] network 10.0.12.2 0.0.0.0</p>
-<p>[R2-ospf-1-area-0.0.0.0] network 10.0.23.2 0.0.0.0</p>
-<p>[R2-ospf-1-area-0.0.0.0] quit</p>
-<p>[R2-ospf-1] quit</p>
-<p>#配置R3</p>
-<p>[R3]ospf 1 router-id 10.0.3.3</p>
-<p>[R3-ospf-1] area 0.0.0.0</p>
-<p>[R3-ospf-1-area-0.0.0.0] network 10.0.3.3 0.0.0.0</p>
-<p>[R3-ospf-1-area-0.0.0.0] network 10.0.23.3 0.0.0.0</p>
-<p>[R3-ospf-1-area-0.0.0.0] quit</p>
-<p>[R3-ospf-1] quit</p>
-<p>#在R2上检查OSPF邻居的概要信息</p>
-<p>R3、R4上配置IS-IS，区域为49.0001，系统ID采用0000.0000.000x格式（x为设备编号），两台设备都为Level-1路由器，在互联接口、R4的Loopback0接口上激活IS-IS。</p>
-<p>#配置R3</p>
-<p>[R3]isis 1</p>
-<p>[R3-isis-1] is-level level-1</p>
-<p>[R3-isis-1] network-entity 49.0001.0000.0000.0003.00</p>
-<p>[R3-isis-1] quit</p>
-<p>[R3]interface GigabitEthernet0&#x2F;0&#x2F;2</p>
-<p>[R3-GigabitEthernet0&#x2F;0&#x2F;2] isis enable 1</p>
-<p>[R3-GigabitEthernet0&#x2F;0&#x2F;2] quit</p>
-<p>#配置R4</p>
-<p>[R4]isis 1</p>
-<p>[R4-isis-1] is-level level-1</p>
-<p>[R4-isis-1] network-entity 49.0001.0000.0000.0004.00</p>
-<p>[R4-isis-1] quit</p>
-<p>[R4]interface GigabitEthernet0&#x2F;0&#x2F;3</p>
-<p>[R4-GigabitEthernet0&#x2F;0&#x2F;3] isis enable 1</p>
-<p>[R4-GigabitEthernet0&#x2F;0&#x2F;3] quit</p>
-<p>[R4]interface LoopBack 0</p>
-<p>[R4-LoopBack0] isis enable 1</p>
-<p>[R4-LoopBack0] quit</p>
-<p>#在R3上检查IS-IS邻居状态</p>
-<h1 id="3-在R1上引入直连路由"><a href="#3-在R1上引入直连路由" class="headerlink" title="3.在R1上引入直连路由"></a>3.在R1上引入直连路由</h1><p>在R1上将直连路由引入到OSPF中，同时配置路由策略过滤C业务网段，将A、B业务网段路由分别打上路由标记10、20。</p>
-<p>#创建IP前缀列表1，匹配Loopback1接口路由（A业务网段）</p>
-<p>[R1]ip ip-prefix 1 index 10 permit 172.16.1.0 24 greater-equal 24 less-equal 24</p>
-<p>#创建IP前缀列表2，匹配Loopback2接口路由（B业务网段）</p>
-<p>[R1]ip ip-prefix 2 index 10 permit 172.16.2.0 24 greater-equal 24 less-equal 24</p>
-<p>#创建Route-Policy hcip，并创建节点10、20，分别调用IP前缀列表1、2，打上路由标记</p>
-<p>[R1]route-policy hcip permit node 10</p>
-<p>[R1-route-policy] if-match ip-prefix 1</p>
-<p>[R1-route-policy] apply tag 10</p>
-<p>[R1-route-policy] quit</p>
-<p>[R1]route-policy hcip permit node 20</p>
-<p>[R1-route-policy] if-match ip-prefix 2</p>
-<p>[R1-route-policy] apply tag 20 </p>
-<p>[R1-route-policy] quit</p>
-<p>#在R1的OSPF中引入直连路由，调用Route-Policy hcip</p>
-<p>[R1]ospf 1</p>
-<p>[R1-ospf-1] import-route direct route-policy hcip</p>
-<p>r1上查看ospf lsdb，Loopback1、2接口路由已经被成功引入OSPF中。</p>
-<p>#在R1上查看OSPF LSDB中AS-external LSA 172.16.1.0的相关信息</p>
-<p>[R1]display ospf lsdb ase 172.16.1.0 </p>
-<p>​	 OSPF Process 1 with Router ID 10.0.1.1</p>
-<p>​		 Link State Database</p>
-<p> Type    : External</p>
-<p> Ls id   : 172.16.1.0</p>
-<p> Adv rtr  : 10.0.1.1  </p>
-<p> Ls age   : 165 </p>
-<p> Len    : 36 </p>
-<p> Options  :  E  </p>
-<p> seq#    : 80000001 </p>
-<p> chksum   : 0xa954</p>
-<p> Net mask  : 255.255.255.0 </p>
-<p> TOS 0  Metric: 1 </p>
-<p> E type   : 2</p>
-<p> Forwarding Address : 0.0.0.0 </p>
-<p> Tag    : 10 </p>
-<p> Priority  : Low</p>
-<p>外部路由172.16.1.0&#x2F;24已经被打上Tag 10。</p>
-<p>#在R1上查看OSPF LSDB中AS-external LSA 172.16.2.0的相关信息</p>
-<p>[R1]display ospf lsdb ase 172.16.2.0</p>
-<p>​	 OSPF Process 1 with Router ID 10.0.1.1</p>
-<p>​		 Link State Database</p>
-<p> Type    : External</p>
-<p> Ls id   : 172.16.2.0</p>
-<p> Adv rtr  : 10.0.1.1  </p>
-<p> Ls age   : 355 </p>
-<p> Len    : 36 </p>
-<p> Options  :  E  </p>
-<p> seq#    : 80000001 </p>
-<p> chksum   : 0x539f</p>
-<p> Net mask  : 255.255.255.0 </p>
-<p> TOS 0  Metric: 1 </p>
-<p> E type   : 2</p>
-<p> Forwarding Address : 0.0.0.0 </p>
-<p> Tag    : 20 </p>
-<p> Priority  : Low</p>
-<p>外部路由172.16.2.0&#x2F;24已经被打上Tag 20。</p>
-<h1 id="4-在R2上配置过滤策略"><a href="#4-在R2上配置过滤策略" class="headerlink" title="4.在R2上配置过滤策略"></a>4.在R2上配置过滤策略</h1><p>在R2上配置Filter-Policy对接收的OSPF路由进行过滤，只接收B业务网段的路由。</p>
-<p>#查看配置Filter-Policy前的OSPF路由表</p>
-<p><R2>display ospf routing</R2></p>
-<p>#查看配置Filter-Policy前的IP路由表中的OSPF路由</p>
-<p><R2>display ip routing-table protocol ospf	</R2></p>
-<p>在OSPF路由表以及IP路由表中<strong>都可以看到</strong>OSPF外部路由172.16.1.0&#x2F;24、172.16.2.0&#x2F;24。</p>
-<p>#配置基础ACL </p>
-<p>[R2]acl number 2000</p>
-<p>[R2-acl-basic-2000] rule 5 deny source 172.16.1.0 0.0.0.255</p>
-<p>[R2-acl-basic-2000] rule 10 permit</p>
-<p>#在OSPF中部署入方向的Filter-Policy，调用ACL 2000</p>
-<p>[R2]ospf 1</p>
-<p>[R2-ospf-1] filter-policy 2000 import</p>
-<p>#查看配置Filter-Policy后的OSPF路由表</p>
-<p>dis ospf routing</p>
-<p>发现两条外部路由都还存在</p>
-<p>#查看配置Filter-Policy后的IP路由表中的OSPF路由</p>
-<p><R2>display ip routing-table protocol ospf	</R2></p>
-<p>在IP路由表中路由172.16.2.0&#x2F;24已经不存在，但是在OSPF路由表中依旧存在。这验证了对于OSPF，Filter-Policy只是限制路由加入IP路由表，不影响本地的LSDB以及LSA的传递。</p>
-<p>#在R3上查看IP路由表中的OSPF路由</p>
-<p><R3>display ip routing-table protocol ospf </R3></p>
-<p>R3的IP路由表中OSPF外部路由172.16.1.0&#x2F;24、172.16.2.0&#x2F;24依旧存在。</p>
-<h1 id="5-在R3上将OSPF路由引入到IS-IS"><a href="#5-在R3上将OSPF路由引入到IS-IS" class="headerlink" title="5.在R3上将OSPF路由引入到IS-IS"></a>5.在R3上将OSPF路由引入到IS-IS</h1><p>在R3上将OSPF路由引入到IS-IS中，通过Route-Policy匹配路由标记，只引入A业务网段的OSPF外部路由。</p>
-<p>#创建Route-Policy hcip</p>
-<p>[R3]route-policy hcip permit node 10</p>
-<p>[R3-route-policy] if-match tag 10</p>
-<p>[R3-route-policy] quit</p>
-<p>#在IS-IS中引入OSPF路由，调用Route-Policy hcip只引入A业务网段的OSPF外部路由</p>
-<p>[R3]isis 1</p>
-<p>[R3-isis-1] import-route ospf 1 <strong>level-1</strong> route-policy hcip</p>
-<p>（注意指定level）</p>
-<p>#查看R3的IS-IS路由表</p>
-<p><R3>display isis route </R3></p>
-<p>Level-1的路由重分发表中只有172.16.1.0&#x2F;24。</p>
+    <title>交换机工作原理</title>
+    <url>/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/</url>
+    <content><![CDATA[<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/1jhjgzyl938.png" alt="1jhjgzyl938"></p>
+<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/2jhjgzyl0011038.png" alt="2jhjgzyl0011038"></p>
+<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/3jhjgzyl011116.png" alt="3jhjgzyl011116"></p>
+<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/4jhjgzyl135.png" alt="4jhjgzyl135"></p>
+<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/5jhjgzyl330011154.png" alt="5jhjgzyl330011154"></p>
+<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/6jhjgzyl0011208.png" alt="6jhjgzyl0011208"></p>
+<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/7jhjgzyl1222.png" alt="7jhjgzyl1222"></p>
+<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/8jhjgzyl240.png" alt="8jhjgzyl240"></p>
+<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/9jhjadji11254.png" alt="9jhjadji11254"></p>
 ]]></content>
       <categories>
-        <category>ip实验</category>
+        <category>基础知识</category>
       </categories>
       <tags>
-        <tag>路由策略</tag>
+        <tag>交换机工作原理</tag>
       </tags>
   </entry>
   <entry>
@@ -2609,211 +2440,6 @@
       </categories>
       <tags>
         <tag>子网划分</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>交换机工作原理</title>
-    <url>/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/</url>
-    <content><![CDATA[<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/1jhjgzyl938.png" alt="1jhjgzyl938"></p>
-<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/2jhjgzyl0011038.png" alt="2jhjgzyl0011038"></p>
-<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/3jhjgzyl011116.png" alt="3jhjgzyl011116"></p>
-<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/4jhjgzyl135.png" alt="4jhjgzyl135"></p>
-<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/5jhjgzyl330011154.png" alt="5jhjgzyl330011154"></p>
-<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/6jhjgzyl0011208.png" alt="6jhjgzyl0011208"></p>
-<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/7jhjgzyl1222.png" alt="7jhjgzyl1222"></p>
-<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/8jhjgzyl240.png" alt="8jhjgzyl240"></p>
-<p><img src="/2024/03/30/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/9jhjadji11254.png" alt="9jhjadji11254"></p>
-]]></content>
-      <categories>
-        <category>基础知识</category>
-      </categories>
-      <tags>
-        <tag>交换机工作原理</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>链路聚合</title>
-    <url>/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/</url>
-    <content><![CDATA[<h1 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h1><h2 id="什么是链路聚合"><a href="#什么是链路聚合" class="headerlink" title="什么是链路聚合"></a>什么是链路聚合</h2><p>在现网中，设备间如果通过一条链路连接，<strong>如果这条链路故障了，那么设备两端的终端就不能够通信了</strong>。有什么办法可以解决该问题呢？答案是——<strong>链路聚合</strong>。</p>
-<p><strong>从端口的角度定义：</strong></p>
-<p><strong>链路聚合（Link Aggregation）</strong>是指将<strong>多个物理端口</strong>汇聚在一起，形成一个<strong>逻辑端口</strong>，以实现出&#x2F;入流量吞吐量在各<strong>成员端口</strong>的负荷分担，交换机根据用户配置的端口负载分担方式决定数据包从哪个成员端口发送到对端的交换机。</p>
-<p><strong>从链路的角度定义：</strong></p>
-<p>链路聚合（Link Aggregation）是把两台设备之间的<strong>多条物理链路聚</strong>合在一起，当做一条<strong>逻辑链路</strong>来使用。这两台设备可以是一对路由器，一对交换机，或者是一台路由器和一台交换机。一条聚合链路可以包含多条成员链路，默认最多为<strong>8</strong>条。</p>
-<h2 id="链路聚合的作用"><a href="#链路聚合的作用" class="headerlink" title="链路聚合的作用"></a>链路聚合的作用</h2><ul>
-<li>链路聚合能够<strong>提高链路带宽</strong>。理论上，通过聚合几条链路，一个聚合口的带宽可以扩展为所有成员口带宽的总和，这样就有效地增加了逻辑链路的带宽。</li>
-<li>链路聚合<strong>为网络提供了高可靠性</strong>。配置了链路聚合之后，如果一个成员接口发生故障，该成员口的物理链路会把流量切换到另一条成员链路上。</li>
-<li>链路聚合<strong>在一个聚合口上实现负载均衡。</strong>一个聚合口可以把流量分散到多个不同的成员口上，通过成员链路把流量发送到同一个目的地，将网络产生拥塞的可能性降到最低。</li>
-</ul>
-<h2 id="三-链路聚合的工作原理："><a href="#三-链路聚合的工作原理：" class="headerlink" title="三. 链路聚合的工作原理："></a><strong>三. 链路聚合的工作原理：</strong></h2><p><strong>应用场景：</strong></p>
-<p>链路聚合一般部署在核心结点，以便提升整个网络的数据吞吐量。</p>
-<p>链路聚合能够提高链路带宽，增强网络可靠、可用性，支持负载分担。</p>
-<p><strong>链路聚合模式:</strong></p>
-<p>链路聚合包含两种模式：<strong>手动负载均衡模式</strong>和<strong>静态LACP（Link Aggregation Control Protocol）模式。</strong></p>
-<ol>
-<li><strong>手工负载分担模式：</strong></li>
-</ol>
-<ul>
-<li>手工负载分担模式下，Eth-Trunk的建立、<strong>成员接口</strong>的加入由<strong>手工配置</strong>，没有链路聚合控制协议的参与。</li>
-<li>该模式下所有<strong>活动链路</strong>都参与数据的转发，平均分担流量，因此称为<strong>负载分担模式</strong>。如果某条活动链路故障，链路聚合组自动在剩余的活动链路中平均分担流量。</li>
-</ul>
-<p><strong>使用场景：</strong></p>
-<p>当需要在两个直连设备间提供<strong>一个较大的链路带宽而设备又不支持LACP协议</strong>时，可以使用手工负载分担模式。</p>
-<p><strong>2. 静态LACP模式：</strong></p>
-<ul>
-<li>在静态LACP模式中，链路两端的设备相互发送<strong>LACP报文，协商聚合参数</strong>。协商完成后，两台设备确定活动接口和非活动接口。</li>
-<li>在静态LACP模式中，需要手动创建一个Eth-Trunk口，并添加成员口。</li>
-<li>静态LACP模式也叫<strong>M:N模式</strong>。M代表<strong>活动成员链路</strong>，用于在负载均衡模式中转发数据。N代表<strong>非活动链路</strong>，用于冗余备份。</li>
-<li>如果一条活动链路发生故障，该链路传输的数据被切换到一条优先级最高的备份链路上，这条备份链路转变为活动状态。</li>
-</ul>
-<p><strong>两种链路聚合模式的主要区别：</strong></p>
-<ul>
-<li>在<strong>静态LACP模式中</strong>，一些链路充当备份链路。</li>
-<li>在<strong>手动负载均衡模式</strong>中，所有的成员口都处于转发状态。</li>
-</ul>
-<table>
-<thead>
-<tr>
-<th>维度</th>
-<th>手工模式</th>
-<th>LACP模式</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Eth-Trunk的建立方式</td>
-<td>Eth-Trunk接口的创建、成员接口的加入由手工配置，没有链路聚合控制协议的参与。</td>
-<td>Eth-Trunk接口的创建、成员接口的加入由手工配置，LACP协议参与链路动态调整，负责链路状态维护。在聚合条件发生变化时，自动调整或解散链路聚合。</td>
-</tr>
-<tr>
-<td>设备是否需要支持LACP协议</td>
-<td>不需要</td>
-<td>需要</td>
-</tr>
-<tr>
-<td>数据转发</td>
-<td>正常情况下，所有链路都是活动链路。所有活动链路均参与数据转发。如果某条活动链路故障，链路聚合组自动在剩余的活动链路中分担流量。</td>
-<td>正常情况下，部分链路是活动链路。所有活动链路均参与数据转发。如果某条活动链路故障，链路聚合组自动在非活动链路中选择一条链路作为活动链路，参与数据转发的链路数目不变。</td>
-</tr>
-<tr>
-<td>检测故障</td>
-<td>只能检测到同一聚合组内的成员链路有断路等故障，无法检测到链路断连、错连等故障。</td>
-<td>不仅能够检测到同一聚合组内的成员链路有断路等故障，还可以检测到链路故障、链路错连等故障。</td>
-</tr>
-</tbody></table>
-<p><strong>数据流控制:</strong></p>
-<p>Eth-trunk链路两端相连的物理接口的数量、速率、双工方式、流控方式必须一致。</p>
-<h2 id="优先级"><a href="#优先级" class="headerlink" title="优先级"></a>优先级</h2><p>0-65535 </p>
-<p>默认32768</p>
-<p>小的优先</p>
-<p>优先级一样，看mac，mac小的优先</p>
-<h1 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h1><p><img src="/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/juhetuopu31207160429.png" alt="juhetuopu31207160429"></p>
-<h2 id="配置手工链路聚合"><a href="#配置手工链路聚合" class="headerlink" title="配置手工链路聚合"></a>配置手工链路聚合</h2><p># 创建Eth-Trunk接口</p>
-<p>[S1]interface Eth-Trunk 1 </p>
-<p><strong>interface eth-trunk</strong>命令用来进入已经存在的Eth-Trunk接口，或创建并进入Eth-Trunk接口。数字“1”代表接口编号，编号范围根据设备情况有所不同。</p>
-<p>[S2]interface Eth-Trunk 1</p>
-<p># 设置Eth-Trunk接口的聚合模式 </p>
-<p>[S1-Eth-Trunk1]mode manual load-balance</p>
-<p><strong>mode</strong>命令用来配置Eth-Trunk的工作模式，有LACP模式和手工负载分担模式（手工模式）两种，缺省情况下，Eth-Trunk的工作模式为手工负载分担模式。此处S1上的模式配置仅为示范目的，实际操作时不需要。</p>
-<p># 将成员接口加入聚合组</p>
-<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;10 </p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10]eth-trunk 1 </p>
-<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10]quit</p>
-<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;11</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11]eth-trunk 1</p>
-<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11]quit</p>
-<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;12</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12]eth-trunk 1</p>
-<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12]quit</p>
-<p>可进入到成员接口的接口视图下，逐一添加到Eth-Trunk接口。也可以在Eth-Trunk接口视图下通过<strong>trunkport</strong>命令批量添加接口。</p>
-<p>[S2]interface Eth-Trunk 1</p>
-<p>[S2-Eth-Trunk1]trunkport GigabitEthernet 0&#x2F;0&#x2F;10 to 0&#x2F;0&#x2F;12 </p>
-<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
-<p>将成员接口加入Eth-Trunk时，需要注意以下问题：</p>
-<p>• 每个Eth-Trunk接口下最多可以包含8个成员接口。</p>
-<p>• Eth-Trunk接口不能嵌套，即Eth-Trunk接口的成员接口不能是Eth-Trunk接口。</p>
-<p>• 一个以太网接口只能加入到一个Eth-Trunk接口，如果需要加入其它Eth-Trunk接口，必须先退出原来的Eth-Trunk接口。</p>
-<p>• 如果本地设备使用了Eth-Trunk，与成员接口直连的对端接口也必须捆绑为Eth-Trunk接口，两端才能正常通信。</p>
-<p>Eth-Trunk链路两端相连的物理接口的数量、速率、双工方式等必须一致。</p>
-<p>#查看Eth-Trunk接口状态</p>
-<p>dis eth-trunk 1</p>
-<h2 id="配置LACP模式"><a href="#配置LACP模式" class="headerlink" title="配置LACP模式"></a>配置LACP模式</h2><p># 删除现有Eth-Trunk接口下的成员接口</p>
-<p>[S1]interface Eth-Trunk 1</p>
-<p>[S1-Eth-Trunk1]undo trunkport GigabitEthernet 0&#x2F;0&#x2F;10 to 0&#x2F;0&#x2F;12</p>
-<p>[S2]interface Eth-Trunk 1</p>
-<p>[S2-Eth-Trunk1]undo trunkport GigabitEthernet 0&#x2F;0&#x2F;10 to 0&#x2F;0&#x2F;12</p>
-<p><strong>在修改Eth-Trunk接口的聚合模式之前，需要确保Eth-Trunk中没有任何成员接口。</strong></p>
-<p># 修改聚合模式</p>
-<p>[S1]interface Eth-Trunk 1</p>
-<p>[S1-Eth-Trunk1]mode lacp</p>
-<p><strong>mode</strong> <strong>lacp</strong> 指定Eth-Trunk工作模式为LACP模式。</p>
-<p>注：部分版本的设备命令为 mode lacp-static</p>
-<p>[S2]interface Eth-Trunk 1</p>
-<p>[S2-Eth-Trunk1]mode lacp</p>
-<p># 将成员接口加入聚合组</p>
-<p>[S1]interface Eth-Trunk 1</p>
-<p>[S1-Eth-Trunk1]trunkport GigabitEthernet 0&#x2F;0&#x2F;10 to 0&#x2F;0&#x2F;12</p>
-<p>[S2]interface Eth-Trunk 1</p>
-<p>[S2-Eth-Trunk1]trunkport GigabitEthernet 0&#x2F;0&#x2F;10 to 0&#x2F;0&#x2F;12</p>
-<p>查看</p>
-<p><img src="/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/1chakan1207160903.png" alt="1chakan1207160903"></p>
-<p>注意此时三个接口都是Select的状态</p>
-<h2 id="选择接口"><a href="#选择接口" class="headerlink" title="选择接口"></a>选择接口</h2><p>​	考虑到网络流量情况，当网络正常时，只需要GigabitEthernet0&#x2F;0&#x2F;11和GigabitEthernet0&#x2F;0&#x2F;12接口处于转发状态，GigabitEthernet0&#x2F;0&#x2F;10接口作为备份。但当活动接口数量少于2时，直接关闭整个Eth-Trunk接口。</p>
-<p>全局配置优先级选举主动方，主动方设备的端口上配置接口优先级选举活动端口</p>
-<p># 配置设备S1的LACP优先级，使其成为主动端设备</p>
-<p>[S1]lacp priority 100 </p>
-<p># 配置接口优先级，优选GigabitEthernet0&#x2F;0&#x2F;11和GigabitEthernet0&#x2F;0&#x2F;12接口</p>
-<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;10 </p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10]lacp priority 40000</p>
-<p># 配置接口优先级，优选GigabitEthernet0&#x2F;0&#x2F;11和GigabitEthernet0&#x2F;0&#x2F;12接口</p>
-<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;10 </p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10]lacp priority 40000</p>
-<p>g0&#x2F;0&#x2F;10配置了大于32768的优先级4000，所以变为备份端口</p>
-<p>之后，g0&#x2F;0&#x2F;11和g0&#x2F;0&#x2F;12为活动端口</p>
-<p>使能了LACP模式链路聚合的两端设备均会收发的LACPDU报文。</p>
-<p>首先选举主动端设备：</p>
-<ol>
-<li>比较系统优先级字段，如果对端的系统优先级高于本端的系统优先级（默认为32768，越小越优），则确定对端为LACP主动端。</li>
-<li>如果系统优先级相同，比较两端设备的MAC地址，MAC地址小的一端为LACP主动端。</li>
-</ol>
-<p>选出主动端后，两端都会以主动端的接口优先级来选择活动接口，接口优先级越小越优，默认为32768。</p>
-<p># 配置Eth-trunk活动接口数上限阈值和下限阈值</p>
-<p>[S1]interface Eth-Trunk 1</p>
-<p>[S1-Eth-Trunk1]max active-linknumber 2</p>
-<p>[S1-Eth-Trunk1]least active-linknumber 2</p>
-<p>在一个Eth-Trunk接口内，活动接口数可以影响到Eth-Trunk接口的状态和带宽。Eth-Trunk接口的带宽是所有处于Up状态的成员口带宽之和。为保证Eth-Trunk接口的状态和带宽，可以设置以下两个阈值，以减小成员链路状态的变化带来的影响。</p>
-<p>• 活动接口数下限阈值：当活动接口数小于配置的下限阈值时，Eth-Trunk接口的状态转为Down。设置活动接口数下限阈值的目的是为了保证最小带宽。<strong>least active-linknumber</strong>命令用来配置链路聚合组活动接口数目的下限阈值。</p>
-<p>• 活动接口数上限阈值：当活动接口数达到上限阈值后，之后再发生成员链路状态变为Up都不会使Eth-Trunk接口的带宽增加。设置活动接口数上限阈值的目的是在保证了带宽的情况下提高网络的可靠性。<strong>max active-linknumber</strong>命令用来配置链路聚合组活动接口数目的上限阈值。</p>
-<p># 开启抢占功能</p>
-<p>[S1]interface Eth-Trunk 1</p>
-<p>[S1-Eth-Trunk1]lacp preempt enable</p>
-<p>在LACP模式下，当活动链路中出现故障链路时，系统会从备用链路中选择优先级最高的链路替代故障链路；如果被替代的故障链路恢复了正常，而且该链路的优先级又高于替代自己的链路。这种情况下，如果使能了LACP优先级抢占功能，高优先级链路会抢占低优先级链路，<strong>回切</strong>到活动状态。<strong>lacp preempt enable</strong>命令用来使能LACP模式下LACP优先级抢占的功能，缺省情况下，优先级抢占处于禁止状态。</p>
-<p># 查看当前 Eth-Trunk接口状态</p>
-<p><img src="/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/2chakan2207161758.png" alt="2chakan2207161758"></p>
-<p>shutdown接口g0&#x2F;0&#x2F;11和g0&#x2F;0&#x2F;12</p>
-<p>查看状态，发现都变为unselect状态</p>
-<p>由于设置了Eth-Trunk的活动链路下限阈值为2，所以聚合组中可用活动接口数量少于2时，整个聚合组对应的接口将会被关闭。尽管此时GigabitEthernet0&#x2F;0&#x2F;10处于UP状态，但是仍处于Unselect状态。</p>
-<h2 id="修改负载分担模式"><a href="#修改负载分担模式" class="headerlink" title="修改负载分担模式"></a>修改负载分担模式</h2><p># 开启上一步中关闭的接口 </p>
-<p>[S1]inter GigabitEthernet 0&#x2F;0&#x2F;11</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11]undo shutdown </p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11]quit</p>
-<p>[S1]inter GigabitEthernet 0&#x2F;0&#x2F;12</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12]undo shutdown</p>
-<p># 大约30秒后，查看当前Eth-Trunk1的接口状态</p>
-<p>由于使能了Eth-Trunk接口的抢占功能，所以当GigabitEthernet0&#x2F;0&#x2F;11和GigabitEthernet0&#x2F;0&#x2F;12接口进入UP状态之后，这两个接口的接口的优先级高于GigabitEthernet0&#x2F;0&#x2F;10，所以GigabitEthernet0&#x2F;0&#x2F;10会进入unselect状态。同时因为系统为了保证链路的稳定性，默认的抢占延时为30秒，所以要在30秒后才会发生抢占。</p>
-<p># 修改Eth-Trunk接口的负载分担模式为基于目的IP地址</p>
-<p>[S1]interface Eth-Trunk 1</p>
-<p>[S1-Eth-Trunk1]load-balance dst-ip</p>
-<p>当需要将Eth-Trunk接口的流量分散到不同的链路上，最后能到达统一目的地时，使用load-balance命令配置Eth-Trunk接口负载分担模式，以确保出方向的流量在各物理链路间进行合理的负载分担，避免链路阻塞。由于负载分担只对出方向的流量有效，因此链路两端接口的负载分担模式可以不一致，两端互不影响</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>链路聚合</tag>
-        <tag>lacp</tag>
-        <tag>eth-trunk</tag>
       </tags>
   </entry>
   <entry>
@@ -3262,6 +2888,396 @@
       <tags>
         <tag>IGMP</tag>
         <tag>PIM</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>路由策略</title>
+    <url>/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/</url>
+    <content><![CDATA[<p><img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/luyouceltuopu126203917.png" alt="luyouceltuopu126203917"></p>
+<p>设备互联方式、互联地址如图所示，所有设备均创建Loopback0，其IP地址为10.0.x.x&#x2F;32，其中x为设备编号，R1、R2、R3在互联接口、Loopback0接口上激活OSPF。</p>
+<p>R3、R4属于IS-IS Area 49.0001，两者都是Level-1路由器，R3、R4的系统ID采用0000.0000.000x格式，其中x为设备编号。</p>
+<span id="more"></span>
+
+<p>R1上存在三个业务网段A、B、C（使用Loopback1、2、3接口路由模拟），在R1上将直连路由引入到OSPF，但是OSPF域内的路由器上不需要C业务的路由，为此在R1上引入直连路由时通过Route-Policy过滤引入的路由。</p>
+<p>R2上不需要A业务网段的路由，但是R3上需要A、B业务网段的路由，为此在R2上配置Filter-Policy对OSPF接收的路由进行过滤。</p>
+<p>IS-IS域内的路由器需要访问A业务，因此需要在R3上执行路由重分发，将OSPF路由引入到IS-IS，但是IS-IS域内的路由器不需要访问B业务，为此在R1上引入直连路由时为A、B业务网段路由打上不同的路由标记，R3上执行重分发时根据路由标记过滤B业务网段路由。</p>
+<h1 id="任务思路"><a href="#任务思路" class="headerlink" title="任务思路"></a>任务思路</h1><ol>
+<li>设备基础IP地址配置。</li>
+<li>配置R1、R2、R3之间的OSPF，在互联接口、Loopback0接口上激活OSPF。在R3、R4之间配置IS-IS。</li>
+<li>在R1上将直连路由引入到OSPF中，同时配置路由策略不引入C业务网段的路由，将A、B业务网段路由分别打上路由标记10、20。</li>
+<li>在R2上配置Filter-Policy对接收的OSPF路由进行过滤，只接收B业务网段的路由。</li>
+<li>在R3上将OSPF路由引入到IS-IS中，通过Route-Policy匹配路由标记，只引入A业务网段的OSPF外部路由。</li>
+</ol>
+<h1 id="1-配置ip"><a href="#1-配置ip" class="headerlink" title="1.配置ip"></a>1.配置ip</h1><p>#配置R1的GE0&#x2F;0&#x2F;2、Loopback0接口IP地址</p>
+<p>[R1]interface GigabitEthernet0&#x2F;0&#x2F;2</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;2] ip address 10.0.12.1 255.255.255.0</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;2] quit</p>
+<p>[R1]interface LoopBack0</p>
+<p>[R1-LoopBack0] ip address 10.0.1.1 255.255.255.255</p>
+<p>[R1-LoopBack0] quit</p>
+<p>#在R1上创建多个环回口，用于模拟业务网段A、B、C</p>
+<p>[R1]interface LoopBack1</p>
+<p>[R1-LoopBack1] ip address 172.16.1.1 255.255.255.0</p>
+<p>[R1-LoopBack1] quit</p>
+<p>[R1]interface LoopBack2</p>
+<p>[R1-LoopBack2] ip address 172.16.2.1 255.255.255.0</p>
+<p>[R1-LoopBack2] quit</p>
+<p>[R1]interface LoopBack3</p>
+<p>[R1-LoopBack3] ip address 172.16.3.1 255.255.255.0</p>
+<p>[R1-LoopBack3] quit</p>
+<p>#配置R2的GE0&#x2F;0&#x2F;2、GE0&#x2F;0&#x2F;3、Loopback0接口IP地址</p>
+<p>[R2]interface LoopBack0</p>
+<p>[R2-LoopBack0] ip address 10.0.2.2 255.255.255.255</p>
+<p>[R2-LoopBack0] quit</p>
+<p>[R2]interface GigabitEthernet0&#x2F;0&#x2F;2</p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;2] ip address 10.0.23.2 255.255.255.0</p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;2] quit</p>
+<p>[R2]interface GigabitEthernet0&#x2F;0&#x2F;3</p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;3] ip address 10.0.12.2 255.255.255.0</p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;3] quit</p>
+<p>#配置R3的GE0&#x2F;0&#x2F;2、GE0&#x2F;0&#x2F;3、Loopback0接口IP地址</p>
+<p>[R3]interface LoopBack0</p>
+<p>[R3-LoopBack0] ip address 10.0.3.3 255.255.255.255</p>
+<p>[R3-LoopBack0] quit</p>
+<p>[R3]interface GigabitEthernet0&#x2F;0&#x2F;2</p>
+<p>[R3-GigabitEthernet0&#x2F;0&#x2F;2] ip address 10.0.34.3 255.255.255.0</p>
+<p>[R3-GigabitEthernet0&#x2F;0&#x2F;2] quit</p>
+<p>[R3]interface GigabitEthernet0&#x2F;0&#x2F;3</p>
+<p>[R3-GigabitEthernet0&#x2F;0&#x2F;3] ip address 10.0.23.3 255.255.255.0</p>
+<p>[R3-GigabitEthernet0&#x2F;0&#x2F;3] quit</p>
+<p>#配置R4的GE0&#x2F;0&#x2F;3、Loopback0接口IP地址</p>
+<p>[R4]interface GigabitEthernet0&#x2F;0&#x2F;3</p>
+<p>[R4-GigabitEthernet0&#x2F;0&#x2F;3] ip address 10.0.34.4 255.255.255.0</p>
+<p>[R4-GigabitEthernet0&#x2F;0&#x2F;3] quit</p>
+<p>[R4]interface LoopBack0</p>
+<p>[R4-LoopBack0] ip address 10.0.4.4 255.255.255.255</p>
+<p>[R4-LoopBack0] quit</p>
+<p>#在R2、R4上检查IP地址连通性</p>
+<h1 id="2-配置ospf和isis"><a href="#2-配置ospf和isis" class="headerlink" title="2.配置ospf和isis"></a>2.配置ospf和isis</h1><p>#配置R1</p>
+<p>[R1]ospf 1 router-id 10.0.1.1</p>
+<p>[R1-ospf-1] area 0</p>
+<p>[R1-ospf-1-area-0.0.0.0] network 10.0.1.1 0.0.0.0</p>
+<p>[R1-ospf-1-area-0.0.0.0] network 10.0.12.1 0.0.0.0</p>
+<p>[R1-ospf-1-area-0.0.0.0] quit</p>
+<p>[R1-ospf-1] quit</p>
+<p>#配置R2</p>
+<p>[R2]ospf 1 router-id 10.0.2.2</p>
+<p>[R2-ospf-1] area 0.0.0.0</p>
+<p>[R2-ospf-1-area-0.0.0.0] network 10.0.2.2 0.0.0.0</p>
+<p>[R2-ospf-1-area-0.0.0.0] network 10.0.12.2 0.0.0.0</p>
+<p>[R2-ospf-1-area-0.0.0.0] network 10.0.23.2 0.0.0.0</p>
+<p>[R2-ospf-1-area-0.0.0.0] quit</p>
+<p>[R2-ospf-1] quit</p>
+<p>#配置R3</p>
+<p>[R3]ospf 1 router-id 10.0.3.3</p>
+<p>[R3-ospf-1] area 0.0.0.0</p>
+<p>[R3-ospf-1-area-0.0.0.0] network 10.0.3.3 0.0.0.0</p>
+<p>[R3-ospf-1-area-0.0.0.0] network 10.0.23.3 0.0.0.0</p>
+<p>[R3-ospf-1-area-0.0.0.0] quit</p>
+<p>[R3-ospf-1] quit</p>
+<p>#在R2上检查OSPF邻居的概要信息</p>
+<p>R3、R4上配置IS-IS，区域为49.0001，系统ID采用0000.0000.000x格式（x为设备编号），两台设备都为Level-1路由器，在互联接口、R4的Loopback0接口上激活IS-IS。</p>
+<p>#配置R3</p>
+<p>[R3]isis 1</p>
+<p>[R3-isis-1] is-level level-1</p>
+<p>[R3-isis-1] network-entity 49.0001.0000.0000.0003.00</p>
+<p>[R3-isis-1] quit</p>
+<p>[R3]interface GigabitEthernet0&#x2F;0&#x2F;2</p>
+<p>[R3-GigabitEthernet0&#x2F;0&#x2F;2] isis enable 1</p>
+<p>[R3-GigabitEthernet0&#x2F;0&#x2F;2] quit</p>
+<p>#配置R4</p>
+<p>[R4]isis 1</p>
+<p>[R4-isis-1] is-level level-1</p>
+<p>[R4-isis-1] network-entity 49.0001.0000.0000.0004.00</p>
+<p>[R4-isis-1] quit</p>
+<p>[R4]interface GigabitEthernet0&#x2F;0&#x2F;3</p>
+<p>[R4-GigabitEthernet0&#x2F;0&#x2F;3] isis enable 1</p>
+<p>[R4-GigabitEthernet0&#x2F;0&#x2F;3] quit</p>
+<p>[R4]interface LoopBack 0</p>
+<p>[R4-LoopBack0] isis enable 1</p>
+<p>[R4-LoopBack0] quit</p>
+<p>#在R3上检查IS-IS邻居状态</p>
+<h1 id="3-在R1上引入直连路由"><a href="#3-在R1上引入直连路由" class="headerlink" title="3.在R1上引入直连路由"></a>3.在R1上引入直连路由</h1><p>在R1上将直连路由引入到OSPF中，同时配置路由策略过滤C业务网段，将A、B业务网段路由分别打上路由标记10、20。</p>
+<p>#创建IP前缀列表1，匹配Loopback1接口路由（A业务网段）</p>
+<p>[R1]ip ip-prefix 1 index 10 permit 172.16.1.0 24 greater-equal 24 less-equal 24</p>
+<p>#创建IP前缀列表2，匹配Loopback2接口路由（B业务网段）</p>
+<p>[R1]ip ip-prefix 2 index 10 permit 172.16.2.0 24 greater-equal 24 less-equal 24</p>
+<p>#创建Route-Policy hcip，并创建节点10、20，分别调用IP前缀列表1、2，打上路由标记</p>
+<p>[R1]route-policy hcip permit node 10</p>
+<p>[R1-route-policy] if-match ip-prefix 1</p>
+<p>[R1-route-policy] apply tag 10</p>
+<p>[R1-route-policy] quit</p>
+<p>[R1]route-policy hcip permit node 20</p>
+<p>[R1-route-policy] if-match ip-prefix 2</p>
+<p>[R1-route-policy] apply tag 20 </p>
+<p>[R1-route-policy] quit</p>
+<p>#在R1的OSPF中引入直连路由，调用Route-Policy hcip</p>
+<p>[R1]ospf 1</p>
+<p>[R1-ospf-1] import-route direct route-policy hcip</p>
+<p>r1上查看ospf lsdb，Loopback1、2接口路由已经被成功引入OSPF中。</p>
+<p>#在R1上查看OSPF LSDB中AS-external LSA 172.16.1.0的相关信息</p>
+<p>[R1]display ospf lsdb ase 172.16.1.0 </p>
+<p>​	 OSPF Process 1 with Router ID 10.0.1.1</p>
+<p>​		 Link State Database</p>
+<p> Type    : External</p>
+<p> Ls id   : 172.16.1.0</p>
+<p> Adv rtr  : 10.0.1.1  </p>
+<p> Ls age   : 165 </p>
+<p> Len    : 36 </p>
+<p> Options  :  E  </p>
+<p> seq#    : 80000001 </p>
+<p> chksum   : 0xa954</p>
+<p> Net mask  : 255.255.255.0 </p>
+<p> TOS 0  Metric: 1 </p>
+<p> E type   : 2</p>
+<p> Forwarding Address : 0.0.0.0 </p>
+<p> Tag    : 10 </p>
+<p> Priority  : Low</p>
+<p>外部路由172.16.1.0&#x2F;24已经被打上Tag 10。</p>
+<p>#在R1上查看OSPF LSDB中AS-external LSA 172.16.2.0的相关信息</p>
+<p>[R1]display ospf lsdb ase 172.16.2.0</p>
+<p>​	 OSPF Process 1 with Router ID 10.0.1.1</p>
+<p>​		 Link State Database</p>
+<p> Type    : External</p>
+<p> Ls id   : 172.16.2.0</p>
+<p> Adv rtr  : 10.0.1.1  </p>
+<p> Ls age   : 355 </p>
+<p> Len    : 36 </p>
+<p> Options  :  E  </p>
+<p> seq#    : 80000001 </p>
+<p> chksum   : 0x539f</p>
+<p> Net mask  : 255.255.255.0 </p>
+<p> TOS 0  Metric: 1 </p>
+<p> E type   : 2</p>
+<p> Forwarding Address : 0.0.0.0 </p>
+<p> Tag    : 20 </p>
+<p> Priority  : Low</p>
+<p>外部路由172.16.2.0&#x2F;24已经被打上Tag 20。</p>
+<h1 id="4-在R2上配置过滤策略"><a href="#4-在R2上配置过滤策略" class="headerlink" title="4.在R2上配置过滤策略"></a>4.在R2上配置过滤策略</h1><p>在R2上配置Filter-Policy对接收的OSPF路由进行过滤，只接收B业务网段的路由。</p>
+<p>#查看配置Filter-Policy前的OSPF路由表</p>
+<p><R2>display ospf routing</R2></p>
+<p>#查看配置Filter-Policy前的IP路由表中的OSPF路由</p>
+<p><R2>display ip routing-table protocol ospf	</R2></p>
+<p>在OSPF路由表以及IP路由表中<strong>都可以看到</strong>OSPF外部路由172.16.1.0&#x2F;24、172.16.2.0&#x2F;24。</p>
+<p>#配置基础ACL </p>
+<p>[R2]acl number 2000</p>
+<p>[R2-acl-basic-2000] rule 5 deny source 172.16.1.0 0.0.0.255</p>
+<p>[R2-acl-basic-2000] rule 10 permit</p>
+<p>#在OSPF中部署入方向的Filter-Policy，调用ACL 2000</p>
+<p>[R2]ospf 1</p>
+<p>[R2-ospf-1] filter-policy 2000 import</p>
+<p>#查看配置Filter-Policy后的OSPF路由表</p>
+<p>dis ospf routing</p>
+<p>发现两条外部路由都还存在</p>
+<p>#查看配置Filter-Policy后的IP路由表中的OSPF路由</p>
+<p><R2>display ip routing-table protocol ospf	</R2></p>
+<p>在IP路由表中路由172.16.2.0&#x2F;24已经不存在，但是在OSPF路由表中依旧存在。这验证了对于OSPF，Filter-Policy只是限制路由加入IP路由表，不影响本地的LSDB以及LSA的传递。</p>
+<p>#在R3上查看IP路由表中的OSPF路由</p>
+<p><R3>display ip routing-table protocol ospf </R3></p>
+<p>R3的IP路由表中OSPF外部路由172.16.1.0&#x2F;24、172.16.2.0&#x2F;24依旧存在。</p>
+<h1 id="5-在R3上将OSPF路由引入到IS-IS"><a href="#5-在R3上将OSPF路由引入到IS-IS" class="headerlink" title="5.在R3上将OSPF路由引入到IS-IS"></a>5.在R3上将OSPF路由引入到IS-IS</h1><p>在R3上将OSPF路由引入到IS-IS中，通过Route-Policy匹配路由标记，只引入A业务网段的OSPF外部路由。</p>
+<p>#创建Route-Policy hcip</p>
+<p>[R3]route-policy hcip permit node 10</p>
+<p>[R3-route-policy] if-match tag 10</p>
+<p>[R3-route-policy] quit</p>
+<p>#在IS-IS中引入OSPF路由，调用Route-Policy hcip只引入A业务网段的OSPF外部路由</p>
+<p>[R3]isis 1</p>
+<p>[R3-isis-1] import-route ospf 1 <strong>level-1</strong> route-policy hcip</p>
+<p>（注意指定level）</p>
+<p>#查看R3的IS-IS路由表</p>
+<p><R3>display isis route </R3></p>
+<p>Level-1的路由重分发表中只有172.16.1.0&#x2F;24。</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>路由策略</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>链路聚合</title>
+    <url>/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/</url>
+    <content><![CDATA[<h1 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h1><h2 id="什么是链路聚合"><a href="#什么是链路聚合" class="headerlink" title="什么是链路聚合"></a>什么是链路聚合</h2><p>在现网中，设备间如果通过一条链路连接，<strong>如果这条链路故障了，那么设备两端的终端就不能够通信了</strong>。有什么办法可以解决该问题呢？答案是——<strong>链路聚合</strong>。</p>
+<p><strong>从端口的角度定义：</strong></p>
+<p><strong>链路聚合（Link Aggregation）</strong>是指将<strong>多个物理端口</strong>汇聚在一起，形成一个<strong>逻辑端口</strong>，以实现出&#x2F;入流量吞吐量在各<strong>成员端口</strong>的负荷分担，交换机根据用户配置的端口负载分担方式决定数据包从哪个成员端口发送到对端的交换机。</p>
+<p><strong>从链路的角度定义：</strong></p>
+<p>链路聚合（Link Aggregation）是把两台设备之间的<strong>多条物理链路聚</strong>合在一起，当做一条<strong>逻辑链路</strong>来使用。这两台设备可以是一对路由器，一对交换机，或者是一台路由器和一台交换机。一条聚合链路可以包含多条成员链路，默认最多为<strong>8</strong>条。</p>
+<h2 id="链路聚合的作用"><a href="#链路聚合的作用" class="headerlink" title="链路聚合的作用"></a>链路聚合的作用</h2><ul>
+<li>链路聚合能够<strong>提高链路带宽</strong>。理论上，通过聚合几条链路，一个聚合口的带宽可以扩展为所有成员口带宽的总和，这样就有效地增加了逻辑链路的带宽。</li>
+<li>链路聚合<strong>为网络提供了高可靠性</strong>。配置了链路聚合之后，如果一个成员接口发生故障，该成员口的物理链路会把流量切换到另一条成员链路上。</li>
+<li>链路聚合<strong>在一个聚合口上实现负载均衡。</strong>一个聚合口可以把流量分散到多个不同的成员口上，通过成员链路把流量发送到同一个目的地，将网络产生拥塞的可能性降到最低。</li>
+</ul>
+<h2 id="三-链路聚合的工作原理："><a href="#三-链路聚合的工作原理：" class="headerlink" title="三. 链路聚合的工作原理："></a><strong>三. 链路聚合的工作原理：</strong></h2><p><strong>应用场景：</strong></p>
+<p>链路聚合一般部署在核心结点，以便提升整个网络的数据吞吐量。</p>
+<p>链路聚合能够提高链路带宽，增强网络可靠、可用性，支持负载分担。</p>
+<p><strong>链路聚合模式:</strong></p>
+<p>链路聚合包含两种模式：<strong>手动负载均衡模式</strong>和<strong>静态LACP（Link Aggregation Control Protocol）模式。</strong></p>
+<ol>
+<li><strong>手工负载分担模式：</strong></li>
+</ol>
+<ul>
+<li>手工负载分担模式下，Eth-Trunk的建立、<strong>成员接口</strong>的加入由<strong>手工配置</strong>，没有链路聚合控制协议的参与。</li>
+<li>该模式下所有<strong>活动链路</strong>都参与数据的转发，平均分担流量，因此称为<strong>负载分担模式</strong>。如果某条活动链路故障，链路聚合组自动在剩余的活动链路中平均分担流量。</li>
+</ul>
+<p><strong>使用场景：</strong></p>
+<p>当需要在两个直连设备间提供<strong>一个较大的链路带宽而设备又不支持LACP协议</strong>时，可以使用手工负载分担模式。</p>
+<p><strong>2. 静态LACP模式：</strong></p>
+<ul>
+<li>在静态LACP模式中，链路两端的设备相互发送<strong>LACP报文，协商聚合参数</strong>。协商完成后，两台设备确定活动接口和非活动接口。</li>
+<li>在静态LACP模式中，需要手动创建一个Eth-Trunk口，并添加成员口。</li>
+<li>静态LACP模式也叫<strong>M:N模式</strong>。M代表<strong>活动成员链路</strong>，用于在负载均衡模式中转发数据。N代表<strong>非活动链路</strong>，用于冗余备份。</li>
+<li>如果一条活动链路发生故障，该链路传输的数据被切换到一条优先级最高的备份链路上，这条备份链路转变为活动状态。</li>
+</ul>
+<p><strong>两种链路聚合模式的主要区别：</strong></p>
+<ul>
+<li>在<strong>静态LACP模式中</strong>，一些链路充当备份链路。</li>
+<li>在<strong>手动负载均衡模式</strong>中，所有的成员口都处于转发状态。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>手工模式</th>
+<th>LACP模式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Eth-Trunk的建立方式</td>
+<td>Eth-Trunk接口的创建、成员接口的加入由手工配置，没有链路聚合控制协议的参与。</td>
+<td>Eth-Trunk接口的创建、成员接口的加入由手工配置，LACP协议参与链路动态调整，负责链路状态维护。在聚合条件发生变化时，自动调整或解散链路聚合。</td>
+</tr>
+<tr>
+<td>设备是否需要支持LACP协议</td>
+<td>不需要</td>
+<td>需要</td>
+</tr>
+<tr>
+<td>数据转发</td>
+<td>正常情况下，所有链路都是活动链路。所有活动链路均参与数据转发。如果某条活动链路故障，链路聚合组自动在剩余的活动链路中分担流量。</td>
+<td>正常情况下，部分链路是活动链路。所有活动链路均参与数据转发。如果某条活动链路故障，链路聚合组自动在非活动链路中选择一条链路作为活动链路，参与数据转发的链路数目不变。</td>
+</tr>
+<tr>
+<td>检测故障</td>
+<td>只能检测到同一聚合组内的成员链路有断路等故障，无法检测到链路断连、错连等故障。</td>
+<td>不仅能够检测到同一聚合组内的成员链路有断路等故障，还可以检测到链路故障、链路错连等故障。</td>
+</tr>
+</tbody></table>
+<p><strong>数据流控制:</strong></p>
+<p>Eth-trunk链路两端相连的物理接口的数量、速率、双工方式、流控方式必须一致。</p>
+<h2 id="优先级"><a href="#优先级" class="headerlink" title="优先级"></a>优先级</h2><p>0-65535 </p>
+<p>默认32768</p>
+<p>小的优先</p>
+<p>优先级一样，看mac，mac小的优先</p>
+<h1 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h1><p><img src="/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/juhetuopu31207160429.png" alt="juhetuopu31207160429"></p>
+<h2 id="配置手工链路聚合"><a href="#配置手工链路聚合" class="headerlink" title="配置手工链路聚合"></a>配置手工链路聚合</h2><p># 创建Eth-Trunk接口</p>
+<p>[S1]interface Eth-Trunk 1 </p>
+<p><strong>interface eth-trunk</strong>命令用来进入已经存在的Eth-Trunk接口，或创建并进入Eth-Trunk接口。数字“1”代表接口编号，编号范围根据设备情况有所不同。</p>
+<p>[S2]interface Eth-Trunk 1</p>
+<p># 设置Eth-Trunk接口的聚合模式 </p>
+<p>[S1-Eth-Trunk1]mode manual load-balance</p>
+<p><strong>mode</strong>命令用来配置Eth-Trunk的工作模式，有LACP模式和手工负载分担模式（手工模式）两种，缺省情况下，Eth-Trunk的工作模式为手工负载分担模式。此处S1上的模式配置仅为示范目的，实际操作时不需要。</p>
+<p># 将成员接口加入聚合组</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;10 </p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10]eth-trunk 1 </p>
+<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10]quit</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;11</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11]eth-trunk 1</p>
+<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11]quit</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;12</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12]eth-trunk 1</p>
+<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12]quit</p>
+<p>可进入到成员接口的接口视图下，逐一添加到Eth-Trunk接口。也可以在Eth-Trunk接口视图下通过<strong>trunkport</strong>命令批量添加接口。</p>
+<p>[S2]interface Eth-Trunk 1</p>
+<p>[S2-Eth-Trunk1]trunkport GigabitEthernet 0&#x2F;0&#x2F;10 to 0&#x2F;0&#x2F;12 </p>
+<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
+<p>将成员接口加入Eth-Trunk时，需要注意以下问题：</p>
+<p>• 每个Eth-Trunk接口下最多可以包含8个成员接口。</p>
+<p>• Eth-Trunk接口不能嵌套，即Eth-Trunk接口的成员接口不能是Eth-Trunk接口。</p>
+<p>• 一个以太网接口只能加入到一个Eth-Trunk接口，如果需要加入其它Eth-Trunk接口，必须先退出原来的Eth-Trunk接口。</p>
+<p>• 如果本地设备使用了Eth-Trunk，与成员接口直连的对端接口也必须捆绑为Eth-Trunk接口，两端才能正常通信。</p>
+<p>Eth-Trunk链路两端相连的物理接口的数量、速率、双工方式等必须一致。</p>
+<p>#查看Eth-Trunk接口状态</p>
+<p>dis eth-trunk 1</p>
+<h2 id="配置LACP模式"><a href="#配置LACP模式" class="headerlink" title="配置LACP模式"></a>配置LACP模式</h2><p># 删除现有Eth-Trunk接口下的成员接口</p>
+<p>[S1]interface Eth-Trunk 1</p>
+<p>[S1-Eth-Trunk1]undo trunkport GigabitEthernet 0&#x2F;0&#x2F;10 to 0&#x2F;0&#x2F;12</p>
+<p>[S2]interface Eth-Trunk 1</p>
+<p>[S2-Eth-Trunk1]undo trunkport GigabitEthernet 0&#x2F;0&#x2F;10 to 0&#x2F;0&#x2F;12</p>
+<p><strong>在修改Eth-Trunk接口的聚合模式之前，需要确保Eth-Trunk中没有任何成员接口。</strong></p>
+<p># 修改聚合模式</p>
+<p>[S1]interface Eth-Trunk 1</p>
+<p>[S1-Eth-Trunk1]mode lacp</p>
+<p><strong>mode</strong> <strong>lacp</strong> 指定Eth-Trunk工作模式为LACP模式。</p>
+<p>注：部分版本的设备命令为 mode lacp-static</p>
+<p>[S2]interface Eth-Trunk 1</p>
+<p>[S2-Eth-Trunk1]mode lacp</p>
+<p># 将成员接口加入聚合组</p>
+<p>[S1]interface Eth-Trunk 1</p>
+<p>[S1-Eth-Trunk1]trunkport GigabitEthernet 0&#x2F;0&#x2F;10 to 0&#x2F;0&#x2F;12</p>
+<p>[S2]interface Eth-Trunk 1</p>
+<p>[S2-Eth-Trunk1]trunkport GigabitEthernet 0&#x2F;0&#x2F;10 to 0&#x2F;0&#x2F;12</p>
+<p>查看</p>
+<p><img src="/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/1chakan1207160903.png" alt="1chakan1207160903"></p>
+<p>注意此时三个接口都是Select的状态</p>
+<h2 id="选择接口"><a href="#选择接口" class="headerlink" title="选择接口"></a>选择接口</h2><p>​	考虑到网络流量情况，当网络正常时，只需要GigabitEthernet0&#x2F;0&#x2F;11和GigabitEthernet0&#x2F;0&#x2F;12接口处于转发状态，GigabitEthernet0&#x2F;0&#x2F;10接口作为备份。但当活动接口数量少于2时，直接关闭整个Eth-Trunk接口。</p>
+<p>全局配置优先级选举主动方，主动方设备的端口上配置接口优先级选举活动端口</p>
+<p># 配置设备S1的LACP优先级，使其成为主动端设备</p>
+<p>[S1]lacp priority 100 </p>
+<p># 配置接口优先级，优选GigabitEthernet0&#x2F;0&#x2F;11和GigabitEthernet0&#x2F;0&#x2F;12接口</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;10 </p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10]lacp priority 40000</p>
+<p># 配置接口优先级，优选GigabitEthernet0&#x2F;0&#x2F;11和GigabitEthernet0&#x2F;0&#x2F;12接口</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;10 </p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10]lacp priority 40000</p>
+<p>g0&#x2F;0&#x2F;10配置了大于32768的优先级4000，所以变为备份端口</p>
+<p>之后，g0&#x2F;0&#x2F;11和g0&#x2F;0&#x2F;12为活动端口</p>
+<p>使能了LACP模式链路聚合的两端设备均会收发的LACPDU报文。</p>
+<p>首先选举主动端设备：</p>
+<ol>
+<li>比较系统优先级字段，如果对端的系统优先级高于本端的系统优先级（默认为32768，越小越优），则确定对端为LACP主动端。</li>
+<li>如果系统优先级相同，比较两端设备的MAC地址，MAC地址小的一端为LACP主动端。</li>
+</ol>
+<p>选出主动端后，两端都会以主动端的接口优先级来选择活动接口，接口优先级越小越优，默认为32768。</p>
+<p># 配置Eth-trunk活动接口数上限阈值和下限阈值</p>
+<p>[S1]interface Eth-Trunk 1</p>
+<p>[S1-Eth-Trunk1]max active-linknumber 2</p>
+<p>[S1-Eth-Trunk1]least active-linknumber 2</p>
+<p>在一个Eth-Trunk接口内，活动接口数可以影响到Eth-Trunk接口的状态和带宽。Eth-Trunk接口的带宽是所有处于Up状态的成员口带宽之和。为保证Eth-Trunk接口的状态和带宽，可以设置以下两个阈值，以减小成员链路状态的变化带来的影响。</p>
+<p>• 活动接口数下限阈值：当活动接口数小于配置的下限阈值时，Eth-Trunk接口的状态转为Down。设置活动接口数下限阈值的目的是为了保证最小带宽。<strong>least active-linknumber</strong>命令用来配置链路聚合组活动接口数目的下限阈值。</p>
+<p>• 活动接口数上限阈值：当活动接口数达到上限阈值后，之后再发生成员链路状态变为Up都不会使Eth-Trunk接口的带宽增加。设置活动接口数上限阈值的目的是在保证了带宽的情况下提高网络的可靠性。<strong>max active-linknumber</strong>命令用来配置链路聚合组活动接口数目的上限阈值。</p>
+<p># 开启抢占功能</p>
+<p>[S1]interface Eth-Trunk 1</p>
+<p>[S1-Eth-Trunk1]lacp preempt enable</p>
+<p>在LACP模式下，当活动链路中出现故障链路时，系统会从备用链路中选择优先级最高的链路替代故障链路；如果被替代的故障链路恢复了正常，而且该链路的优先级又高于替代自己的链路。这种情况下，如果使能了LACP优先级抢占功能，高优先级链路会抢占低优先级链路，<strong>回切</strong>到活动状态。<strong>lacp preempt enable</strong>命令用来使能LACP模式下LACP优先级抢占的功能，缺省情况下，优先级抢占处于禁止状态。</p>
+<p># 查看当前 Eth-Trunk接口状态</p>
+<p><img src="/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/2chakan2207161758.png" alt="2chakan2207161758"></p>
+<p>shutdown接口g0&#x2F;0&#x2F;11和g0&#x2F;0&#x2F;12</p>
+<p>查看状态，发现都变为unselect状态</p>
+<p>由于设置了Eth-Trunk的活动链路下限阈值为2，所以聚合组中可用活动接口数量少于2时，整个聚合组对应的接口将会被关闭。尽管此时GigabitEthernet0&#x2F;0&#x2F;10处于UP状态，但是仍处于Unselect状态。</p>
+<h2 id="修改负载分担模式"><a href="#修改负载分担模式" class="headerlink" title="修改负载分担模式"></a>修改负载分担模式</h2><p># 开启上一步中关闭的接口 </p>
+<p>[S1]inter GigabitEthernet 0&#x2F;0&#x2F;11</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11]undo shutdown </p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11]quit</p>
+<p>[S1]inter GigabitEthernet 0&#x2F;0&#x2F;12</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12]undo shutdown</p>
+<p># 大约30秒后，查看当前Eth-Trunk1的接口状态</p>
+<p>由于使能了Eth-Trunk接口的抢占功能，所以当GigabitEthernet0&#x2F;0&#x2F;11和GigabitEthernet0&#x2F;0&#x2F;12接口进入UP状态之后，这两个接口的接口的优先级高于GigabitEthernet0&#x2F;0&#x2F;10，所以GigabitEthernet0&#x2F;0&#x2F;10会进入unselect状态。同时因为系统为了保证链路的稳定性，默认的抢占延时为30秒，所以要在30秒后才会发生抢占。</p>
+<p># 修改Eth-Trunk接口的负载分担模式为基于目的IP地址</p>
+<p>[S1]interface Eth-Trunk 1</p>
+<p>[S1-Eth-Trunk1]load-balance dst-ip</p>
+<p>当需要将Eth-Trunk接口的流量分散到不同的链路上，最后能到达统一目的地时，使用load-balance命令配置Eth-Trunk接口负载分担模式，以确保出方向的流量在各物理链路间进行合理的负载分担，避免链路阻塞。由于负载分担只对出方向的流量有效，因此链路两端接口的负载分担模式可以不一致，两端互不影响</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>链路聚合</tag>
+        <tag>lacp</tag>
+        <tag>eth-trunk</tag>
       </tags>
   </entry>
 </search>
