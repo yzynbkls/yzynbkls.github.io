@@ -1474,6 +1474,188 @@
       </tags>
   </entry>
   <entry>
+    <title>VRRP</title>
+    <url>/2024/05/25/VRRP/</url>
+    <content><![CDATA[<h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><p>虚拟路由冗余协议VRRP（Virtual Router Redundancy Protocol）通过把几台路由设备联合组成一台虚拟的路由设备，将虚拟路由设备的IP地址作为用户的默认网关实现与外部网络通信。当网关设备发生故障时，VRRP机制能够选举新的网关设备承担数据流量，从而保障网络的可靠通信。</p>
+<p>随着网络的快速普及和相关应用的日益深入，各种增值业务（如IPTV、视频会议等）已经开始广泛部署，基础网络的可靠性日益成为用户关注的焦点，能够保证网络传输不中断对于终端用户非常重要。</p>
+<p>通常，同一网段内的所有主机上都设置一条相同的、以网关为下一跳的缺省路由。主机发往其他网段的报文将通过缺省路由发往网关，再由网关进行转发，从而实现主机与外部网络的通信。当网关发生故障时，本网段内所有以网关为缺省路由的主机将无法与外部网络通信。增加出口网关是提高系统可靠性的常见方法，此时如何在多个出口之间进行选路就成为需要解决的问题。</p>
+<p>VRRP的出现很好的解决了这个问题。VRRP能够在不改变组网的情况下，采用将多台路由设备组成一个虚拟路由器，通过配置虚拟路由器的IP地址为默认网关，实现默认网关的备份。当网关设备发生故障时，VRRP机制能够选举新的网关设备承担数据流量，从而保障网络的可靠通信。</p>
+<img src="/2024/05/25/VRRP/QQ截图20240525184700.png" alt="QQ截图20240525184700" style="zoom:67%;">
+
+<ul>
+<li>VRRP路由器（VRRP Router）：运行VRRP协议的设备，它可能属于一个或多个虚拟路由器，如RouterA和RouterB。</li>
+<li>虚拟路由器（Virtual Router）：又称VRRP备份组，由一个Master设备和多个Backup设备组成，被当作一个共享局域网内主机的缺省网关。如RouterA和RouterB共同组成了一个虚拟路由器。</li>
+<li>Master路由器（Virtual Router Master）：承担转发报文任务的VRRP设备，如RouterA。</li>
+<li>Backup路由器（Virtual Router Backup）：一组没有承担转发任务的VRRP设备，当Master设备出现故障时，它们将通过竞选成为新的Master设备，如RouterB。</li>
+<li>VRID：虚拟路由器的标识。如RouterA和RouterB组成的虚拟路由器的VRID为1。</li>
+<li>虚拟IP地址(Virtual IP Address)：虚拟路由器的IP地址，一个虚拟路由器可以有一个或多个IP地址，由用户配置。如RouterA和RouterB组成的虚拟路由器的虚拟IP地址为10.1.1.10&#x2F;24。</li>
+<li><strong>IP地址拥有者（</strong>IP Address Owner）：如果一个VRRP设备将虚拟路由器IP地址作为真实的接口地址，则该设备被称为IP地址拥有者。如果IP地址拥有者是可用的，通常它将成为Master。如RouterA，其接口的IP地址与虚拟路由器的IP地址相同，均为10.1.1.10&#x2F;24，因此它是这个VRRP备份组的IP地址拥有者。</li>
+<li>虚拟MAC地址（Virtual MAC Address）：虚拟路由器根据虚拟路由器ID生成的MAC地址。一个虚拟路由器拥有一个虚拟MAC地址，格式为：<strong>00-00-5E-00-01</strong>-{VRID}(VRRP for IPv4)；00-00-5E-00-02-{VRID}(VRRP for IPv6)。当虚拟路由器回应ARP请求时，使用虚拟MAC地址，而不是接口的真实MAC地址。如RouterA和RouterB组成的虚拟路由器的VRID为1，因此这个VRRP备份组的MAC地址为00-00-5E-00-01-01。</li>
+</ul>
+<p>0000-5e00-01xx   其中xx是vrid</p>
+<h1 id="报文格式"><a href="#报文格式" class="headerlink" title="报文格式"></a>报文格式</h1><p>vrrp只有一种报文，Advertisement报文，基于组播方式发送，目的组播地址为224.0.0.18，ip协议号：112</p>
+<img src="/2024/05/25/VRRP/QQ截图20240525185133.png" alt="QQ截图20240525185133" style="zoom:67%;">
+
+<table>
+<thead>
+<tr>
+<th>报文字段</th>
+<th>含义</th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>VRRPv2</td>
+<td>VRRPv3</td>
+<td></td>
+</tr>
+<tr>
+<td>Version</td>
+<td>VRRP协议版本号，取值为2。</td>
+<td>VRRP协议版本号，取值为3。</td>
+</tr>
+<tr>
+<td>Type</td>
+<td>VRRP通告报文的类型，取值为1，表示Advertisement。</td>
+<td>VRRP通告报文的类型，取值为1，表示Advertisement。</td>
+</tr>
+<tr>
+<td>Virtual Rtr ID（VRID）</td>
+<td>虚拟路由器ID，取值范围是1～255。</td>
+<td>虚拟路由器ID，取值范围是1～255。</td>
+</tr>
+<tr>
+<td>Priority</td>
+<td>Master设备在备份组中的优先级，取值范围是0～255。0表示设备停止参与VRRP备份组，用来使备份设备尽快成为Master设备，而不必等到计时器超时；255则保留给IP地址拥有者。缺省值是100。</td>
+<td>Master设备在备份组中的优先级，取值范围是0～255。0表示设备停止参与VRRP备份组，用来使备份设备尽快成为Master设备，而不必等到计时器超时；255则保留给IP地址拥有者。缺省值是100。</td>
+</tr>
+<tr>
+<td>Count IP Addrs&#x2F;Count IPvX Addr</td>
+<td>备份组中虚拟IPv4地址的个数。</td>
+<td>备份组中虚拟IPv4或虚拟IPv6地址的个数。</td>
+</tr>
+<tr>
+<td>Auth Type</td>
+<td>VRRP报文的认证类型。协议中指定了3种类型：0：Non Authentication，表示无认证。1：Simple Text Password，表示明文认证方式。2：IP Authentication Header，表示MD5认证方式。</td>
+<td>-</td>
+</tr>
+<tr>
+<td>Adver Int&#x2F;Max Adver Int</td>
+<td>VRRP通告报文的发送时间间隔，单位是秒，缺省值为1秒。</td>
+<td>VRRP通告报文的发送时间间隔，单位是厘秒，缺省值为100厘秒（1秒）。</td>
+</tr>
+<tr>
+<td>Checksum</td>
+<td>16位校验和，用于检测VRRP报文中的数据破坏情况。</td>
+<td>16位校验和，用于检测VRRP报文中的数据破坏情况。</td>
+</tr>
+<tr>
+<td>IP Address&#x2F;IPvX Address(es)</td>
+<td>VRRP备份组的虚拟IPv4地址，所包含的地址数定义在Count IP Addrs字段。</td>
+<td>VRRP备份组的虚拟IPv4地址或者虚拟IPv6地址，所包含的地址数定义在Count IPvX Addrs字段。</td>
+</tr>
+<tr>
+<td>Authentication Data</td>
+<td>VRRP报文的认证字。目前只有明文认证和MD5认证才用到该部分，对于其它认证方式，一律填0。</td>
+<td>-</td>
+</tr>
+<tr>
+<td>rsvd</td>
+<td>-</td>
+<td>VRRP报文的保留字段，必须设置为0。</td>
+</tr>
+</tbody></table>
+<ul>
+<li><p>支持的网络类型不同。VRRPv3适用于IPv4和IPv6两种网络，而VRRPv2仅适用于IPv4网络。</p>
+</li>
+<li><p>认证功能不同。VRRPv3不支持认证功能，而VRRPv2支持认证功能。</p>
+</li>
+<li><p>发送通告报文的时间间隔的单位不同。VRRPv3支持的是厘秒级，而VRRPv2支持的是秒级。</p>
+</li>
+</ul>
+<h1 id="状态机"><a href="#状态机" class="headerlink" title="状态机"></a>状态机</h1><p><img src="/2024/05/25/VRRP/QQ%E6%88%AA%E5%9B%BE20240525185814.png" alt="QQ截图20240525185814"></p>
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Initialize</td>
+<td>该状态为VRRP不可用状态，在此状态时设备不会对VRRP报文做任何处理。通常刚配置VRRP时或设备检测到故障时会进入Initialize状态。收到接口Up的消息后，如果设备的优先级为255，则直接成为Master设备；如果设备的优先级小于255，则会先切换至Backup状态。</td>
+</tr>
+<tr>
+<td>Master</td>
+<td>当VRRP设备处于Master状态时，它将会做下列工作：定时（Advertisement Interval）发送VRRP通告报文。以虚拟MAC地址响应对虚拟IP地址的ARP请求。转发目的MAC地址为虚拟MAC地址的IP报文。如果它是这个虚拟IP地址的拥有者，则接收目的IP地址为这个虚拟IP地址的IP报文。否则，丢弃这个IP报文。如果收到比自己优先级大的报文，立即成为Backup。如果收到与自己优先级相等的VRRP报文且本地接口IP地址小于对端接口IP，立即成为Backup。</td>
+</tr>
+<tr>
+<td>Backup</td>
+<td>当VRRP设备处于Backup状态时，它将会做下列工作：接收Master设备发送的VRRP通告报文，判断Master设备的状态是否正常。对虚拟IP地址的ARP请求，不做响应。丢弃目的IP地址为虚拟IP地址的IP报文。如果收到优先级和自己相同或者比自己大的报文，则重置Master_Down_Interval定时器，不进一步比较IP地址。Master_Down_Interval定时器：Backup设备在该定时器超时后仍未收到通告报文，则会转换为Master状态。计算公式如下：<em><em>Master_Down_Interval&#x3D;(3</em> Advertisement_Interval) + Skew_time。其中，Skew_Time&#x3D;(256–Priority)&#x2F;256。</em>*如果收到比自己优先级小的报文且该报文优先级是0时，定时器时间设置为Skew_time（偏移时间），如果该报文优先级不是0，丢弃报文，立刻成为Master。</td>
+</tr>
+</tbody></table>
+<h1 id="VRRP工作过程"><a href="#VRRP工作过程" class="headerlink" title="VRRP工作过程"></a>VRRP工作过程</h1><ol>
+<li>VRRP备份组中的设备根据<strong>优先级</strong>选举出Master。Master设备通过发送免费ARP报文，将虚拟MAC地址通知给与它连接的设备或者主机，从而承担报文转发任务。</li>
+<li>Master设备周期性向备份组内所有Backup设备发送VRRP通告报文，以公布其配置信息（优先级等）和工作状况。</li>
+<li>如果Master设备出现故障，VRRP备份组中的Backup设备将根据优先级重新选举新的Master。</li>
+<li>VRRP备份组状态切换时，Master设备由一台设备切换为另外一台设备，新的Master设备会立即发送携带虚拟路由器的虚拟MAC地址和虚拟IP地址信息的免费ARP报文，刷新与它连接的主机或设备中的MAC表项，从而把用户流量引到新的Master设备上来，整个过程对用户完全透明。</li>
+<li>原Master设备故障恢复时，若该设备为IP地址拥有者（优先级为255），将直接切换至Master状态。若该设备优先级小于255，将首先切换至Backup状态，且其优先级恢复为故障前配置的优先级。</li>
+<li>Backup设备的优先级高于Master设备时，由Backup设备的工作方式（抢占方式和非抢占方式）决定是否重新选举Master。<ul>
+<li><strong>抢占模式</strong>（默认）：在抢占模式下，如果Backup设备的优先级比当前Master设备的优先级高，则主动将自己切换成Master。</li>
+<li>非抢占模式：在非抢占模式下，只要Master设备没有出现故障，Backup设备即使随后被配置了更高的优先级也不会成为Master设备。</li>
+</ul>
+</li>
+</ol>
+<p>由此可见，为了保证Master设备和Backup设备能够协调工作，VRRP需要实现以下功能：</p>
+<ul>
+<li>Master设备的选举。</li>
+<li>Master设备状态的通告。</li>
+</ul>
+<p>下面将从上述两个方面详细介绍VRRP的工作过程。</p>
+<ul>
+<li><p><strong>Master设备的选举</strong></p>
+<p>VRRP根据优先级来确定虚拟路由器中每台设备的角色（Master设备或Backup设备）。优先级越高，则越有可能成为Master设备。</p>
+<p>初始创建的VRRP设备工作在Initialize状态，收到接口Up的消息后，如果设备的优先级为255，则直接成为Master设备；如果设备的优先级小于255，则会先切换至Backup状态，待Master_Down_Interval定时器超时后再切换至Master状态。首先切换至Master状态的VRRP设备通过VRRP通告报文的交互获知虚拟设备中其他成员的优先级，进行Master的选举：</p>
+<ul>
+<li>如果VRRP报文中Master设备的优先级高于或等于自己的优先级，则Backup设备保持Backup状态。</li>
+<li>如果VRRP报文中Master设备的优先级低于自己的优先级，采用抢占方式的Backup设备将切换至Master状态，采用非抢占方式的Backup设备仍保持Backup状态。</li>
+<li>如果多个VRRP设备同时切换到Master状态，通过VRRP通告报文的交互进行协商后，优先级较低的VRRP设备将切换成Backup状态，优先级最高的VRRP设备成为最终的Master设备；优先级相同时，VRRP设备上VRRP备份组所在接口主IP地址较大的成为Master设备。</li>
+<li>如果创建的VRRP设备为IP地址拥有者，收到接口Up的消息后，将会直接切换至Master状态。</li>
+</ul>
+</li>
+<li><p><strong>Master设备状态的通告</strong></p>
+<p>Master设备周期性地发送VRRP通告报文，在VRRP备份组中公布其配置信息（优先级等）和工作状况。Backup设备通过接收到VRRP报文的情况来判断Master设备是否工作正常。</p>
+<ul>
+<li>当Master设备主动放弃Master地位（如Master设备退出备份组）时，会发送优先级为0的通告报文，用来使Backup设备快速切换成Master设备，而不用等到Master_Down_Interval定时器超时。这个切换的时间称为Skew time，计算方式为：（256－Backup设备的优先级）&#x2F;256，单位为秒。</li>
+<li>当Master设备发生网络故障而不能发送通告报文的时候，Backup设备并不能立即知道其工作状况。等到Master_Down_Interval定时器超时后，才会认为Master设备无法正常工作，从而将状态切换为Master。其中，Master_Down_Interval定时器取值为：3×Advertisement_Interval＋Skew_time，单位为秒。</li>
+</ul>
+</li>
+</ul>
+<h1 id="VRRP负载分担"><a href="#VRRP负载分担" class="headerlink" title="VRRP负载分担"></a>VRRP负载分担</h1><p>负载分担是指多个VRRP备份组同时承担业务，VRRP负载分担与VRRP主备备份的基本原理和报文协商过程都是相同的。同样对于每一个VRRP备份组，都包含一个Master设备和若干Backup设备。与主备备份方式不同点在于：负载分担方式需要建立多个VRRP备份组，各备份组的Master设备可以不同；同一台VRRP设备可以加入多个备份组，在不同的备份组中具有不同的优先级。</p>
+<h4 id><a href="#" class="headerlink" title></a><img src="/2024/05/25/VRRP/QQ截图20240525190602.png" alt="QQ截图20240525190602" style="zoom:67%;"></h4><p>配置两个VRRP备份组。</p>
+<ul>
+<li>VRRP备份组1：RouterA为Master设备，RouterB为Backup设备。</li>
+<li>VRRP备份组2：RouterB为Master设备，RouterA为Backup设备。</li>
+</ul>
+<p>一部分用户将VRRP备份组1作为网关，另一部分用户将VRRP备份组2作为网关。这样既可实现对业务流量的负载分担，同时，也起到了相互备份的作用。</p>
+<h1 id="VRRP监视上行端口"><a href="#VRRP监视上行端口" class="headerlink" title="VRRP监视上行端口"></a>VRRP监视上行端口</h1><img src="/2024/05/25/VRRP/QQ截图20240525190751.png" alt="QQ截图20240525190751" style="zoom:67%;">
+
+<p>命令：上行接口视图，vrrp vrid 1 track interface  g 0&#x2F;0&#x2F;1 increased(或者reduced) 30（增加或减少优先级）</p>
+<p>VRRP备份组只能感知其所在接口状态的变化，当VRRP设备上行接口或直连链路发生故障时，VRRP无法感知，此时会引起业务流量中断。通过部署VRRP与接口状态联动监视上行接口可以有效地解决上述问题，当Master设备的上行接口或直连链路发生故障时，通过调整自身优先级，触发主备切换，确保流量正常转发。</p>
+<p>VRRP可以通过Increased和Reduced方式来监视接口状态：</p>
+<ul>
+<li>如果VRRP设备上配置以Increased方式监视一个接口，当被监视的接口状态变成Down后，该VRRP设备的优先级增加指定值。</li>
+<li>如果VRRP设备上配置以Reduced方式监视一个接口，当被监视的接口状态变为Down后，该VRRP设备的优先级降低指定值。</li>
+</ul>
+]]></content>
+      <categories>
+        <category>基础知识</category>
+      </categories>
+      <tags>
+        <tag>VRRP</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>VRRP基础实验</title>
     <url>/2023/11/29/VRRP%E5%9F%BA%E7%A1%80%E5%AE%9E%E9%AA%8C/</url>
     <content><![CDATA[<p>设备连接方式如图所示，网络中存在VLAN10、20，每个VLAN中部署一组VRRP，使用与VLAN ID相同的数值作为VRID，将S1配置为VLAN10的VRRP Master，将S2配置为VLAN20的VRRP Master。</p>
@@ -1677,6 +1859,71 @@
       <tags>
         <tag>ap上线</tag>
         <tag>wlan</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>nat实验</title>
+    <url>/2023/11/25/nat%E5%AE%9E%E9%AA%8C/</url>
+    <content><![CDATA[<h1 id="静态nat"><a href="#静态nat" class="headerlink" title="静态nat"></a>静态nat</h1><p>静态NAT实现了私有地址和公有地址的一对一映射。如果希望一台主机优先使用某个关联地址，或者想要外部网络使用一个指定的公网地址访问内部服务器时，可以使用静态NAT。但是在大型网络中，这种一对一的IP地址映射无法缓解公用地址短缺的问题。</p>
+<span id="more"></span>
+
+<p>静态NAT实现了私有地址和共有地址一对一的映射（一个私有地址对应一个共有地址），并没有做到缓解地址短缺的问题，只是做到了地址转换。</p>
+<p>一个公网地址只会分配给唯一且固定的内网地址</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingttuopu4509.png" alt="jingttuopu4509"></p>
+<p>如图配置ip地址和网关</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingta15204327.png" alt="jingta15204327"></p>
+<p>r1上配置静态nat（注意是在公网的接口上，出接口）</p>
+<p>注意配置一条静态路由，不然没有路由的下一跳会被丢弃</p>
+<p>在r1上查看nat映射关系：dis nat static</p>
+<p>验证一下：<img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingtainatjg25204222.png" alt="jingtainatjg25204222"></p>
+<p>发现去往2.2.2.2的源地址变为2.2.2.3，说明nat完成转换。</p>
+<p>静态nat两种配置方式：</p>
+<p>1.接口下（上述实验采用这种方式）：进入到连接外网路由器的出接口下，然后在接口视图下配置nat映射关系</p>
+<p>2.全局：在全局视图下，配置好nat映射关系，再进入到出接口，执行：nat static enable</p>
+<h1 id="动态nat"><a href="#动态nat" class="headerlink" title="动态nat"></a>动态nat</h1><p>动态NAT通过使用地址池来实现。</p>
+<p>如上图，当内部主机A和主机B需要与公网中的目的主机通信时，网关RTA会从配置的公网地址池中选择一个未使用的公网地址与之做映射。每台主机都会分配到地址池中的一个唯一地址。当不需要此连接时，对应的地址映射将会被删除，公网地址也会被恢复到地址池中待用。当网关收到回复报文后，会根据之前的映射再次进行转换之后转发给对应主机。</p>
+<p>注意：</p>
+<p>动态NAT实际上实现的还是私有地址和公有地址一对一的关系，但是共有地址不再绑定给特定的内网地址。实现了一定程度的缓解地址短缺问题。<br>动态NAT地址池中的地址用尽以后，只能等待被占用的公用IP被释放后，其他主机才能使用它来访问公网。<img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dongtaitu00800.png" alt="dongtaitu00800"></p>
+<h2 id="动态NAT转换流程："><a href="#动态NAT转换流程：" class="headerlink" title="动态NAT转换流程："></a>动态NAT转换流程：</h2><p>1）路由器上配置一个内部地址池（公司内部所有主机用到的私有IP）动态映射一个外部地址池（所购买的公有IP）。<br>2）当有一个内网主机访问外网时，路由器首先查看NAT地址转换表；<br>3）若无，则再查看是否配置了动态NAT映射，若配置，则将IP包头中的源IP与内部地址池进行匹配，若有匹配项，则将该内网IP从内部地址池中取出，同时取出外部地址池中的一个IP地址，动态形成NAT地址转换表。注意，外部地址池的公网IP地址取出后，外部地址池中将没有该公网IP了。<br>4）默认当该主机24小时没有联系外网时，该动态NAT条目会自动消失，所被取出的公私有地址重新回到地址池中。</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/tuopudawda12714.png" alt="tuopudawda12714"></p>
+<p>ip如图，pc的网关192.168.1.254</p>
+<p>r1上配置默认路由，ip route-static 0.0.0.0 0 172.16.1.2</p>
+<p>r1上配置动态地址池：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/acldongtai2005212357.png" alt="acldongtai2005212357"></p>
+<p>地址池验证：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dizhichi1201.png" alt="dizhichi1201"></p>
+<p>配置acl策略：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/acl55da612432.png" alt="acl55da612432"></p>
+<p>在r1的外网出接口上调用：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/natout25212448.png" alt="natout25212448"></p>
+<p>验证：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dongtaijiegy12547.png" alt="dongtaijiegy12547"></p>
+<p>其中源IP为3、4、5不定，说明是在动态分配外网地址。动态NAT配置完成。</p>
+<p>在动态NAT实验中，最后利用PC1测试连通性时，间歇性会丢包</p>
+<p>可能的原因：ping的时候默认按地址池中可用地址顺序从1~254进行地址转换，放大nat地址池可解决。</p>
+<h1 id="NAPT"><a href="#NAPT" class="headerlink" title="NAPT"></a>NAPT</h1><p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/NApttu39.png" alt="NApttu39"></p>
+<p>如上图，RTA收到一个私网主机发送的报文，源IP地址是192.168.1.1，源端口号是1025，目的IP地址是100.1.1.1，目的端口是80。RTA会从配置的公网地址池中选择一个空闲的公网IP地址和端口号，并建立相应的NAPT表项。这些NAPT表项指定了报文的私网IP地址和端口号与公网IP地址和端口号的映射关系。之后，RTA将报文的源IP地址和端口号转换成公网地址200.10.10.1和端口号2843，并转发报文到公网。当网关RTA收到回复报文后，会根据之前的映射表再次进行转换之后转发给主机A。主机B同理。</p>
+<p>注意：</p>
+<p>NAPT技术允许多个内部地址映射到同一个公有地址的不同端口。<br>NAPT实现了私有地址对共有地址多对一</p>
+<p>相当于一种特殊的动态nat</p>
+<p>1、端口NAT和动态NAT的配置过程基本一致，只是在应用到接口时，配置命令少no-pat<br>2、端口NAT一个地址可以给多个源地址转换，不是单对单的转换，所以节省了nat地址！<br>3、端口NAT实际应用较多，静态NAT和动态NAT因为地址不能节约，所以实际应用少</p>
+<h1 id="Easy-IP"><a href="#Easy-IP" class="headerlink" title="Easy IP"></a>Easy IP</h1><p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/easydahwka5.png" alt="easydahwka5"></p>
+<p>Easy IP本质上是NAPT（所以原理与NAPT大致相似）<br>由于网关设备出接口IP地址为公网地址，所以可以利用该<strong>出接口地址</strong>来作为地址转换的公有地址。<br>Easy IP适用于小规模局域网中的主机访问Internet的场景。小规模局域网通常部署在小型的网吧或者办公室中，这些地方内部主机不多，出接口可以通过拨号方式获取一个临时公网IP地址。Easy IP可以实现内部主机使用这个临时公网IP地址访问Internet。</p>
+<p>Easy IP适用于小规模局域网中的主机访问Internet的场景。小规模局域网通常部署在小型的网吧或者办公室中，这些地方内部主机不多，出接口可以通过拨号方式获取一个临时公网IP地址。Easy IP可以实现内部主机使用这个临时公网IP地址访问Internet。</p>
+<h2 id="Easy-IP的配置："><a href="#Easy-IP的配置：" class="headerlink" title="Easy IP的配置："></a>Easy IP的配置：</h2><p>1.创建ACL：acl 2000</p>
+<p>2.允许1.0的数据进行转换：rule 5 permit source 192.168.1.0 0 .0.0.255</p>
+<p>3.进入公网出接口</p>
+<p>4.应用acl：nat outbound 2000</p>
+<p>（相较于napt少了地址池）</p>
+<p>验证：</p>
+<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/easadwaawh215116.png" alt="easadwaawh215116"></p>
+<p>源地址为出接口地址172.16.1.1，只是端口不同</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>nat</tag>
       </tags>
   </entry>
   <entry>
@@ -1897,71 +2144,6 @@
       </categories>
       <tags>
         <tag>mpls</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>nat实验</title>
-    <url>/2023/11/25/nat%E5%AE%9E%E9%AA%8C/</url>
-    <content><![CDATA[<h1 id="静态nat"><a href="#静态nat" class="headerlink" title="静态nat"></a>静态nat</h1><p>静态NAT实现了私有地址和公有地址的一对一映射。如果希望一台主机优先使用某个关联地址，或者想要外部网络使用一个指定的公网地址访问内部服务器时，可以使用静态NAT。但是在大型网络中，这种一对一的IP地址映射无法缓解公用地址短缺的问题。</p>
-<span id="more"></span>
-
-<p>静态NAT实现了私有地址和共有地址一对一的映射（一个私有地址对应一个共有地址），并没有做到缓解地址短缺的问题，只是做到了地址转换。</p>
-<p>一个公网地址只会分配给唯一且固定的内网地址</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingttuopu4509.png" alt="jingttuopu4509"></p>
-<p>如图配置ip地址和网关</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingta15204327.png" alt="jingta15204327"></p>
-<p>r1上配置静态nat（注意是在公网的接口上，出接口）</p>
-<p>注意配置一条静态路由，不然没有路由的下一跳会被丢弃</p>
-<p>在r1上查看nat映射关系：dis nat static</p>
-<p>验证一下：<img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/jingtainatjg25204222.png" alt="jingtainatjg25204222"></p>
-<p>发现去往2.2.2.2的源地址变为2.2.2.3，说明nat完成转换。</p>
-<p>静态nat两种配置方式：</p>
-<p>1.接口下（上述实验采用这种方式）：进入到连接外网路由器的出接口下，然后在接口视图下配置nat映射关系</p>
-<p>2.全局：在全局视图下，配置好nat映射关系，再进入到出接口，执行：nat static enable</p>
-<h1 id="动态nat"><a href="#动态nat" class="headerlink" title="动态nat"></a>动态nat</h1><p>动态NAT通过使用地址池来实现。</p>
-<p>如上图，当内部主机A和主机B需要与公网中的目的主机通信时，网关RTA会从配置的公网地址池中选择一个未使用的公网地址与之做映射。每台主机都会分配到地址池中的一个唯一地址。当不需要此连接时，对应的地址映射将会被删除，公网地址也会被恢复到地址池中待用。当网关收到回复报文后，会根据之前的映射再次进行转换之后转发给对应主机。</p>
-<p>注意：</p>
-<p>动态NAT实际上实现的还是私有地址和公有地址一对一的关系，但是共有地址不再绑定给特定的内网地址。实现了一定程度的缓解地址短缺问题。<br>动态NAT地址池中的地址用尽以后，只能等待被占用的公用IP被释放后，其他主机才能使用它来访问公网。<img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dongtaitu00800.png" alt="dongtaitu00800"></p>
-<h2 id="动态NAT转换流程："><a href="#动态NAT转换流程：" class="headerlink" title="动态NAT转换流程："></a>动态NAT转换流程：</h2><p>1）路由器上配置一个内部地址池（公司内部所有主机用到的私有IP）动态映射一个外部地址池（所购买的公有IP）。<br>2）当有一个内网主机访问外网时，路由器首先查看NAT地址转换表；<br>3）若无，则再查看是否配置了动态NAT映射，若配置，则将IP包头中的源IP与内部地址池进行匹配，若有匹配项，则将该内网IP从内部地址池中取出，同时取出外部地址池中的一个IP地址，动态形成NAT地址转换表。注意，外部地址池的公网IP地址取出后，外部地址池中将没有该公网IP了。<br>4）默认当该主机24小时没有联系外网时，该动态NAT条目会自动消失，所被取出的公私有地址重新回到地址池中。</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/tuopudawda12714.png" alt="tuopudawda12714"></p>
-<p>ip如图，pc的网关192.168.1.254</p>
-<p>r1上配置默认路由，ip route-static 0.0.0.0 0 172.16.1.2</p>
-<p>r1上配置动态地址池：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/acldongtai2005212357.png" alt="acldongtai2005212357"></p>
-<p>地址池验证：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dizhichi1201.png" alt="dizhichi1201"></p>
-<p>配置acl策略：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/acl55da612432.png" alt="acl55da612432"></p>
-<p>在r1的外网出接口上调用：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/natout25212448.png" alt="natout25212448"></p>
-<p>验证：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/dongtaijiegy12547.png" alt="dongtaijiegy12547"></p>
-<p>其中源IP为3、4、5不定，说明是在动态分配外网地址。动态NAT配置完成。</p>
-<p>在动态NAT实验中，最后利用PC1测试连通性时，间歇性会丢包</p>
-<p>可能的原因：ping的时候默认按地址池中可用地址顺序从1~254进行地址转换，放大nat地址池可解决。</p>
-<h1 id="NAPT"><a href="#NAPT" class="headerlink" title="NAPT"></a>NAPT</h1><p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/NApttu39.png" alt="NApttu39"></p>
-<p>如上图，RTA收到一个私网主机发送的报文，源IP地址是192.168.1.1，源端口号是1025，目的IP地址是100.1.1.1，目的端口是80。RTA会从配置的公网地址池中选择一个空闲的公网IP地址和端口号，并建立相应的NAPT表项。这些NAPT表项指定了报文的私网IP地址和端口号与公网IP地址和端口号的映射关系。之后，RTA将报文的源IP地址和端口号转换成公网地址200.10.10.1和端口号2843，并转发报文到公网。当网关RTA收到回复报文后，会根据之前的映射表再次进行转换之后转发给主机A。主机B同理。</p>
-<p>注意：</p>
-<p>NAPT技术允许多个内部地址映射到同一个公有地址的不同端口。<br>NAPT实现了私有地址对共有地址多对一</p>
-<p>相当于一种特殊的动态nat</p>
-<p>1、端口NAT和动态NAT的配置过程基本一致，只是在应用到接口时，配置命令少no-pat<br>2、端口NAT一个地址可以给多个源地址转换，不是单对单的转换，所以节省了nat地址！<br>3、端口NAT实际应用较多，静态NAT和动态NAT因为地址不能节约，所以实际应用少</p>
-<h1 id="Easy-IP"><a href="#Easy-IP" class="headerlink" title="Easy IP"></a>Easy IP</h1><p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/easydahwka5.png" alt="easydahwka5"></p>
-<p>Easy IP本质上是NAPT（所以原理与NAPT大致相似）<br>由于网关设备出接口IP地址为公网地址，所以可以利用该<strong>出接口地址</strong>来作为地址转换的公有地址。<br>Easy IP适用于小规模局域网中的主机访问Internet的场景。小规模局域网通常部署在小型的网吧或者办公室中，这些地方内部主机不多，出接口可以通过拨号方式获取一个临时公网IP地址。Easy IP可以实现内部主机使用这个临时公网IP地址访问Internet。</p>
-<p>Easy IP适用于小规模局域网中的主机访问Internet的场景。小规模局域网通常部署在小型的网吧或者办公室中，这些地方内部主机不多，出接口可以通过拨号方式获取一个临时公网IP地址。Easy IP可以实现内部主机使用这个临时公网IP地址访问Internet。</p>
-<h2 id="Easy-IP的配置："><a href="#Easy-IP的配置：" class="headerlink" title="Easy IP的配置："></a>Easy IP的配置：</h2><p>1.创建ACL：acl 2000</p>
-<p>2.允许1.0的数据进行转换：rule 5 permit source 192.168.1.0 0 .0.0.255</p>
-<p>3.进入公网出接口</p>
-<p>4.应用acl：nat outbound 2000</p>
-<p>（相较于napt少了地址池）</p>
-<p>验证：</p>
-<p><img src="/2023/11/25/nat%E5%AE%9E%E9%AA%8C/easadwaawh215116.png" alt="easadwaawh215116"></p>
-<p>源地址为出接口地址172.16.1.1，只是端口不同</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>nat</tag>
       </tags>
   </entry>
   <entry>
