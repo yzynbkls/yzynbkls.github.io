@@ -501,95 +501,6 @@
       </tags>
   </entry>
   <entry>
-    <title>BGP路由反射器</title>
-    <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/</url>
-    <content><![CDATA[<h1 id="BGP路由反射器"><a href="#BGP路由反射器" class="headerlink" title="BGP路由反射器"></a>BGP路由反射器</h1><p>由于水平分割的原因，为了保证AS内所有的BGP路由器都能学习到完整的BGP路由，就必须在AS内实现IBGP全互联。</p>
-<p>然而实现IBGP全互联存在诸多短板：</p>
-<p> 路由器需维护大量的TCP及BGP连接，尤其在路由器数量较多时。</p>
-<p> AS内BGP网络的可扩展性较差，因为通过纯手工配置命令。</p>
-<p>为了解决该问题，可应用到RR路由反射器技术。</p>
-<p>1、Client：RR客户端，在RR设备上通过手动指定。</p>
-<blockquote>
-<p>指定命令：peer 邻居 reflect-client</p>
-</blockquote>
-<p>2、除了指定的设备为客户端，其它设备均为非客户端。</p>
-<p>实验：</p>
-<p>R1、R2、R3、R4都属于AS64511，其连接方式、互联接口地址如图所示。每台设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号。R1、R2上的Loopback1地址分别为10.1.1.1&#x2F;24、10.2.2.2&#x2F;24，用于模拟用户网段。</p>
-<span id="more"></span>
-
-<p>所有设备都使用Loopback0地址作为BGP Router ID，R1与R2、R2与R3、R3与R4、R4与R2之间基于直连接口建立IBGP对等体关系，其中R1为R2的路由反射器客户端，R2为R3的路由反射器客户端，R3为R4的路由反射器客户端。</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/bgpluy8165208.png" alt="bgpluy8165208"></p>
-<p>配置ip地址：略</p>
-<p>建立ibgp对等体：略</p>
-<h1 id="配置路由反射器"><a href="#配置路由反射器" class="headerlink" title="配置路由反射器"></a>配置路由反射器</h1><p>#R2上将R1配置为路由反射器客户端</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] peer 10.0.1.1 reflect-client</p>
-<p>#R3上将R2配置为路由反射器客户端</p>
-<p>[R3]bgp 64511</p>
-<p>[R3-bgp] peer 10.0.2.2 reflect-client</p>
-<p>#R4上将R3配置为路由反射器客户端</p>
-<p>[R4]bgp 64511</p>
-<p>[R4-bgp] peer 10.0.3.3 reflect-client</p>
-<h1 id="验证Orginator-ID实现路由防环"><a href="#验证Orginator-ID实现路由防环" class="headerlink" title="验证Orginator_ID实现路由防环"></a>验证Orginator_ID实现路由防环</h1><p>在本步骤中，我们将在R2上发布BGP路由10.2.2.0&#x2F;24，并观察该路由依次经路由反射器R3、R4反射后，被通告回R2从而引发潜在路由环路风险的情况。</p>
-<p>缺省情况下，R2发布BGP路由后，该路由将被R2直接通告给R4，另一方面也会通过R3反射给R4，此时R4将优选R2直接通告过来的路由，从而不会再将R3反射过来的路由再反射回给R2。为此，我们需要在R2上部署路由策略，使R2不直接向R4通告10.2.2.0&#x2F;24路由。</p>
-<p>#配置路由策略</p>
-<p>[R2]acl number 2000</p>
-<p>[R2-acl-basic-2000] rule 5 permit</p>
-<p>[R2-acl-basic-2000] quit</p>
-<p>[R2]route-policy bgp deny node 10</p>
-<p>[R2-route-policy] if-match acl 2000</p>
-<p>#在BGP中调用路由策略</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] peer 10.0.24.4 route-policy bgp export</p>
-<p>#在R2上发布路由</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] network 10.2.2.0 24</p>
-<p>#R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/chakan102224728.png" alt="chakan102224728"></p>
-<p>R2将该条路由通告给了R3、R1，但是并未通告给R4。</p>
-<p>#R3上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r174808.png" alt="r174808"></p>
-<p>R3将来自反射器客户端的BGP路由10.2.2.0&#x2F;24反射给了10.0.34.4（R4）。同时该BGP路由的nexthop为10.0.23.2。</p>
-<p># R4上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r4chakan80119.png" alt="r4chakan80119"></p>
-<p>该条路由来自反射器客户端R3，原始路由经由R3反射，路由的nexthop地址并未改变，同时R3为其添加了Orginator_ID属性，值为10.0.2.2。同时R4将该条路由反射给了R2。</p>
-<p>#再次在R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zacifa80349.png" alt="zacifa80349"></p>
-<p>依旧只存在本地通告的BGP路由，没有R4通告的BGP路由。</p>
-<p>#在R2上查看BGP对等体10.0.4.4的详细信息</p>
-<p>display bgp peer 10.0.4.4 verbose</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/safhaofbsh1128180629.png" alt="safhaofbsh1128180629"></p>
-<p>从输出信息可以看到R2从R4收到了1个Update报文，未向R4发送Update报文（路由策略限制），但是本地BGP路由表中不存在由R4通告的BGP路由10.2.2.0&#x2F;24。</p>
-<p>R4通告的BGP路由Orginator_ID属性值与本地的Router ID一致，R2忽略了该路由通告。</p>
-<h1 id="验证Cluster-List实现路由防环"><a href="#验证Cluster-List实现路由防环" class="headerlink" title="验证Cluster_List实现路由防环"></a>验证Cluster_List实现路由防环</h1><p>为了方便观察现象，取消R2上的BGP路由发布，在R1上将Loopback1接口路由发布到BGP，观察Cluster_List如何防止环路。</p>
-<p>#取消R2上的BGP路由发布</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] undo network 10.2.2.0 255.255.255.0</p>
-<p>#在R1上将Loopback1接口路由发布到BGP</p>
-<p>[R1]bgp 64511</p>
-<p>[R1-bgp] network 10.1.1.0 24</p>
-<p>#依次在R1、R2、R3、R4上查看BGP路由10.1.1.0 &#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/xinfuaiell181000.png" alt="xinfuaiell181000"></p>
-<p>R1为BGP路由10.1.1.0&#x2F;24的始发者，R1将路由通告给了R2</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/2xinfahol128181116.png" alt="2xinfahol128181116"></p>
-<p>来自路由反射器客户端R1的BGP路由10.1.1.0&#x2F;24，R2将其反射给了R3</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/3xinmbxmcx1128181206.png" alt="3xinmbxmcx1128181206"></p>
-<p>来自路由反射器客户端R2的BGP路由10.1.1.0&#x2F;24，R2反射时添加了Cluster_List属性，值为10.0.2.2，R3将该条路由反射给了R4</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/44xinm1334.png" alt="44xinm1334"></p>
-<p>来自路由反射器客户端R3的BGP路由10.1.1.0&#x2F;24，R3反射时添加了Cluster_List属性的值，当前值为10.0.3.3，10.0.2.2，R4将该条路由反射给了R2</p>
-<p>#再次查看R2的BGP路由表</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zaizaici661435.png" alt="zaizaici661435"></p>
-<p>R2的BGP路由表中依旧只有一条来自r1的BGP路由10.1.1.0&#x2F;24。</p>
-<p>4通告的BGP路由其Cluster_List属性值中包含了R2的Cluster-ID，R2忽略了该路由通告。</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>BGP路由反射器</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>DHCP基础配置</title>
     <url>/2023/11/25/DHCP%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/</url>
     <content><![CDATA[<p> DHCP是一种终端自动配置协议，客户端通过DHCP协议可获取一个合法的动态IP地址。</p>
@@ -865,6 +776,95 @@
       </tags>
   </entry>
   <entry>
+    <title>BGP路由反射器</title>
+    <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/</url>
+    <content><![CDATA[<h1 id="BGP路由反射器"><a href="#BGP路由反射器" class="headerlink" title="BGP路由反射器"></a>BGP路由反射器</h1><p>由于水平分割的原因，为了保证AS内所有的BGP路由器都能学习到完整的BGP路由，就必须在AS内实现IBGP全互联。</p>
+<p>然而实现IBGP全互联存在诸多短板：</p>
+<p> 路由器需维护大量的TCP及BGP连接，尤其在路由器数量较多时。</p>
+<p> AS内BGP网络的可扩展性较差，因为通过纯手工配置命令。</p>
+<p>为了解决该问题，可应用到RR路由反射器技术。</p>
+<p>1、Client：RR客户端，在RR设备上通过手动指定。</p>
+<blockquote>
+<p>指定命令：peer 邻居 reflect-client</p>
+</blockquote>
+<p>2、除了指定的设备为客户端，其它设备均为非客户端。</p>
+<p>实验：</p>
+<p>R1、R2、R3、R4都属于AS64511，其连接方式、互联接口地址如图所示。每台设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号。R1、R2上的Loopback1地址分别为10.1.1.1&#x2F;24、10.2.2.2&#x2F;24，用于模拟用户网段。</p>
+<span id="more"></span>
+
+<p>所有设备都使用Loopback0地址作为BGP Router ID，R1与R2、R2与R3、R3与R4、R4与R2之间基于直连接口建立IBGP对等体关系，其中R1为R2的路由反射器客户端，R2为R3的路由反射器客户端，R3为R4的路由反射器客户端。</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/bgpluy8165208.png" alt="bgpluy8165208"></p>
+<p>配置ip地址：略</p>
+<p>建立ibgp对等体：略</p>
+<h1 id="配置路由反射器"><a href="#配置路由反射器" class="headerlink" title="配置路由反射器"></a>配置路由反射器</h1><p>#R2上将R1配置为路由反射器客户端</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] peer 10.0.1.1 reflect-client</p>
+<p>#R3上将R2配置为路由反射器客户端</p>
+<p>[R3]bgp 64511</p>
+<p>[R3-bgp] peer 10.0.2.2 reflect-client</p>
+<p>#R4上将R3配置为路由反射器客户端</p>
+<p>[R4]bgp 64511</p>
+<p>[R4-bgp] peer 10.0.3.3 reflect-client</p>
+<h1 id="验证Orginator-ID实现路由防环"><a href="#验证Orginator-ID实现路由防环" class="headerlink" title="验证Orginator_ID实现路由防环"></a>验证Orginator_ID实现路由防环</h1><p>在本步骤中，我们将在R2上发布BGP路由10.2.2.0&#x2F;24，并观察该路由依次经路由反射器R3、R4反射后，被通告回R2从而引发潜在路由环路风险的情况。</p>
+<p>缺省情况下，R2发布BGP路由后，该路由将被R2直接通告给R4，另一方面也会通过R3反射给R4，此时R4将优选R2直接通告过来的路由，从而不会再将R3反射过来的路由再反射回给R2。为此，我们需要在R2上部署路由策略，使R2不直接向R4通告10.2.2.0&#x2F;24路由。</p>
+<p>#配置路由策略</p>
+<p>[R2]acl number 2000</p>
+<p>[R2-acl-basic-2000] rule 5 permit</p>
+<p>[R2-acl-basic-2000] quit</p>
+<p>[R2]route-policy bgp deny node 10</p>
+<p>[R2-route-policy] if-match acl 2000</p>
+<p>#在BGP中调用路由策略</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] peer 10.0.24.4 route-policy bgp export</p>
+<p>#在R2上发布路由</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] network 10.2.2.0 24</p>
+<p>#R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/chakan102224728.png" alt="chakan102224728"></p>
+<p>R2将该条路由通告给了R3、R1，但是并未通告给R4。</p>
+<p>#R3上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r174808.png" alt="r174808"></p>
+<p>R3将来自反射器客户端的BGP路由10.2.2.0&#x2F;24反射给了10.0.34.4（R4）。同时该BGP路由的nexthop为10.0.23.2。</p>
+<p># R4上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r4chakan80119.png" alt="r4chakan80119"></p>
+<p>该条路由来自反射器客户端R3，原始路由经由R3反射，路由的nexthop地址并未改变，同时R3为其添加了Orginator_ID属性，值为10.0.2.2。同时R4将该条路由反射给了R2。</p>
+<p>#再次在R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zacifa80349.png" alt="zacifa80349"></p>
+<p>依旧只存在本地通告的BGP路由，没有R4通告的BGP路由。</p>
+<p>#在R2上查看BGP对等体10.0.4.4的详细信息</p>
+<p>display bgp peer 10.0.4.4 verbose</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/safhaofbsh1128180629.png" alt="safhaofbsh1128180629"></p>
+<p>从输出信息可以看到R2从R4收到了1个Update报文，未向R4发送Update报文（路由策略限制），但是本地BGP路由表中不存在由R4通告的BGP路由10.2.2.0&#x2F;24。</p>
+<p>R4通告的BGP路由Orginator_ID属性值与本地的Router ID一致，R2忽略了该路由通告。</p>
+<h1 id="验证Cluster-List实现路由防环"><a href="#验证Cluster-List实现路由防环" class="headerlink" title="验证Cluster_List实现路由防环"></a>验证Cluster_List实现路由防环</h1><p>为了方便观察现象，取消R2上的BGP路由发布，在R1上将Loopback1接口路由发布到BGP，观察Cluster_List如何防止环路。</p>
+<p>#取消R2上的BGP路由发布</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] undo network 10.2.2.0 255.255.255.0</p>
+<p>#在R1上将Loopback1接口路由发布到BGP</p>
+<p>[R1]bgp 64511</p>
+<p>[R1-bgp] network 10.1.1.0 24</p>
+<p>#依次在R1、R2、R3、R4上查看BGP路由10.1.1.0 &#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/xinfuaiell181000.png" alt="xinfuaiell181000"></p>
+<p>R1为BGP路由10.1.1.0&#x2F;24的始发者，R1将路由通告给了R2</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/2xinfahol128181116.png" alt="2xinfahol128181116"></p>
+<p>来自路由反射器客户端R1的BGP路由10.1.1.0&#x2F;24，R2将其反射给了R3</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/3xinmbxmcx1128181206.png" alt="3xinmbxmcx1128181206"></p>
+<p>来自路由反射器客户端R2的BGP路由10.1.1.0&#x2F;24，R2反射时添加了Cluster_List属性，值为10.0.2.2，R3将该条路由反射给了R4</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/44xinm1334.png" alt="44xinm1334"></p>
+<p>来自路由反射器客户端R3的BGP路由10.1.1.0&#x2F;24，R3反射时添加了Cluster_List属性的值，当前值为10.0.3.3，10.0.2.2，R4将该条路由反射给了R2</p>
+<p>#再次查看R2的BGP路由表</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zaizaici661435.png" alt="zaizaici661435"></p>
+<p>R2的BGP路由表中依旧只有一条来自r1的BGP路由10.1.1.0&#x2F;24。</p>
+<p>4通告的BGP路由其Cluster_List属性值中包含了R2的Cluster-ID，R2忽略了该路由通告。</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>BGP路由反射器</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>FTP实验</title>
     <url>/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/</url>
     <content><![CDATA[<h1 id="File-Transfer-Protocol-文件传输协议"><a href="#File-Transfer-Protocol-文件传输协议" class="headerlink" title="File Transfer Protocol 文件传输协议"></a>File Transfer Protocol 文件传输协议</h1><p>FTP服务器开启21号端口进行控制连接，20号端口与客户端建立数据连接</p>
@@ -1026,37 +1026,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Hybrid接口</title>
-    <url>/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/</url>
-    <content><![CDATA[<h1 id="接口属性"><a href="#接口属性" class="headerlink" title="接口属性"></a>接口属性</h1><p>​	交换机接口的类型，可以是Access、Trunk和Hybrid。Access类型的接口仅属于一个VLAN,,,,只能接收、转发相应VLAN的帧；而Trunk类型接口则默认属于所有VLAN任何Tagged帧都能经过Trunk接收和转发； Hybrid类型接口则介于二者之间，可自主定义端口上能接收和转发那些VLAN Tag帧，并可决定VLAN Tag是否继续携带或者剥离。。Access和Trunk类型接口是Hybrid类型接口的两个特例，，，一个仅支持一个VLAN传递，，一个默认支持所有VLAN的传递，而Access类型和Trunk类型的接口能做到的，Hybrid接口都能做到。</p>
-<p>​    hybrid属性具有trunk和access两种端口属性的特点，tag类似trunk，untag类似access，但是又不同，因为hybrid端口可以接收某个或者多个vlan的数据。</p>
-<p>在开始研究之前强调几点：</p>
-<p>1、在hybrid端口中，所有端口都默认属于vlan1，除非配置undo port hybrid vlan 1 才能将该hybrid剔除出vlan1，可以使用display vlan 查看端口所属的vlan</p>
-<p>2、在hybrid端口中，无论是tag还是untag后面配置的vlan-id就是该hybrid端口所能够收到vlan数据的vlan-id，换句话说就是这些vlan中发出的数据该端口都能收到，可以使用display vlan查看（这里注意虽然可以收到这些vlan的数据但是严格意义上讲hybrid端口并不属于任何一个vlan）</p>
-<p>3、所有类型端口的默认pvid都是vlan1，而pvid这个属性只！针对！进入！该端口的！没有标签的！普通数据包有效，作用是将没有标签的普通数据包打上pvid中配置的标签号</p>
-<p>4、hybrid属性中，tag是针对于端口的接收方向的（从该端口进来的流量允许带有这些vlan标签的通过），untag是针对端口的发送方向的（从该端口出去的流量去除这些vlan标签）</p>
-<p>5、加入一个hybrid端口配置tag vlan 2 3和untag vlan 4 5 ，那么默认情况下这个hybrid属于vlan1、2、3、4、5，在display vlan中可以查看到，只有端口属于了某个vlan，那么该端口才能收到某个vlan的数据包，这一点是理解下列两种配置和hybrid端口属性的关键！！！</p>
-<h1 id="收发过程"><a href="#收发过程" class="headerlink" title="收发过程"></a>收发过程</h1><p>在数据发送时untag列表的原理，如下图<br>1.带有vlan 3标签的数据从F0&#x2F;0接口出去，通过时查看untag列表，发现有对应的标签，将标签脱掉发送出去<br>2.带有vlan 8标签的数据从F0&#x2F;1接口出去，通过时查看untag列表，发现没有对应的标签，继续查看tag表，发现有对应标签，所以直接带有vlan 8标签的数据发送出去<br>3.带有vlan 5标签的数据从F0&#x2F;2接口出去，通过时查看untag列表，发现没有对应的标签 ，继续查看tag列表，发现也没有对应的标签，所以数据直接被丢弃<br><img src="/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/shoufa6505133622.png" alt="shoufa6505133622"></p>
-<p>tag列表处理数据帧的接收和发送的原理，如下图<br>1.没有标签的数据进入F0&#x2F;0接口，接口查看到数据没有标签，根据接口PVID&#x3D;3，将vlan 3标签打入数据<br>2.带有vlan 9标签的数据进入接口F0&#x2F;1，接口查看到数据带有标签，接着查看tag列表，发现列表中存在对应标签，放通数据<br>3.带有vlan 5标签的数据从接口F0&#x2F;2出去，接口查看到数据带有标签，查看untag列表，发现列表中没有对应vlan 5标签，继续查看tag列表，发现列表中存在对应标签vlan 5，放通数据出去<br>4.带有vlan 3标签的数据从F0&#x2F;2接口出去，查看untag列表，发现列表中存在对应vlan 3标签，将标签脱掉，放通数据出去<br>5.带有vlan 9标签的数据从F0&#x2F;2接口出去，查看untag表，发现列表中不存在对应vlan 9标签，继续查看tag列表，发现列表中不存在vlan 9标签，将数据丢弃</p>
-<p><img src="/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/fataf2133722.png" alt="fataf2133722"></p>
-<h1 id="实例分析"><a href="#实例分析" class="headerlink" title="实例分析"></a>实例分析</h1><p><img src="/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/tuo2205133307.png" alt="tuo2205133307"></p>
-<p>1、为了让我们更加简洁的理解hydrid的属性，首先在所有的端口上移除了vlan1这个默认有的vlan，假设为所有端口初始不属于任何vlan，都不能相互之间通信</p>
-<p>2、pvid是当普通的主机数据帧进入交换机端口后被打上的vlan-tag的属性，在途中可以看出PC1、PC2、PC3的流量在进入交换机的时候分别会被打上vlan2、vlan3、vlan99的vlan标签</p>
-<p>3、untag后面的vlan就是该端口属于的vlan，那么不难看出LSW1的G0&#x2F;0&#x2F;1属于vlan2、3，G0&#x2F;0&#x2F;2属于vlan2、10，G0&#x2F;0&#x2F;3属于vlan3、10，而untag的动作是在流量出端口去往主机的时候把vlan-tag全部去除，那么不难看出LSW1的G0&#x2F;0&#x2F;1将去除vlan2、3的标签，G0&#x2F;0&#x2F;2去除vlan2、10的标签，G0&#x2F;0&#x2F;3去除vlan3、10的标签（还原成普通帧）</p>
-<p>LSW2的G0&#x2F;0&#x2F;1属于vlan99，G0&#x2F;0&#x2F;2属于vlan99，在流量出端口的时候会去除vlan99的标签（还原成普通帧）</p>
-<p>那么PC1与PC2的通信现在分析如下：当PC1发送arp去请求PC2的MAC地址的时候，PC1会将数据包广播发往LSW1的G0&#x2F;0&#x2F;2接口，LSW1收到后发现是个普通的不带标签的数据帧，于是根据接口的pvid给该帧打上vlan2的tag，然后往vlan2中进行泛红，无奈G0&#x2F;0&#x2F;3端口只属于vlan3、10所以无法收到vlan2中的泛红，故PC1与PC2通信失败。</p>
-<p>下面再来分析PC1与PC3通信：前面已经分析了PC1要去请求PC3的MAC，被LSW1的G0&#x2F;0&#x2F;2收到，并且打上vlan2的tag，然后在vlan2中泛红，那么在vlan2中的端口就都能收到该泛红了，所以在配置了untag vlan 2 3的G0&#x2F;0&#x2F;1端口自然也能收到vlan2和vlan3的泛红并转发出去，但是LSW1发现G0&#x2F;0&#x2F;1配置untag vlan2 3，所以将从该端口发送出去的所有带有vlan2和vlan3的数据包的tag全部去除（还原成普通帧），然后这个普通的帧就会发往LSW2被G0&#x2F;0&#x2F;1端口接收到，LSW2发现了一个普通的帧，那么就会用到pvid了不是，所以LSW2收到这个帧后打上vlan99的tag进行泛红，那么PC3所在的hybrid因为配置有untag vlan99必然能够收到vlan99的数据包了，然后在G0&#x2F;0&#x2F;2发给PC3的时候将vlan99的tag去除掉，PC3收到的就是一个不带任何tag的普通包（PC3完全不知道在它个PC1之间还有SW这种东西存在），好了PC3收到了PC1发来的arp请求，那么作为有礼貌的人应该回复自己的MAC地址了，与回一个arp响应给PC1，</p>
-<p>下面PC3的回包分析：PC3使用PC1的MAC和ip封装好数据包后从网卡发送出去，LSW2的G0&#x2F;0&#x2F;2端口收到了，发现是一个普通帧，OK来pvid打上vlan99的tag，然后查看mac地址表发现PC1的MAC地址在G0&#x2F;0&#x2F;1口，在查看vlan信息，发现G0&#x2F;0&#x2F;1口可以接收vlan99的数据（untag vlan99），两个转发条件都满足了，那么久把数据包发给G0&#x2F;0&#x2F;1转发，G0&#x2F;0&#x2F;1转发的时候根据untag vlan99把数据包vlan-id去除还原成普通帧，被LSW1的G0&#x2F;0&#x2F;1收到，按照pvid的惯例，普通帧被打上了pvid vlan10的tag（用vlan10举例，也可以是任意vlan），然后LSW1根据MAC地址表找到PC1在自己的G0&#x2F;0&#x2F;2口，再查看vlan信息发现G0&#x2F;0&#x2F;2接口配置了untag vlan2 10，可以接收vlan10的数据包，于是就把这个被打上vlan10的PC3发来的arp响应通过G0&#x2F;0&#x2F;2发送给了PC1，当然在从G0&#x2F;0&#x2F;2接口出去的时候根据untag vlan2 10的配置将vlan10的tag去除还原成一个普通的帧，PC1收到的是一个普通的帧，完全不知道它和PC3之间还有交换机这个东西。好了，这就是一次通信过程，PC2与PC3的通信原理也是一样的，于是就实现了PC3与PC1、PC2互通，PC1与PC2之间不通的效果。</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>hybrid</tag>
-        <tag>tag</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>IS-IS总结</title>
     <url>/2024/04/20/IS-IS%E6%80%BB%E7%BB%93/</url>
     <content><![CDATA[<p>1、IS-IS的介绍</p>
@@ -1151,6 +1120,8 @@
     <content><![CDATA[<p>PPP（点到点协议 ），该协议支持认证（PAP、CHAP）、该协议中还包括LCP、NCP协议</p>
 <p>PPP链路的建立有三个阶段的协商过程，链路层协商、认证协商（可选）和网络层协商。<br>1）链路层协商：通过LCP报文进行链路参数协商，建立链路层连接。</p>
 <p>链路层协议（LCP）协商的参数有MRU（最大接收单元）、认证方式（不认证、PAP、CHAP）、魔术字（检测是否有环路）</p>
+<img src="/2024/05/02/PPP-PPPoE/微信截图_20240531153136.png" alt="微信截图_20240531153136" style="zoom:67%;">
+
 <p><img src="/2024/05/02/PPP-PPPoE/wps1.jpg" alt="img"> </p>
 <p><img src="/2024/05/02/PPP-PPPoE/wps2.jpg" alt="img"> </p>
 <p><img src="/2024/05/02/PPP-PPPoE/wps3.jpg" alt="img"> </p>
@@ -1196,6 +1167,190 @@
       <tags>
         <tag>PPP</tag>
         <tag>PPPoE</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>STP拓扑变更机制</title>
+    <url>/2024/05/08/STP%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4%E6%9C%BA%E5%88%B6/</url>
+    <content><![CDATA[<h1 id="为什么要有STP拓扑变化机制"><a href="#为什么要有STP拓扑变化机制" class="headerlink" title="为什么要有STP拓扑变化机制"></a>为什么要有STP拓扑变化机制</h1><p>网络中发生拓扑变化时，例如链路中断或接口异常Down等情况，由于MAC地址老化时间的存在（缺省为5分钟），如果不及时通知上游设备，则可能会导致上游设备的报文在这段时间内一直向一个不可达的链路发送。</p>
+<h5 id="拓扑改变导致MAC地址表错误"><a href="#拓扑改变导致MAC地址表错误" class="headerlink" title="拓扑改变导致MAC地址表错误"></a>拓扑改变导致MAC地址表错误</h5><p><img src="/2024/05/08/STP%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4%E6%9C%BA%E5%88%B6/1stp3434.png" alt="1stp3434"></p>
+<p> 本例中，SW3中的MAC地址表项定义了通过端口GigabitEthernet 0&#x2F;0&#x2F;2可以到达主机1，通过端口GigabitEthernet 0&#x2F;0&#x2F;3可以到达主机2。由于SW2的根端口产生故障，导致生成树拓扑重新收敛，在生成树拓扑完成收敛之后，从主机1到主机2的帧仍然不能到达目的地。这是因为MAC地址表项老化时间是300秒，主机2发往主机1的帧到达SW3后，SW3会继续通过端口GigabitEthernet 0&#x2F;0&#x2F;2转发该数据帧。那么该怎么快速恢复转发？</p>
+<p><img src="/2024/05/08/STP%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4%E6%9C%BA%E5%88%B6/2stp821462.png" alt="2stp821462"></p>
+<p>   拓扑变更以及MAC地址表项更新的具体过程如下：</p>
+<p>SW2感知到网络拓扑发生变化后，会立即向SW3发送TCN BPDU报文。<br>SW3收到SW2发来的TCN BPDU报文后，会把配置BPDU报文中的Flags的TCA位设置1，然后发送给SW2，告知SW2我已经收到你发送的TCN BPDU。<br>SW3向根桥转发TCN BPDU报文。<br>SW1把配置BPDU报文中的Flags的TC位和TCA位设置为1后发送，通知下游设备我已经收到你发送的TCN BPDU，并通知下游交换机把MAC地址表项的老化时间由默认的300 s修改为Forward Delay的时间（默认为15 s），之后会持续不断的发送TC bit &#x3D; 1的BPDU持续35s。<br>最多等待15 s之后，SW3中的错误MAC地址表项会被自动清除。此后，SW3就能重新开始MAC表项的学习及转发操作。</p>
+<p>说明：</p>
+<ul>
+<li>TCN BPDU报文主要用来向上游设备乃至根桥通知拓扑变化。</li>
+<li>TCA标记置位的配置BPDU报文主要是上游设备用来告知下游设备已经知道拓扑变化，通知下游设备停止发送TCN BPDU报文。</li>
+<li>置位的TC标记的配置BPDU报文主要是上游设备用来告知下游设备拓扑发生变化，请下游设备直接删除桥MAC地址表项，从而达到快速收敛的目的。</li>
+</ul>
+<h5 id="感知拓扑改变"><a href="#感知拓扑改变" class="headerlink" title="感知拓扑改变"></a>感知拓扑改变</h5><p>什么情况下STP会感知到拓扑发生了改变呢？有下面四种！</p>
+<p>（1）当DP端口进入到Forwarding状态认为拓扑发生了改变。</p>
+<p><img src="/2024/05/08/STP%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4%E6%9C%BA%E5%88%B6/bian1014293.png" alt="bian1014293"></p>
+<p>如上图当S2的g0&#x2F;0&#x2F;3接口(与主机直接相连的接口都是DP端口)经过大概30s进入到Forwarding状态之后，S2的RP端口会立即向根桥发送一个TCN BPDU告知根桥拓扑发生了改变，根桥也会向S2交换机回复一个TC bit &#x3D; 1和TCA bit &#x3D; 1的BPDU，并且根桥会将TC bit &#x3D; 1的报文泛洪到全网交换机，持续35s。 S3的DP接口从shutdown重新进入到Forwarding状态与此情况类似。</p>
+<p>（2）根桥的DP失效直接发送TC BPDU。<br><img src="/2024/05/08/STP%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4%E6%9C%BA%E5%88%B6/bian272946542.png" alt="bian272946542"></p>
+<p> 如上图，当根桥的DP失效之后，S3交换机的RP也随即失效，DP立即成为RP并向S2的AP持续不断的发送TCN BPDU。当S2的AP经过大概30s进入到Forwarding状态之后会向S3的DP回复一个TCA bit &#x3D; 1的BPDU，告知S3我已收到你发送的TCN BPDU并且通过自己的RP将TCN BPDU发送给根桥，根桥也会向S2交换机回复一个TC bit &#x3D; 1和TCA bit &#x3D; 1的BPDU，并且根桥会将TC bit &#x3D; 1的报文泛洪到全网交换机持续35s。</p>
+<p>(3)RP失效或者RP进入到Forwarding状态。<br>        S3的RP失效其实等同于根桥的DP失效导致S3的RP失效。S2的RP失效等同于 1.拓扑改变导致MAC地址表错误。<br>(4)非根桥的DP端口失效不认为拓扑发生了改变。<br><img src="/2024/05/08/STP%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4%E6%9C%BA%E5%88%B6/bian44841788.png" alt="bian44841788"></p>
+<p>如上图两种情况，非根桥的DP失效都不会认为拓扑发生了改变。</p>
+<p>总结：<strong>stp发生拓扑变更的条件</strong>：<br>1、处于转发状态或者监听状态的端口过渡到阻塞状态，这个状态通常是链路故障<br>2、处于未启用状态的端口进入转发状态，这个状态通常是增加了新的链路<br>3、交换机从指定端口收到TCNBPDU报文。</p>
+<p><strong>stp缺点</strong>：1.收敛速度慢，故障切换时间太长（30-50秒）2.网络中大量主机频繁上下线，会导致TCN BPDU大量发送，导致Mac地址表不稳定</p>
+<h1 id="RSTP对STP的改进："><a href="#RSTP对STP的改进：" class="headerlink" title="RSTP对STP的改进："></a>RSTP对STP的改进：</h1><ul>
+<li>RSTP对STP的改进：<ul>
+<li>通过端口角色的增补，简化了生成树协议的理解及部署；</li>
+<li>端口状态的重新划分；</li>
+<li>配置BPDU格式的改变，充分利用了STP协议报文中的Flag字段，明确了端口角色；</li>
+<li>配置BPDU的处理发生变化；</li>
+<li>快速收敛；</li>
+<li>增加保护功能。</li>
+</ul>
+</li>
+</ul>
+<h5 id="改进点1：端口角色的改进："><a href="#改进点1：端口角色的改进：" class="headerlink" title="改进点1：端口角色的改进："></a>改进点1：端口角色的改进：</h5><p>RSTP的端口角色共有4种：根端口、指定端口、Alternate端口和Backup端口。</p>
+<p> 根端口和指定端口的作用同STP中定义，Alternate端口和Backup端口的描述如下：  </p>
+<ul>
+<li>从配置BPDU报文发送角度来看：<ul>
+<li>Alternate端口就是由于学习到其它网桥发送的配置BPDU报文而阻塞的端口</li>
+<li>Backup端口就是由于学习到自己发送的配置BPDU报文而阻塞的端口</li>
+</ul>
+</li>
+<li>从用户流量角度来看：<ul>
+<li>Alternate端口提供了从指定桥到根的另一条可切换路径，作为根端口的备份端口</li>
+<li>Backup端口作为指定端口的备份，提供了另一条从根桥到相应网段的备份通路</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p> 给一个RSTP域内所有端口分配角色的过程就是整个拓扑收敛的过程 </p>
+</blockquote>
+<h5 id="改进点2：端口状态的改进"><a href="#改进点2：端口状态的改进" class="headerlink" title="改进点2：端口状态的改进"></a>改进点2：端口状态的改进</h5><p>RSTP的状态规范缩减为3种，根据端口是否转发用户流量和学习MAC地址来划分:</p>
+<ul>
+<li>Discarding状态：不转发用户流量也不学习MAC地址</li>
+<li>Learning状态：不转发用户流量但是学习MAC地址</li>
+<li>Forwarding状：既转发用户流量又学习MAC地址。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="left">STP端口状态</th>
+<th align="left">RSTP端口状态</th>
+<th align="left">端口在拓扑中的角色</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">Forwarding</td>
+<td align="left">Forwarding</td>
+<td align="left">包括根端口、指定端口</td>
+</tr>
+<tr>
+<td align="left">Learning</td>
+<td align="left">Learning</td>
+<td align="left">包括根端口、指定端口</td>
+</tr>
+<tr>
+<td align="left">Listening</td>
+<td align="left">Discarding</td>
+<td align="left">包括根端口、指定端口</td>
+</tr>
+<tr>
+<td align="left">Blocking</td>
+<td align="left">Discarding</td>
+<td align="left">包括Alternate端口、Backup端口</td>
+</tr>
+<tr>
+<td align="left">Disabled</td>
+<td align="left">Discarding</td>
+<td align="left">包括Disable端口</td>
+</tr>
+</tbody></table>
+<h5 id="改进点3：配置BPDU-RST-BPDU"><a href="#改进点3：配置BPDU-RST-BPDU" class="headerlink" title="改进点3：配置BPDU - RST BPDU"></a>改进点3：配置BPDU - RST BPDU</h5><p><strong>RSTP的配置BPDU充分利用了STP报文中的Flag字段，明确了端口角色</strong></p>
+<ul>
+<li>除了保证和STP格式基本一致之外，RSTP作了如下变化：<ul>
+<li>Type字段：配置BPDU类型不再是0而是2，所以运行STP的设备收到RSTP的配置BPDU时会丢弃</li>
+<li>Flag字段：使用了原来保留的中间6位，这样改变的配置BPDU叫做RST BPDU</li>
+</ul>
+</li>
+</ul>
+<h6 id="RST-BPDU报文格式："><a href="#RST-BPDU报文格式：" class="headerlink" title="RST BPDU报文格式："></a>RST BPDU报文格式：</h6><h6 id="RST-BPDU与STP配置BPDU报文格式不同点"><a href="#RST-BPDU与STP配置BPDU报文格式不同点" class="headerlink" title="RST BPDU与STP配置BPDU报文格式不同点"></a>RST BPDU与STP配置BPDU报文格式不同点</h6><ul>
+<li>BPDU类型，1 Byte，RST BPDU的类型值为0x02。</li>
+<li>标志，1 Byte，包括：<ul>
+<li>bit 7：TCA，表示拓扑变化确认；</li>
+<li>bit 6：Agreement，表示同意，用于P&#x2F;A机制；</li>
+<li>bit 5：Forwarding，表示转发状态；</li>
+<li>bit 4：Learning，表示学习状态；</li>
+<li>bit 3和bit 2：表示端口角色, 00表示未知端口, 01表示替代或备份端口, 10表示根端口, 11表示指定端口</li>
+<li>bit 1：Proposal，表示提议，用于P&#x2F;A机制；</li>
+<li>bit 0：TC，表示拓扑变化。</li>
+</ul>
+</li>
+</ul>
+<h5 id="改进点4：配置BPDU的处理"><a href="#改进点4：配置BPDU的处理" class="headerlink" title="改进点4：配置BPDU的处理"></a>改进点4：配置BPDU的处理</h5><h6 id="RSTP对配置BPDU的发送方式进行了改进"><a href="#RSTP对配置BPDU的发送方式进行了改进" class="headerlink" title="RSTP对配置BPDU的发送方式进行了改进"></a>RSTP对配置BPDU的发送方式进行了改进</h6><blockquote>
+<p> 在拓扑稳定后，无论非根桥设备是否接收到根桥传来的配置BPDU报文，非根桥设备仍然按照Hello Time规定的时间间隔发送配置BPDU，该行为完全由每台设备自主进行 </p>
+</blockquote>
+<h6 id="更短的BPDU超时时间"><a href="#更短的BPDU超时时间" class="headerlink" title="更短的BPDU超时时间"></a>更短的BPDU超时时间</h6><p>如果一个端口在超时时间（即三个周期，超时时间＝Hello Time×3）内没有收到上游设备发送过来的配置BPDU，那么该设备认为与此邻居之间的协商失败</p>
+<blockquote>
+<p> STP需要先等待一个Max Age </p>
+</blockquote>
+<h6 id="处理次优BPDU"><a href="#处理次优BPDU" class="headerlink" title="处理次优BPDU"></a>处理次优BPDU</h6><p>当一个端口收到上游的指定桥发来的RST BPDU报文时，该端口会将自身缓存的RST BPDU与收到的RST BPDU进行比较如果该端口缓存的RST BPDU优于收到的RST BPDU，那么该端口会直接丢弃收到的RST BPDU，立即回应自身缓存的RST BPDU，从而加快收敛速度</p>
+<ul>
+<li>STP：      STP只有指定端口会立即处理次优BPDU，其他端口会忽略次优BPDU，等到Max Age计时器超时后，缓存的次优BPDU才会老化，然后发送自身更优的BPDU，进行新一轮的拓扑收敛。 </li>
+<li>RSTP：   RSTP处理次优BPDU报文不再依赖于任何定时器，解决拓扑收敛，同时RSTP的任何端口角色都会处理次优BPDU，从而加快了拓扑收敛。</li>
+</ul>
+<h5 id="改进点5：快速收敛机制"><a href="#改进点5：快速收敛机制" class="headerlink" title="改进点5：快速收敛机制"></a>改进点5：快速收敛机制</h5><h6 id="快速收敛机制："><a href="#快速收敛机制：" class="headerlink" title="快速收敛机制："></a>快速收敛机制：</h6><ul>
+<li>如果网络中一个根端口失效，那么网络中最优的Alternate端口将成为根端口，进入Forwarding状态。因为通过这个Alternate端口连接的网段上必然有个指定端口可以通往根桥 </li>
+<li>如果网络中一指定端口失效，那么网络中最优的Backup端口将成为指定端口，进入Forwarding状态。因为Backup端口作为指定端口的备份，提供了另一条从根桥到相应网段的备份通路</li>
+</ul>
+<p> ##### 边缘端口 (Edge Port)机制：  </p>
+<blockquote>
+<p> 在RSTP里面，如果某一个端口位于整个网络的边缘，即不再与其他交换设备连接，而是直接与终端设备直连，这种端口可以设置为边缘端口 </p>
+</blockquote>
+<p>边缘端口不参与RSTP计算，可以由Discarding直接进入Forwarding状态，同时边缘端口的UP和Down，不会引起网络拓扑的变动</p>
+<p>但是一旦边缘端口收到配置BPDU，就丧失了边缘端口属性，成为普通STP端口，并重新进行生成树计算，从而引起网络震荡</p>
+<h6 id="Proposal-Agreement机制："><a href="#Proposal-Agreement机制：" class="headerlink" title="Proposal&#x2F;Agreement机制："></a>Proposal&#x2F;Agreement机制：</h6><p>简称P&#x2F;A机制，RSTP通过P&#x2F;A机制加快了上游端口进入Forwarding状态的速度。 当一个端口被选举成为指定端口之后,会先进入Discarding状态，再通过P&#x2F;A机制快速进入Forwarding状态</p>
+<p>事实上对于STP，指定端口的选择可以很快完成，主要的速度瓶颈在于：为了避免环路，必须等待足够长的时间，使全网的端口状态全部确定，也就是说必须要等待至少一个Forward Delay所有端口才能进行转发。 而RSTP的主要目的就是消除这个瓶颈，通过阻塞自己的非根端口来保证不会出现环路。而使用P&#x2F;A机制加快了上游端口进入Forwarding状态的速度。</p>
+<h5 id="改进点6：拓扑变更机制"><a href="#改进点6：拓扑变更机制" class="headerlink" title="改进点6：拓扑变更机制"></a>改进点6：拓扑变更机制</h5><p>在RSTP中检测拓扑是否发生变化只有一个标准：一个非边缘端口迁移到Forwarding状态。</p>
+<p>一旦检测到拓扑发生变化，将进行如下处理： 为本交换设备的所有非边缘指定端口和根端口启动一个TC While Timer，该计时器值是Hello Time的两倍。在这个时间内，清空状态发生变化的端口上学习到的MAC地址。 同时，由非边缘指定端口和根端口向外发送RST BPDU，其中TC置位。一旦TC While Timer超时，则停止发送RST BPDU。 其他交换设备接收到RST BPDU后，清空所有端口（除了收到RST BPDU的端口和边缘端口）学习到MAC地址，然后也为自己所有的非边缘指定端口和根端口启动TC While Timer，重复上述过程。 如此，网络中就会产生RST BPDU的泛洪。</p>
+<h4 id="RSTP与STP的兼容"><a href="#RSTP与STP的兼容" class="headerlink" title="RSTP与STP的兼容"></a>RSTP与STP的兼容</h4><blockquote>
+<p> RSTP可以兼容STP：RSTP可以和STP互操作，但是此时会丧失快速收敛等RSTP优势。 </p>
+</blockquote>
+<p>当一个网段里既有运行STP的交换设备又有运行RSTP的交换设备，STP交换设备会忽略RSTP的BPDU</p>
+<p>运行RSTP的交换设备在某端口上接收到运行STP的交换设备发出的配置BPDU，在两个Hello Time时间之后，便把自己的端口转换到STP工作模式，发送配置BPDU，从而实现了互操作。</p>
+]]></content>
+      <categories>
+        <category>基础知识</category>
+      </categories>
+      <tags>
+        <tag>stp拓扑变更</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hybrid接口</title>
+    <url>/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/</url>
+    <content><![CDATA[<h1 id="接口属性"><a href="#接口属性" class="headerlink" title="接口属性"></a>接口属性</h1><p>​	交换机接口的类型，可以是Access、Trunk和Hybrid。Access类型的接口仅属于一个VLAN,,,,只能接收、转发相应VLAN的帧；而Trunk类型接口则默认属于所有VLAN任何Tagged帧都能经过Trunk接收和转发； Hybrid类型接口则介于二者之间，可自主定义端口上能接收和转发那些VLAN Tag帧，并可决定VLAN Tag是否继续携带或者剥离。。Access和Trunk类型接口是Hybrid类型接口的两个特例，，，一个仅支持一个VLAN传递，，一个默认支持所有VLAN的传递，而Access类型和Trunk类型的接口能做到的，Hybrid接口都能做到。</p>
+<p>​    hybrid属性具有trunk和access两种端口属性的特点，tag类似trunk，untag类似access，但是又不同，因为hybrid端口可以接收某个或者多个vlan的数据。</p>
+<p>在开始研究之前强调几点：</p>
+<p>1、在hybrid端口中，所有端口都默认属于vlan1，除非配置undo port hybrid vlan 1 才能将该hybrid剔除出vlan1，可以使用display vlan 查看端口所属的vlan</p>
+<p>2、在hybrid端口中，无论是tag还是untag后面配置的vlan-id就是该hybrid端口所能够收到vlan数据的vlan-id，换句话说就是这些vlan中发出的数据该端口都能收到，可以使用display vlan查看（这里注意虽然可以收到这些vlan的数据但是严格意义上讲hybrid端口并不属于任何一个vlan）</p>
+<p>3、所有类型端口的默认pvid都是vlan1，而pvid这个属性只！针对！进入！该端口的！没有标签的！普通数据包有效，作用是将没有标签的普通数据包打上pvid中配置的标签号</p>
+<p>4、hybrid属性中，tag是针对于端口的接收方向的（从该端口进来的流量允许带有这些vlan标签的通过），untag是针对端口的发送方向的（从该端口出去的流量去除这些vlan标签）</p>
+<p>5、加入一个hybrid端口配置tag vlan 2 3和untag vlan 4 5 ，那么默认情况下这个hybrid属于vlan1、2、3、4、5，在display vlan中可以查看到，只有端口属于了某个vlan，那么该端口才能收到某个vlan的数据包，这一点是理解下列两种配置和hybrid端口属性的关键！！！</p>
+<h1 id="收发过程"><a href="#收发过程" class="headerlink" title="收发过程"></a>收发过程</h1><p>在数据发送时untag列表的原理，如下图<br>1.带有vlan 3标签的数据从F0&#x2F;0接口出去，通过时查看untag列表，发现有对应的标签，将标签脱掉发送出去<br>2.带有vlan 8标签的数据从F0&#x2F;1接口出去，通过时查看untag列表，发现没有对应的标签，继续查看tag表，发现有对应标签，所以直接带有vlan 8标签的数据发送出去<br>3.带有vlan 5标签的数据从F0&#x2F;2接口出去，通过时查看untag列表，发现没有对应的标签 ，继续查看tag列表，发现也没有对应的标签，所以数据直接被丢弃<br><img src="/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/shoufa6505133622.png" alt="shoufa6505133622"></p>
+<p>tag列表处理数据帧的接收和发送的原理，如下图<br>1.没有标签的数据进入F0&#x2F;0接口，接口查看到数据没有标签，根据接口PVID&#x3D;3，将vlan 3标签打入数据<br>2.带有vlan 9标签的数据进入接口F0&#x2F;1，接口查看到数据带有标签，接着查看tag列表，发现列表中存在对应标签，放通数据<br>3.带有vlan 5标签的数据从接口F0&#x2F;2出去，接口查看到数据带有标签，查看untag列表，发现列表中没有对应vlan 5标签，继续查看tag列表，发现列表中存在对应标签vlan 5，放通数据出去<br>4.带有vlan 3标签的数据从F0&#x2F;2接口出去，查看untag列表，发现列表中存在对应vlan 3标签，将标签脱掉，放通数据出去<br>5.带有vlan 9标签的数据从F0&#x2F;2接口出去，查看untag表，发现列表中不存在对应vlan 9标签，继续查看tag列表，发现列表中不存在vlan 9标签，将数据丢弃</p>
+<p><img src="/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/fataf2133722.png" alt="fataf2133722"></p>
+<h1 id="实例分析"><a href="#实例分析" class="headerlink" title="实例分析"></a>实例分析</h1><p><img src="/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/tuo2205133307.png" alt="tuo2205133307"></p>
+<p>1、为了让我们更加简洁的理解hydrid的属性，首先在所有的端口上移除了vlan1这个默认有的vlan，假设为所有端口初始不属于任何vlan，都不能相互之间通信</p>
+<p>2、pvid是当普通的主机数据帧进入交换机端口后被打上的vlan-tag的属性，在途中可以看出PC1、PC2、PC3的流量在进入交换机的时候分别会被打上vlan2、vlan3、vlan99的vlan标签</p>
+<p>3、untag后面的vlan就是该端口属于的vlan，那么不难看出LSW1的G0&#x2F;0&#x2F;1属于vlan2、3，G0&#x2F;0&#x2F;2属于vlan2、10，G0&#x2F;0&#x2F;3属于vlan3、10，而untag的动作是在流量出端口去往主机的时候把vlan-tag全部去除，那么不难看出LSW1的G0&#x2F;0&#x2F;1将去除vlan2、3的标签，G0&#x2F;0&#x2F;2去除vlan2、10的标签，G0&#x2F;0&#x2F;3去除vlan3、10的标签（还原成普通帧）</p>
+<p>LSW2的G0&#x2F;0&#x2F;1属于vlan99，G0&#x2F;0&#x2F;2属于vlan99，在流量出端口的时候会去除vlan99的标签（还原成普通帧）</p>
+<p>那么PC1与PC2的通信现在分析如下：当PC1发送arp去请求PC2的MAC地址的时候，PC1会将数据包广播发往LSW1的G0&#x2F;0&#x2F;2接口，LSW1收到后发现是个普通的不带标签的数据帧，于是根据接口的pvid给该帧打上vlan2的tag，然后往vlan2中进行泛红，无奈G0&#x2F;0&#x2F;3端口只属于vlan3、10所以无法收到vlan2中的泛红，故PC1与PC2通信失败。</p>
+<p>下面再来分析PC1与PC3通信：前面已经分析了PC1要去请求PC3的MAC，被LSW1的G0&#x2F;0&#x2F;2收到，并且打上vlan2的tag，然后在vlan2中泛红，那么在vlan2中的端口就都能收到该泛红了，所以在配置了untag vlan 2 3的G0&#x2F;0&#x2F;1端口自然也能收到vlan2和vlan3的泛红并转发出去，但是LSW1发现G0&#x2F;0&#x2F;1配置untag vlan2 3，所以将从该端口发送出去的所有带有vlan2和vlan3的数据包的tag全部去除（还原成普通帧），然后这个普通的帧就会发往LSW2被G0&#x2F;0&#x2F;1端口接收到，LSW2发现了一个普通的帧，那么就会用到pvid了不是，所以LSW2收到这个帧后打上vlan99的tag进行泛红，那么PC3所在的hybrid因为配置有untag vlan99必然能够收到vlan99的数据包了，然后在G0&#x2F;0&#x2F;2发给PC3的时候将vlan99的tag去除掉，PC3收到的就是一个不带任何tag的普通包（PC3完全不知道在它个PC1之间还有SW这种东西存在），好了PC3收到了PC1发来的arp请求，那么作为有礼貌的人应该回复自己的MAC地址了，与回一个arp响应给PC1，</p>
+<p>下面PC3的回包分析：PC3使用PC1的MAC和ip封装好数据包后从网卡发送出去，LSW2的G0&#x2F;0&#x2F;2端口收到了，发现是一个普通帧，OK来pvid打上vlan99的tag，然后查看mac地址表发现PC1的MAC地址在G0&#x2F;0&#x2F;1口，在查看vlan信息，发现G0&#x2F;0&#x2F;1口可以接收vlan99的数据（untag vlan99），两个转发条件都满足了，那么久把数据包发给G0&#x2F;0&#x2F;1转发，G0&#x2F;0&#x2F;1转发的时候根据untag vlan99把数据包vlan-id去除还原成普通帧，被LSW1的G0&#x2F;0&#x2F;1收到，按照pvid的惯例，普通帧被打上了pvid vlan10的tag（用vlan10举例，也可以是任意vlan），然后LSW1根据MAC地址表找到PC1在自己的G0&#x2F;0&#x2F;2口，再查看vlan信息发现G0&#x2F;0&#x2F;2接口配置了untag vlan2 10，可以接收vlan10的数据包，于是就把这个被打上vlan10的PC3发来的arp响应通过G0&#x2F;0&#x2F;2发送给了PC1，当然在从G0&#x2F;0&#x2F;2接口出去的时候根据untag vlan2 10的配置将vlan10的tag去除还原成一个普通的帧，PC1收到的是一个普通的帧，完全不知道它和PC3之间还有交换机这个东西。好了，这就是一次通信过程，PC2与PC3的通信原理也是一样的，于是就实现了PC3与PC1、PC2互通，PC1与PC2之间不通的效果。</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>hybrid</tag>
+        <tag>tag</tag>
       </tags>
   </entry>
   <entry>
@@ -1553,159 +1708,6 @@
         <tag>STP</tag>
         <tag>RSTP</tag>
         <tag>MSTP</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>STP拓扑变更机制</title>
-    <url>/2024/05/08/STP%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4%E6%9C%BA%E5%88%B6/</url>
-    <content><![CDATA[<h1 id="为什么要有STP拓扑变化机制"><a href="#为什么要有STP拓扑变化机制" class="headerlink" title="为什么要有STP拓扑变化机制"></a>为什么要有STP拓扑变化机制</h1><p>网络中发生拓扑变化时，例如链路中断或接口异常Down等情况，由于MAC地址老化时间的存在（缺省为5分钟），如果不及时通知上游设备，则可能会导致上游设备的报文在这段时间内一直向一个不可达的链路发送。</p>
-<h5 id="拓扑改变导致MAC地址表错误"><a href="#拓扑改变导致MAC地址表错误" class="headerlink" title="拓扑改变导致MAC地址表错误"></a>拓扑改变导致MAC地址表错误</h5><p><img src="/2024/05/08/STP%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4%E6%9C%BA%E5%88%B6/1stp3434.png" alt="1stp3434"></p>
-<p> 本例中，SW3中的MAC地址表项定义了通过端口GigabitEthernet 0&#x2F;0&#x2F;2可以到达主机1，通过端口GigabitEthernet 0&#x2F;0&#x2F;3可以到达主机2。由于SW2的根端口产生故障，导致生成树拓扑重新收敛，在生成树拓扑完成收敛之后，从主机1到主机2的帧仍然不能到达目的地。这是因为MAC地址表项老化时间是300秒，主机2发往主机1的帧到达SW3后，SW3会继续通过端口GigabitEthernet 0&#x2F;0&#x2F;2转发该数据帧。那么该怎么快速恢复转发？</p>
-<p><img src="/2024/05/08/STP%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4%E6%9C%BA%E5%88%B6/2stp821462.png" alt="2stp821462"></p>
-<p>   拓扑变更以及MAC地址表项更新的具体过程如下：</p>
-<p>SW2感知到网络拓扑发生变化后，会立即向SW3发送TCN BPDU报文。<br>SW3收到SW2发来的TCN BPDU报文后，会把配置BPDU报文中的Flags的TCA位设置1，然后发送给SW2，告知SW2我已经收到你发送的TCN BPDU。<br>SW3向根桥转发TCN BPDU报文。<br>SW1把配置BPDU报文中的Flags的TC位和TCA位设置为1后发送，通知下游设备我已经收到你发送的TCN BPDU，并通知下游交换机把MAC地址表项的老化时间由默认的300 s修改为Forward Delay的时间（默认为15 s），之后会持续不断的发送TC bit &#x3D; 1的BPDU持续35s。<br>最多等待15 s之后，SW3中的错误MAC地址表项会被自动清除。此后，SW3就能重新开始MAC表项的学习及转发操作。</p>
-<p>说明：</p>
-<ul>
-<li>TCN BPDU报文主要用来向上游设备乃至根桥通知拓扑变化。</li>
-<li>TCA标记置位的配置BPDU报文主要是上游设备用来告知下游设备已经知道拓扑变化，通知下游设备停止发送TCN BPDU报文。</li>
-<li>置位的TC标记的配置BPDU报文主要是上游设备用来告知下游设备拓扑发生变化，请下游设备直接删除桥MAC地址表项，从而达到快速收敛的目的。</li>
-</ul>
-<h5 id="感知拓扑改变"><a href="#感知拓扑改变" class="headerlink" title="感知拓扑改变"></a>感知拓扑改变</h5><p>什么情况下STP会感知到拓扑发生了改变呢？有下面四种！</p>
-<p>（1）当DP端口进入到Forwarding状态认为拓扑发生了改变。</p>
-<p><img src="/2024/05/08/STP%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4%E6%9C%BA%E5%88%B6/bian1014293.png" alt="bian1014293"></p>
-<p>如上图当S2的g0&#x2F;0&#x2F;3接口(与主机直接相连的接口都是DP端口)经过大概30s进入到Forwarding状态之后，S2的RP端口会立即向根桥发送一个TCN BPDU告知根桥拓扑发生了改变，根桥也会向S2交换机回复一个TC bit &#x3D; 1和TCA bit &#x3D; 1的BPDU，并且根桥会将TC bit &#x3D; 1的报文泛洪到全网交换机，持续35s。 S3的DP接口从shutdown重新进入到Forwarding状态与此情况类似。</p>
-<p>（2）根桥的DP失效直接发送TC BPDU。<br><img src="/2024/05/08/STP%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4%E6%9C%BA%E5%88%B6/bian272946542.png" alt="bian272946542"></p>
-<p> 如上图，当根桥的DP失效之后，S3交换机的RP也随即失效，DP立即成为RP并向S2的AP持续不断的发送TCN BPDU。当S2的AP经过大概30s进入到Forwarding状态之后会向S3的DP回复一个TCA bit &#x3D; 1的BPDU，告知S3我已收到你发送的TCN BPDU并且通过自己的RP将TCN BPDU发送给根桥，根桥也会向S2交换机回复一个TC bit &#x3D; 1和TCA bit &#x3D; 1的BPDU，并且根桥会将TC bit &#x3D; 1的报文泛洪到全网交换机持续35s。</p>
-<p>(3)RP失效或者RP进入到Forwarding状态。<br>        S3的RP失效其实等同于根桥的DP失效导致S3的RP失效。S2的RP失效等同于 1.拓扑改变导致MAC地址表错误。<br>(4)非根桥的DP端口失效不认为拓扑发生了改变。<br><img src="/2024/05/08/STP%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4%E6%9C%BA%E5%88%B6/bian44841788.png" alt="bian44841788"></p>
-<p>如上图两种情况，非根桥的DP失效都不会认为拓扑发生了改变。</p>
-<p>总结：<strong>stp发生拓扑变更的条件</strong>：<br>1、处于转发状态或者监听状态的端口过渡到阻塞状态，这个状态通常是链路故障<br>2、处于未启用状态的端口进入转发状态，这个状态通常是增加了新的链路<br>3、交换机从指定端口收到TCNBPDU报文。</p>
-<p><strong>stp缺点</strong>：1.收敛速度慢，故障切换时间太长（30-50秒）2.网络中大量主机频繁上下线，会导致TCN BPDU大量发送，导致Mac地址表不稳定</p>
-<h1 id="RSTP对STP的改进："><a href="#RSTP对STP的改进：" class="headerlink" title="RSTP对STP的改进："></a>RSTP对STP的改进：</h1><ul>
-<li>RSTP对STP的改进：<ul>
-<li>通过端口角色的增补，简化了生成树协议的理解及部署；</li>
-<li>端口状态的重新划分；</li>
-<li>配置BPDU格式的改变，充分利用了STP协议报文中的Flag字段，明确了端口角色；</li>
-<li>配置BPDU的处理发生变化；</li>
-<li>快速收敛；</li>
-<li>增加保护功能。</li>
-</ul>
-</li>
-</ul>
-<h5 id="改进点1：端口角色的改进："><a href="#改进点1：端口角色的改进：" class="headerlink" title="改进点1：端口角色的改进："></a>改进点1：端口角色的改进：</h5><p>RSTP的端口角色共有4种：根端口、指定端口、Alternate端口和Backup端口。</p>
-<p> 根端口和指定端口的作用同STP中定义，Alternate端口和Backup端口的描述如下：  </p>
-<ul>
-<li>从配置BPDU报文发送角度来看：<ul>
-<li>Alternate端口就是由于学习到其它网桥发送的配置BPDU报文而阻塞的端口</li>
-<li>Backup端口就是由于学习到自己发送的配置BPDU报文而阻塞的端口</li>
-</ul>
-</li>
-<li>从用户流量角度来看：<ul>
-<li>Alternate端口提供了从指定桥到根的另一条可切换路径，作为根端口的备份端口</li>
-<li>Backup端口作为指定端口的备份，提供了另一条从根桥到相应网段的备份通路</li>
-</ul>
-</li>
-</ul>
-<blockquote>
-<p> 给一个RSTP域内所有端口分配角色的过程就是整个拓扑收敛的过程 </p>
-</blockquote>
-<h5 id="改进点2：端口状态的改进"><a href="#改进点2：端口状态的改进" class="headerlink" title="改进点2：端口状态的改进"></a>改进点2：端口状态的改进</h5><p>RSTP的状态规范缩减为3种，根据端口是否转发用户流量和学习MAC地址来划分:</p>
-<ul>
-<li>Discarding状态：不转发用户流量也不学习MAC地址</li>
-<li>Learning状态：不转发用户流量但是学习MAC地址</li>
-<li>Forwarding状：既转发用户流量又学习MAC地址。</li>
-</ul>
-<table>
-<thead>
-<tr>
-<th align="left">STP端口状态</th>
-<th align="left">RSTP端口状态</th>
-<th align="left">端口在拓扑中的角色</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left">Forwarding</td>
-<td align="left">Forwarding</td>
-<td align="left">包括根端口、指定端口</td>
-</tr>
-<tr>
-<td align="left">Learning</td>
-<td align="left">Learning</td>
-<td align="left">包括根端口、指定端口</td>
-</tr>
-<tr>
-<td align="left">Listening</td>
-<td align="left">Discarding</td>
-<td align="left">包括根端口、指定端口</td>
-</tr>
-<tr>
-<td align="left">Blocking</td>
-<td align="left">Discarding</td>
-<td align="left">包括Alternate端口、Backup端口</td>
-</tr>
-<tr>
-<td align="left">Disabled</td>
-<td align="left">Discarding</td>
-<td align="left">包括Disable端口</td>
-</tr>
-</tbody></table>
-<h5 id="改进点3：配置BPDU-RST-BPDU"><a href="#改进点3：配置BPDU-RST-BPDU" class="headerlink" title="改进点3：配置BPDU - RST BPDU"></a>改进点3：配置BPDU - RST BPDU</h5><p><strong>RSTP的配置BPDU充分利用了STP报文中的Flag字段，明确了端口角色</strong></p>
-<ul>
-<li>除了保证和STP格式基本一致之外，RSTP作了如下变化：<ul>
-<li>Type字段：配置BPDU类型不再是0而是2，所以运行STP的设备收到RSTP的配置BPDU时会丢弃</li>
-<li>Flag字段：使用了原来保留的中间6位，这样改变的配置BPDU叫做RST BPDU</li>
-</ul>
-</li>
-</ul>
-<h6 id="RST-BPDU报文格式："><a href="#RST-BPDU报文格式：" class="headerlink" title="RST BPDU报文格式："></a>RST BPDU报文格式：</h6><h6 id="RST-BPDU与STP配置BPDU报文格式不同点"><a href="#RST-BPDU与STP配置BPDU报文格式不同点" class="headerlink" title="RST BPDU与STP配置BPDU报文格式不同点"></a>RST BPDU与STP配置BPDU报文格式不同点</h6><ul>
-<li>BPDU类型，1 Byte，RST BPDU的类型值为0x02。</li>
-<li>标志，1 Byte，包括：<ul>
-<li>bit 7：TCA，表示拓扑变化确认；</li>
-<li>bit 6：Agreement，表示同意，用于P&#x2F;A机制；</li>
-<li>bit 5：Forwarding，表示转发状态；</li>
-<li>bit 4：Learning，表示学习状态；</li>
-<li>bit 3和bit 2：表示端口角色, 00表示未知端口, 01表示替代或备份端口, 10表示根端口, 11表示指定端口</li>
-<li>bit 1：Proposal，表示提议，用于P&#x2F;A机制；</li>
-<li>bit 0：TC，表示拓扑变化。</li>
-</ul>
-</li>
-</ul>
-<h5 id="改进点4：配置BPDU的处理"><a href="#改进点4：配置BPDU的处理" class="headerlink" title="改进点4：配置BPDU的处理"></a>改进点4：配置BPDU的处理</h5><h6 id="RSTP对配置BPDU的发送方式进行了改进"><a href="#RSTP对配置BPDU的发送方式进行了改进" class="headerlink" title="RSTP对配置BPDU的发送方式进行了改进"></a>RSTP对配置BPDU的发送方式进行了改进</h6><blockquote>
-<p> 在拓扑稳定后，无论非根桥设备是否接收到根桥传来的配置BPDU报文，非根桥设备仍然按照Hello Time规定的时间间隔发送配置BPDU，该行为完全由每台设备自主进行 </p>
-</blockquote>
-<h6 id="更短的BPDU超时时间"><a href="#更短的BPDU超时时间" class="headerlink" title="更短的BPDU超时时间"></a>更短的BPDU超时时间</h6><p>如果一个端口在超时时间（即三个周期，超时时间＝Hello Time×3）内没有收到上游设备发送过来的配置BPDU，那么该设备认为与此邻居之间的协商失败</p>
-<blockquote>
-<p> STP需要先等待一个Max Age </p>
-</blockquote>
-<h6 id="处理次优BPDU"><a href="#处理次优BPDU" class="headerlink" title="处理次优BPDU"></a>处理次优BPDU</h6><p>当一个端口收到上游的指定桥发来的RST BPDU报文时，该端口会将自身缓存的RST BPDU与收到的RST BPDU进行比较如果该端口缓存的RST BPDU优于收到的RST BPDU，那么该端口会直接丢弃收到的RST BPDU，立即回应自身缓存的RST BPDU，从而加快收敛速度</p>
-<ul>
-<li>STP：      STP只有指定端口会立即处理次优BPDU，其他端口会忽略次优BPDU，等到Max Age计时器超时后，缓存的次优BPDU才会老化，然后发送自身更优的BPDU，进行新一轮的拓扑收敛。 </li>
-<li>RSTP：   RSTP处理次优BPDU报文不再依赖于任何定时器，解决拓扑收敛，同时RSTP的任何端口角色都会处理次优BPDU，从而加快了拓扑收敛。</li>
-</ul>
-<h5 id="改进点5：快速收敛机制"><a href="#改进点5：快速收敛机制" class="headerlink" title="改进点5：快速收敛机制"></a>改进点5：快速收敛机制</h5><h6 id="快速收敛机制："><a href="#快速收敛机制：" class="headerlink" title="快速收敛机制："></a>快速收敛机制：</h6><ul>
-<li>如果网络中一个根端口失效，那么网络中最优的Alternate端口将成为根端口，进入Forwarding状态。因为通过这个Alternate端口连接的网段上必然有个指定端口可以通往根桥 </li>
-<li>如果网络中一指定端口失效，那么网络中最优的Backup端口将成为指定端口，进入Forwarding状态。因为Backup端口作为指定端口的备份，提供了另一条从根桥到相应网段的备份通路</li>
-</ul>
-<p> ##### 边缘端口 (Edge Port)机制：  </p>
-<blockquote>
-<p> 在RSTP里面，如果某一个端口位于整个网络的边缘，即不再与其他交换设备连接，而是直接与终端设备直连，这种端口可以设置为边缘端口 </p>
-</blockquote>
-<p>边缘端口不参与RSTP计算，可以由Discarding直接进入Forwarding状态，同时边缘端口的UP和Down，不会引起网络拓扑的变动</p>
-<p>但是一旦边缘端口收到配置BPDU，就丧失了边缘端口属性，成为普通STP端口，并重新进行生成树计算，从而引起网络震荡</p>
-<h6 id="Proposal-Agreement机制："><a href="#Proposal-Agreement机制：" class="headerlink" title="Proposal&#x2F;Agreement机制："></a>Proposal&#x2F;Agreement机制：</h6><p>简称P&#x2F;A机制，RSTP通过P&#x2F;A机制加快了上游端口进入Forwarding状态的速度。 当一个端口被选举成为指定端口之后,会先进入Discarding状态，再通过P&#x2F;A机制快速进入Forwarding状态</p>
-<p>事实上对于STP，指定端口的选择可以很快完成，主要的速度瓶颈在于：为了避免环路，必须等待足够长的时间，使全网的端口状态全部确定，也就是说必须要等待至少一个Forward Delay所有端口才能进行转发。 而RSTP的主要目的就是消除这个瓶颈，通过阻塞自己的非根端口来保证不会出现环路。而使用P&#x2F;A机制加快了上游端口进入Forwarding状态的速度。</p>
-<h5 id="改进点6：拓扑变更机制"><a href="#改进点6：拓扑变更机制" class="headerlink" title="改进点6：拓扑变更机制"></a>改进点6：拓扑变更机制</h5><p>在RSTP中检测拓扑是否发生变化只有一个标准：一个非边缘端口迁移到Forwarding状态。</p>
-<p>一旦检测到拓扑发生变化，将进行如下处理： 为本交换设备的所有非边缘指定端口和根端口启动一个TC While Timer，该计时器值是Hello Time的两倍。在这个时间内，清空状态发生变化的端口上学习到的MAC地址。 同时，由非边缘指定端口和根端口向外发送RST BPDU，其中TC置位。一旦TC While Timer超时，则停止发送RST BPDU。 其他交换设备接收到RST BPDU后，清空所有端口（除了收到RST BPDU的端口和边缘端口）学习到MAC地址，然后也为自己所有的非边缘指定端口和根端口启动TC While Timer，重复上述过程。 如此，网络中就会产生RST BPDU的泛洪。</p>
-<h4 id="RSTP与STP的兼容"><a href="#RSTP与STP的兼容" class="headerlink" title="RSTP与STP的兼容"></a>RSTP与STP的兼容</h4><blockquote>
-<p> RSTP可以兼容STP：RSTP可以和STP互操作，但是此时会丧失快速收敛等RSTP优势。 </p>
-</blockquote>
-<p>当一个网段里既有运行STP的交换设备又有运行RSTP的交换设备，STP交换设备会忽略RSTP的BPDU</p>
-<p>运行RSTP的交换设备在某端口上接收到运行STP的交换设备发出的配置BPDU，在两个Hello Time时间之后，便把自己的端口转换到STP工作模式，发送配置BPDU，从而实现了互操作。</p>
-]]></content>
-      <categories>
-        <category>基础知识</category>
-      </categories>
-      <tags>
-        <tag>stp拓扑变更</tag>
       </tags>
   </entry>
   <entry>
@@ -2730,6 +2732,22 @@
       </tags>
   </entry>
   <entry>
+    <title>telnet</title>
+    <url>/2023/12/02/telnet/</url>
+    <content><![CDATA[<h1 id="两种配置方法"><a href="#两种配置方法" class="headerlink" title="两种配置方法"></a>两种配置方法</h1><h2 id="1-仅密码登录验证"><a href="#1-仅密码登录验证" class="headerlink" title="1.仅密码登录验证"></a>1.仅密码登录验证</h2><p>代码如下（示例）：<br><Quidway>system-view —–进入配置模式<br>[Quidway]interface vlan 1 —–进入管理vlan<br>[Quidway-Vlanif1]ip address 192.168.28.49 255.255.255.0 —–配置管理ip地址<br>[Quidway-Vlanif1]quit —–退出<br>[Quidway]telnet server enable —–打开telnet服务 （一般默认开启）<br>[Quidway]user-interface vty 0 4 —–用户指定虚拟用户终端接口<br>[Quidway-ui-vty0-4]authentication-mode password —–配置用户终端接口认证方式 密码验证<br>[Quidway-ui-vty0-4]set authentication password cipher huawei123 —–设置接口验证密码,密码为huawei123<br>[Quidway-ui-vty0-4]user privilege level 15 —–设置用户优先级 （可选）<br>[Quidway-ui-vty0-4]idle-timeout 1 —–设置登陆超时为一分钟 （可选）<br>[Quidway-ui-vty0-4]return —–返回用户视图<br><Quidway>save —–保存</Quidway></Quidway></p>
+<h2 id="2-配置AAA登录"><a href="#2-配置AAA登录" class="headerlink" title="2.配置AAA登录"></a>2.配置AAA登录</h2><p>代码如下（示例）：<br><Quidway>system-view —–进入配置模式<br>[Quidway]interface vlan 1 —–进入管理vlan<br>[Quidway-Vlanif1]ip address 192.168.28.49 255.255.255.0 —–配置管理ip地址<br>[Quidway-Vlanif1]quit —–退出<br>[Quidway]telnet server enable —–打开telnet服务 （一般默认开启）<br>[Quidway]user-interface vty 0 4 —–用户指定虚拟用户终端接口<br>[Quidway-ui-vty0-4]authentication-mode aaa —–配置用户终端接口认证方式 aaa验证<br>[Quidway-ui-vty0-4]user privilege level 15 —–设置用户优先级<br>[Quidway-ui-vty0-4]idle-timeout 1 —–设置登陆超时为一分钟<br>[Quidway-ui-vty0-4]quit —–退出<br>[Quidway]aaa —–进入aaa<br>[Quidway-aaa]local-user huawei password cipher huawei123 —–创建用户名huawei 密码huawei123<br>[Quidway-aaa]local-user huawei privilege level 15 —–设置用户优先级<br>[Quidway-aaa]local-user huawei service-type telnet —–授权用户使用telnet<br>[Quidway-ui-vty0-4]return —–返回用户视图<br><Quidway>save —–保存</Quidway></Quidway></p>
+<h2 id="user-interface-vty-0-4-详解"><a href="#user-interface-vty-0-4-详解" class="headerlink" title="user-interface vty 0 4 详解"></a>user-interface vty 0 4 详解</h2><p>Quidway]user-interface vty 0 4                    ；进入虚拟终端<br>[S3026-ui-vty0-4]authentication-mode password           ；设置口令模式<br>[S3026-ui-vty0-4]set authentication-mode password simple 222 ；设置口令<br>[S3026-ui-vty0-4]user privilege level 3 </p>
+<p>一、第一句的意思是：进入到vty 终端，在华为的交换机里，vty就是人家用telnet远程进入到你交换机的界面，最多有五个，所以说你可以vty 0  vty 1 vty… vty 4交换机最多可以允许五个人同时在线进到交换机里去配置命令的。vty0 4 就是说把这五个界面一起配置了，这五个界面进去的话，都是使用以下的配置。<br>二、用的认证模式是密码认证，可以使用scheme模式来，也可以用password来，用password的话，是要密码的，就是说你telnet的话，要输入密码才能登陆到包交换机里去的。<br>二、设置密码为明文密码，密码是123 ，如果是密文的话，就是cipher<br>四、用户等级为3，也就是最高的，华为的命令级别很多，分为四级，0 1 2 3 ，0是参观级，只能看，1比0要高，可以使用一些命令，2 是可以配置了，3可以备份与删除IOS啦，呵呵，这个命令就是说用这个123密码，进来就是最高级别的，不用换级别。</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>telnet</tag>
+        <tag>aaa</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>vlan间通信</title>
     <url>/2023/11/24/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/</url>
     <content><![CDATA[<h1 id="VLAN间通信"><a href="#VLAN间通信" class="headerlink" title="VLAN间通信"></a>VLAN间通信</h1><h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>划分VLAN后，不同VLAN的用户间不能二层互访，这样能起到隔离广播的作用。但实际应用中，不同VLAN的用户又常有互访的需求，此时就需要实现不同VLAN的用户互访，简称VLAN间互访。</p>
@@ -2887,22 +2905,6 @@
       </categories>
       <tags>
         <tag>交换机工作原理</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>telnet</title>
-    <url>/2023/12/02/telnet/</url>
-    <content><![CDATA[<h1 id="两种配置方法"><a href="#两种配置方法" class="headerlink" title="两种配置方法"></a>两种配置方法</h1><h2 id="1-仅密码登录验证"><a href="#1-仅密码登录验证" class="headerlink" title="1.仅密码登录验证"></a>1.仅密码登录验证</h2><p>代码如下（示例）：<br><Quidway>system-view —–进入配置模式<br>[Quidway]interface vlan 1 —–进入管理vlan<br>[Quidway-Vlanif1]ip address 192.168.28.49 255.255.255.0 —–配置管理ip地址<br>[Quidway-Vlanif1]quit —–退出<br>[Quidway]telnet server enable —–打开telnet服务 （一般默认开启）<br>[Quidway]user-interface vty 0 4 —–用户指定虚拟用户终端接口<br>[Quidway-ui-vty0-4]authentication-mode password —–配置用户终端接口认证方式 密码验证<br>[Quidway-ui-vty0-4]set authentication password cipher huawei123 —–设置接口验证密码,密码为huawei123<br>[Quidway-ui-vty0-4]user privilege level 15 —–设置用户优先级 （可选）<br>[Quidway-ui-vty0-4]idle-timeout 1 —–设置登陆超时为一分钟 （可选）<br>[Quidway-ui-vty0-4]return —–返回用户视图<br><Quidway>save —–保存</Quidway></Quidway></p>
-<h2 id="2-配置AAA登录"><a href="#2-配置AAA登录" class="headerlink" title="2.配置AAA登录"></a>2.配置AAA登录</h2><p>代码如下（示例）：<br><Quidway>system-view —–进入配置模式<br>[Quidway]interface vlan 1 —–进入管理vlan<br>[Quidway-Vlanif1]ip address 192.168.28.49 255.255.255.0 —–配置管理ip地址<br>[Quidway-Vlanif1]quit —–退出<br>[Quidway]telnet server enable —–打开telnet服务 （一般默认开启）<br>[Quidway]user-interface vty 0 4 —–用户指定虚拟用户终端接口<br>[Quidway-ui-vty0-4]authentication-mode aaa —–配置用户终端接口认证方式 aaa验证<br>[Quidway-ui-vty0-4]user privilege level 15 —–设置用户优先级<br>[Quidway-ui-vty0-4]idle-timeout 1 —–设置登陆超时为一分钟<br>[Quidway-ui-vty0-4]quit —–退出<br>[Quidway]aaa —–进入aaa<br>[Quidway-aaa]local-user huawei password cipher huawei123 —–创建用户名huawei 密码huawei123<br>[Quidway-aaa]local-user huawei privilege level 15 —–设置用户优先级<br>[Quidway-aaa]local-user huawei service-type telnet —–授权用户使用telnet<br>[Quidway-ui-vty0-4]return —–返回用户视图<br><Quidway>save —–保存</Quidway></Quidway></p>
-<h2 id="user-interface-vty-0-4-详解"><a href="#user-interface-vty-0-4-详解" class="headerlink" title="user-interface vty 0 4 详解"></a>user-interface vty 0 4 详解</h2><p>Quidway]user-interface vty 0 4                    ；进入虚拟终端<br>[S3026-ui-vty0-4]authentication-mode password           ；设置口令模式<br>[S3026-ui-vty0-4]set authentication-mode password simple 222 ；设置口令<br>[S3026-ui-vty0-4]user privilege level 3 </p>
-<p>一、第一句的意思是：进入到vty 终端，在华为的交换机里，vty就是人家用telnet远程进入到你交换机的界面，最多有五个，所以说你可以vty 0  vty 1 vty… vty 4交换机最多可以允许五个人同时在线进到交换机里去配置命令的。vty0 4 就是说把这五个界面一起配置了，这五个界面进去的话，都是使用以下的配置。<br>二、用的认证模式是密码认证，可以使用scheme模式来，也可以用password来，用password的话，是要密码的，就是说你telnet的话，要输入密码才能登陆到包交换机里去的。<br>二、设置密码为明文密码，密码是123 ，如果是密文的话，就是cipher<br>四、用户等级为3，也就是最高的，华为的命令级别很多，分为四级，0 1 2 3 ，0是参观级，只能看，1比0要高，可以使用一些命令，2 是可以配置了，3可以备份与删除IOS啦，呵呵，这个命令就是说用这个123密码，进来就是最高级别的，不用换级别。</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>telnet</tag>
-        <tag>aaa</tag>
       </tags>
   </entry>
   <entry>
