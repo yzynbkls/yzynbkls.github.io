@@ -388,6 +388,95 @@
       </tags>
   </entry>
   <entry>
+    <title>BGP路由反射器</title>
+    <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/</url>
+    <content><![CDATA[<h1 id="BGP路由反射器"><a href="#BGP路由反射器" class="headerlink" title="BGP路由反射器"></a>BGP路由反射器</h1><p>由于水平分割的原因，为了保证AS内所有的BGP路由器都能学习到完整的BGP路由，就必须在AS内实现IBGP全互联。</p>
+<p>然而实现IBGP全互联存在诸多短板：</p>
+<p> 路由器需维护大量的TCP及BGP连接，尤其在路由器数量较多时。</p>
+<p> AS内BGP网络的可扩展性较差，因为通过纯手工配置命令。</p>
+<p>为了解决该问题，可应用到RR路由反射器技术。</p>
+<p>1、Client：RR客户端，在RR设备上通过手动指定。</p>
+<blockquote>
+<p>指定命令：peer 邻居 reflect-client</p>
+</blockquote>
+<p>2、除了指定的设备为客户端，其它设备均为非客户端。</p>
+<p>实验：</p>
+<p>R1、R2、R3、R4都属于AS64511，其连接方式、互联接口地址如图所示。每台设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号。R1、R2上的Loopback1地址分别为10.1.1.1&#x2F;24、10.2.2.2&#x2F;24，用于模拟用户网段。</p>
+<span id="more"></span>
+
+<p>所有设备都使用Loopback0地址作为BGP Router ID，R1与R2、R2与R3、R3与R4、R4与R2之间基于直连接口建立IBGP对等体关系，其中R1为R2的路由反射器客户端，R2为R3的路由反射器客户端，R3为R4的路由反射器客户端。</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/bgpluy8165208.png" alt="bgpluy8165208"></p>
+<p>配置ip地址：略</p>
+<p>建立ibgp对等体：略</p>
+<h1 id="配置路由反射器"><a href="#配置路由反射器" class="headerlink" title="配置路由反射器"></a>配置路由反射器</h1><p>#R2上将R1配置为路由反射器客户端</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] peer 10.0.1.1 reflect-client</p>
+<p>#R3上将R2配置为路由反射器客户端</p>
+<p>[R3]bgp 64511</p>
+<p>[R3-bgp] peer 10.0.2.2 reflect-client</p>
+<p>#R4上将R3配置为路由反射器客户端</p>
+<p>[R4]bgp 64511</p>
+<p>[R4-bgp] peer 10.0.3.3 reflect-client</p>
+<h1 id="验证Orginator-ID实现路由防环"><a href="#验证Orginator-ID实现路由防环" class="headerlink" title="验证Orginator_ID实现路由防环"></a>验证Orginator_ID实现路由防环</h1><p>在本步骤中，我们将在R2上发布BGP路由10.2.2.0&#x2F;24，并观察该路由依次经路由反射器R3、R4反射后，被通告回R2从而引发潜在路由环路风险的情况。</p>
+<p>缺省情况下，R2发布BGP路由后，该路由将被R2直接通告给R4，另一方面也会通过R3反射给R4，此时R4将优选R2直接通告过来的路由，从而不会再将R3反射过来的路由再反射回给R2。为此，我们需要在R2上部署路由策略，使R2不直接向R4通告10.2.2.0&#x2F;24路由。</p>
+<p>#配置路由策略</p>
+<p>[R2]acl number 2000</p>
+<p>[R2-acl-basic-2000] rule 5 permit</p>
+<p>[R2-acl-basic-2000] quit</p>
+<p>[R2]route-policy bgp deny node 10</p>
+<p>[R2-route-policy] if-match acl 2000</p>
+<p>#在BGP中调用路由策略</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] peer 10.0.24.4 route-policy bgp export</p>
+<p>#在R2上发布路由</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] network 10.2.2.0 24</p>
+<p>#R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/chakan102224728.png" alt="chakan102224728"></p>
+<p>R2将该条路由通告给了R3、R1，但是并未通告给R4。</p>
+<p>#R3上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r174808.png" alt="r174808"></p>
+<p>R3将来自反射器客户端的BGP路由10.2.2.0&#x2F;24反射给了10.0.34.4（R4）。同时该BGP路由的nexthop为10.0.23.2。</p>
+<p># R4上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r4chakan80119.png" alt="r4chakan80119"></p>
+<p>该条路由来自反射器客户端R3，原始路由经由R3反射，路由的nexthop地址并未改变，同时R3为其添加了Orginator_ID属性，值为10.0.2.2。同时R4将该条路由反射给了R2。</p>
+<p>#再次在R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zacifa80349.png" alt="zacifa80349"></p>
+<p>依旧只存在本地通告的BGP路由，没有R4通告的BGP路由。</p>
+<p>#在R2上查看BGP对等体10.0.4.4的详细信息</p>
+<p>display bgp peer 10.0.4.4 verbose</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/safhaofbsh1128180629.png" alt="safhaofbsh1128180629"></p>
+<p>从输出信息可以看到R2从R4收到了1个Update报文，未向R4发送Update报文（路由策略限制），但是本地BGP路由表中不存在由R4通告的BGP路由10.2.2.0&#x2F;24。</p>
+<p>R4通告的BGP路由Orginator_ID属性值与本地的Router ID一致，R2忽略了该路由通告。</p>
+<h1 id="验证Cluster-List实现路由防环"><a href="#验证Cluster-List实现路由防环" class="headerlink" title="验证Cluster_List实现路由防环"></a>验证Cluster_List实现路由防环</h1><p>为了方便观察现象，取消R2上的BGP路由发布，在R1上将Loopback1接口路由发布到BGP，观察Cluster_List如何防止环路。</p>
+<p>#取消R2上的BGP路由发布</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] undo network 10.2.2.0 255.255.255.0</p>
+<p>#在R1上将Loopback1接口路由发布到BGP</p>
+<p>[R1]bgp 64511</p>
+<p>[R1-bgp] network 10.1.1.0 24</p>
+<p>#依次在R1、R2、R3、R4上查看BGP路由10.1.1.0 &#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/xinfuaiell181000.png" alt="xinfuaiell181000"></p>
+<p>R1为BGP路由10.1.1.0&#x2F;24的始发者，R1将路由通告给了R2</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/2xinfahol128181116.png" alt="2xinfahol128181116"></p>
+<p>来自路由反射器客户端R1的BGP路由10.1.1.0&#x2F;24，R2将其反射给了R3</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/3xinmbxmcx1128181206.png" alt="3xinmbxmcx1128181206"></p>
+<p>来自路由反射器客户端R2的BGP路由10.1.1.0&#x2F;24，R2反射时添加了Cluster_List属性，值为10.0.2.2，R3将该条路由反射给了R4</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/44xinm1334.png" alt="44xinm1334"></p>
+<p>来自路由反射器客户端R3的BGP路由10.1.1.0&#x2F;24，R3反射时添加了Cluster_List属性的值，当前值为10.0.3.3，10.0.2.2，R4将该条路由反射给了R2</p>
+<p>#再次查看R2的BGP路由表</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zaizaici661435.png" alt="zaizaici661435"></p>
+<p>R2的BGP路由表中依旧只有一条来自r1的BGP路由10.1.1.0&#x2F;24。</p>
+<p>4通告的BGP路由其Cluster_List属性值中包含了R2的Cluster-ID，R2忽略了该路由通告。</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>BGP路由反射器</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>BGP路由优选</title>
     <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/</url>
     <content><![CDATA[<h1 id="BGP路由优选"><a href="#BGP路由优选" class="headerlink" title="BGP路由优选"></a>BGP路由优选</h1><h2 id="实验背景"><a href="#实验背景" class="headerlink" title="实验背景"></a>实验背景</h2><p>你是公司的网络管理员。公司的网络采用了BGP协议接入了两个服务运营商。公司自己采用了私有的AS号64512，ISP1的AS号为100，ISP2的AS号为200。通过AS100、AS200都可以到达相同的网络，你通过改变BGP的各种属性达到了调整路由走向的目的。</p>
@@ -498,95 +587,6 @@
       </categories>
       <tags>
         <tag>BGP路由优选</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>BGP路由反射器</title>
-    <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/</url>
-    <content><![CDATA[<h1 id="BGP路由反射器"><a href="#BGP路由反射器" class="headerlink" title="BGP路由反射器"></a>BGP路由反射器</h1><p>由于水平分割的原因，为了保证AS内所有的BGP路由器都能学习到完整的BGP路由，就必须在AS内实现IBGP全互联。</p>
-<p>然而实现IBGP全互联存在诸多短板：</p>
-<p> 路由器需维护大量的TCP及BGP连接，尤其在路由器数量较多时。</p>
-<p> AS内BGP网络的可扩展性较差，因为通过纯手工配置命令。</p>
-<p>为了解决该问题，可应用到RR路由反射器技术。</p>
-<p>1、Client：RR客户端，在RR设备上通过手动指定。</p>
-<blockquote>
-<p>指定命令：peer 邻居 reflect-client</p>
-</blockquote>
-<p>2、除了指定的设备为客户端，其它设备均为非客户端。</p>
-<p>实验：</p>
-<p>R1、R2、R3、R4都属于AS64511，其连接方式、互联接口地址如图所示。每台设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号。R1、R2上的Loopback1地址分别为10.1.1.1&#x2F;24、10.2.2.2&#x2F;24，用于模拟用户网段。</p>
-<span id="more"></span>
-
-<p>所有设备都使用Loopback0地址作为BGP Router ID，R1与R2、R2与R3、R3与R4、R4与R2之间基于直连接口建立IBGP对等体关系，其中R1为R2的路由反射器客户端，R2为R3的路由反射器客户端，R3为R4的路由反射器客户端。</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/bgpluy8165208.png" alt="bgpluy8165208"></p>
-<p>配置ip地址：略</p>
-<p>建立ibgp对等体：略</p>
-<h1 id="配置路由反射器"><a href="#配置路由反射器" class="headerlink" title="配置路由反射器"></a>配置路由反射器</h1><p>#R2上将R1配置为路由反射器客户端</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] peer 10.0.1.1 reflect-client</p>
-<p>#R3上将R2配置为路由反射器客户端</p>
-<p>[R3]bgp 64511</p>
-<p>[R3-bgp] peer 10.0.2.2 reflect-client</p>
-<p>#R4上将R3配置为路由反射器客户端</p>
-<p>[R4]bgp 64511</p>
-<p>[R4-bgp] peer 10.0.3.3 reflect-client</p>
-<h1 id="验证Orginator-ID实现路由防环"><a href="#验证Orginator-ID实现路由防环" class="headerlink" title="验证Orginator_ID实现路由防环"></a>验证Orginator_ID实现路由防环</h1><p>在本步骤中，我们将在R2上发布BGP路由10.2.2.0&#x2F;24，并观察该路由依次经路由反射器R3、R4反射后，被通告回R2从而引发潜在路由环路风险的情况。</p>
-<p>缺省情况下，R2发布BGP路由后，该路由将被R2直接通告给R4，另一方面也会通过R3反射给R4，此时R4将优选R2直接通告过来的路由，从而不会再将R3反射过来的路由再反射回给R2。为此，我们需要在R2上部署路由策略，使R2不直接向R4通告10.2.2.0&#x2F;24路由。</p>
-<p>#配置路由策略</p>
-<p>[R2]acl number 2000</p>
-<p>[R2-acl-basic-2000] rule 5 permit</p>
-<p>[R2-acl-basic-2000] quit</p>
-<p>[R2]route-policy bgp deny node 10</p>
-<p>[R2-route-policy] if-match acl 2000</p>
-<p>#在BGP中调用路由策略</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] peer 10.0.24.4 route-policy bgp export</p>
-<p>#在R2上发布路由</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] network 10.2.2.0 24</p>
-<p>#R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/chakan102224728.png" alt="chakan102224728"></p>
-<p>R2将该条路由通告给了R3、R1，但是并未通告给R4。</p>
-<p>#R3上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r174808.png" alt="r174808"></p>
-<p>R3将来自反射器客户端的BGP路由10.2.2.0&#x2F;24反射给了10.0.34.4（R4）。同时该BGP路由的nexthop为10.0.23.2。</p>
-<p># R4上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r4chakan80119.png" alt="r4chakan80119"></p>
-<p>该条路由来自反射器客户端R3，原始路由经由R3反射，路由的nexthop地址并未改变，同时R3为其添加了Orginator_ID属性，值为10.0.2.2。同时R4将该条路由反射给了R2。</p>
-<p>#再次在R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zacifa80349.png" alt="zacifa80349"></p>
-<p>依旧只存在本地通告的BGP路由，没有R4通告的BGP路由。</p>
-<p>#在R2上查看BGP对等体10.0.4.4的详细信息</p>
-<p>display bgp peer 10.0.4.4 verbose</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/safhaofbsh1128180629.png" alt="safhaofbsh1128180629"></p>
-<p>从输出信息可以看到R2从R4收到了1个Update报文，未向R4发送Update报文（路由策略限制），但是本地BGP路由表中不存在由R4通告的BGP路由10.2.2.0&#x2F;24。</p>
-<p>R4通告的BGP路由Orginator_ID属性值与本地的Router ID一致，R2忽略了该路由通告。</p>
-<h1 id="验证Cluster-List实现路由防环"><a href="#验证Cluster-List实现路由防环" class="headerlink" title="验证Cluster_List实现路由防环"></a>验证Cluster_List实现路由防环</h1><p>为了方便观察现象，取消R2上的BGP路由发布，在R1上将Loopback1接口路由发布到BGP，观察Cluster_List如何防止环路。</p>
-<p>#取消R2上的BGP路由发布</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] undo network 10.2.2.0 255.255.255.0</p>
-<p>#在R1上将Loopback1接口路由发布到BGP</p>
-<p>[R1]bgp 64511</p>
-<p>[R1-bgp] network 10.1.1.0 24</p>
-<p>#依次在R1、R2、R3、R4上查看BGP路由10.1.1.0 &#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/xinfuaiell181000.png" alt="xinfuaiell181000"></p>
-<p>R1为BGP路由10.1.1.0&#x2F;24的始发者，R1将路由通告给了R2</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/2xinfahol128181116.png" alt="2xinfahol128181116"></p>
-<p>来自路由反射器客户端R1的BGP路由10.1.1.0&#x2F;24，R2将其反射给了R3</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/3xinmbxmcx1128181206.png" alt="3xinmbxmcx1128181206"></p>
-<p>来自路由反射器客户端R2的BGP路由10.1.1.0&#x2F;24，R2反射时添加了Cluster_List属性，值为10.0.2.2，R3将该条路由反射给了R4</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/44xinm1334.png" alt="44xinm1334"></p>
-<p>来自路由反射器客户端R3的BGP路由10.1.1.0&#x2F;24，R3反射时添加了Cluster_List属性的值，当前值为10.0.3.3，10.0.2.2，R4将该条路由反射给了R2</p>
-<p>#再次查看R2的BGP路由表</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zaizaici661435.png" alt="zaizaici661435"></p>
-<p>R2的BGP路由表中依旧只有一条来自r1的BGP路由10.1.1.0&#x2F;24。</p>
-<p>4通告的BGP路由其Cluster_List属性值中包含了R2的Cluster-ID，R2忽略了该路由通告。</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>BGP路由反射器</tag>
       </tags>
   </entry>
   <entry>
@@ -1313,7 +1313,6 @@
 <p>[AR2]ip route-static 0.0.0.0 0 200.1.1.1</p>
 <p>测试环回口[AR2]int LoopBack 0</p>
 <p>[AR2-LoopBack0]ip add 2.2.2.2 24</p>
-<p> <a href="%22D:%5Cblog%5Csource_posts%5CIA%E7%BB%BC%E5%90%88%E5%AE%9E%E9%AA%8C%5CHCIA%E7%BB%BC%E5%90%88%E5%AE%9E%E9%AA%8C.topo%22">HCIA综合实验.topo</a> </p>
 ]]></content>
       <categories>
         <category>综合实验</category>
@@ -2077,6 +2076,47 @@
       <tags>
         <tag>USG5500</tag>
         <tag>防火墙nat</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>VRF</title>
+    <url>/2024/06/23/VRF/</url>
+    <content><![CDATA[<p><img src="/2024/06/23/VRF/20190301110350669.png" alt="20190301110350669"></p>
+<p><img src="/2024/06/23/VRF/20190301110855304.png" alt="20190301110855304"></p>
+<p>假设PC1与R2这一侧的网络属于一个独立的业务；PC2与R3这一侧的网络属于另一个独立的业务，由于设备资源有限或者其他方面的原因，这两个独立的业务的相关节点连接在R1上，也就是同一台设备上。那么在完成相关配置后，R1的路由表如上图所示。<br>现在如果PC1要发一个数据包到2.2.2.2，那么这个数据包在到达R1后，R1就会去查看自己的路由表，发现有一条2.2.2.0&#x2F;24的路由匹配，因此将这个IP包从GE0&#x2F;0&#x2F;2口转发给192.168.100.2。这是没有问题的，然而如果PC1要访问3.3.3.0&#x2F;24网络呢？也是无压力的，因为数据包到达R1后，她照样查找路由表结果发现有匹配的路由，因此将数据包转给R3。但是实际上，从业务的角度考虑，我们禁止PC1访问3.3.3.0&#x2F;24网络。<br>那么怎么办？</p>
+<p><img src="/2024/06/23/VRF/20190301110351539.png" alt="20190301110351539"></p>
+<p><img src="/2024/06/23/VRF/2019030111115184.png" alt="2019030111115184"></p>
+<p>现在，我们在R1上创建两个VRF：VRF1及VRF2，创建完成后，我们可以理解为，拥有了两台虚拟路由器。当然，现在这两台虚拟路由器上啥也没有。<br>接下去我们将GE0&#x2F;0&#x2F;1口及GE0&#x2F;0&#x2F;2口绑定到VRF1；将GE0&#x2F;0&#x2F;3及GE0&#x2F;0&#x2F;4口绑定到VRF2。如此一来这两台虚拟路由器就各自拥有了两个物理接口。值得注意的是，这两台虚拟路由器是虽然都在同一台物理设备上，但是却是隔离的，他们将有自己的接口，自己的路由表，自己的ARP表等等相关的内容。我们的环境就变成有点像这样：</p>
+<p><img src="/2024/06/23/VRF/20190301111226761.png" alt="20190301111226761"></p>
+<p>我们看到，VRF1及VRF2有了自己的接口，也有了自己的路由表。并且相互之间是隔离的。<br>现在PC1要发送一个数据包到2.2.2.2，R1从接口GE0&#x2F;0&#x2F;1收到了这个数据包，由于此时GE0&#x2F;0&#x2F;1已经绑定到了VRF1，因此在执行目的IP的路由查找的时候，查的是VRF1的路由表，查找到匹配的路由条目后，间个数据包从其指示的GE0&#x2F;0&#x2F;1口转发给下一跳192.168.100.2。</p>
+<p>那么如果PC1要访问3.3.3.3呢？数据包发到了R1，R1从接口GE0&#x2F;0&#x2F;1收到了这个数据包，于是它在做路由查找的时候，查的仍然是VRF1的路由表。经过查表后，它发现并无匹配的条目，因此将数据包丢弃。</p>
+<p><img src="/2024/06/23/VRF/20190301111315435.png" alt="20190301111315435"></p>
+<p>实验</p>
+<img src="/2024/06/23/VRF/QQ截图20240623181526.png" alt="QQ截图20240623181526" style="zoom:80%;">
+
+<p>如图，R2属于VPN实例aa，R3属于VPN实例bb，要求pc1可以访问R2，不能访问R3。PC2可以访问R3，不能访问R2.</p>
+<p>R1下做单臂路由，创建VPN实例aa和bb，子接口分别绑定相应的VPN实例。g0&#x2F;0&#x2F;0绑定vpn实例aa，g0&#x2F;0&#x2F;1绑定vpn实例bb。</p>
+<p>S1创建vlan，划分接口：略</p>
+<p>注意：接口绑定VPN实例后，ip地址的配置会被移除，需要重新配置</p>
+<p>创建vpn实例：</p>
+<p>ip vpn-instance aa</p>
+<p> ipv4-family #使能ipv4地址簇</p>
+<p>接口绑定：ip binding vpn-instance aa</p>
+<p>查看vpn路由表：dis ip routing-table vpn-instance aa</p>
+<p>静态路由：ip route-static vpn-instance aa 2.2.2.2 32 192.168.10.1 </p>
+<p>ping命令：ping -vpn-instance aa 192.168.10.1</p>
+<p>R2上添加回程路由：略</p>
+<p>至此，PC1可以ping通R2</p>
+<p>R1上创建ospf：ospf 1 router-id 1.1.1.1 vpn-instance bb</p>
+<p>宣告网段：略</p>
+<p>R3上ospf宣告3.3.3.3</p>
+<p>pc2ping通3.3.3.3</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>VRF</tag>
       </tags>
   </entry>
   <entry>
@@ -3761,6 +3801,191 @@
       </tags>
   </entry>
   <entry>
+    <title>链路聚合</title>
+    <url>/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/</url>
+    <content><![CDATA[<h1 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h1><h2 id="什么是链路聚合"><a href="#什么是链路聚合" class="headerlink" title="什么是链路聚合"></a>什么是链路聚合</h2><p>在现网中，设备间如果通过一条链路连接，<strong>如果这条链路故障了，那么设备两端的终端就不能够通信了</strong>。有什么办法可以解决该问题呢？答案是——<strong>链路聚合</strong>。</p>
+<p><strong>从端口的角度定义：</strong></p>
+<p><strong>链路聚合（Link Aggregation）</strong>是指将<strong>多个物理端口</strong>汇聚在一起，形成一个<strong>逻辑端口</strong>，以实现出&#x2F;入流量吞吐量在各<strong>成员端口</strong>的负荷分担，交换机根据用户配置的端口负载分担方式决定数据包从哪个成员端口发送到对端的交换机。</p>
+<p><strong>从链路的角度定义：</strong></p>
+<p>链路聚合（Link Aggregation）是把两台设备之间的<strong>多条物理链路聚</strong>合在一起，当做一条<strong>逻辑链路</strong>来使用。这两台设备可以是一对路由器，一对交换机，或者是一台路由器和一台交换机。一条聚合链路可以包含多条成员链路，默认最多为<strong>8</strong>条。</p>
+<h2 id="链路聚合的作用"><a href="#链路聚合的作用" class="headerlink" title="链路聚合的作用"></a>链路聚合的作用</h2><ul>
+<li>链路聚合能够<strong>提高链路带宽</strong>。理论上，通过聚合几条链路，一个聚合口的带宽可以扩展为所有成员口带宽的总和，这样就有效地增加了逻辑链路的带宽。</li>
+<li>链路聚合<strong>为网络提供了高可靠性</strong>。配置了链路聚合之后，如果一个成员接口发生故障，该成员口的物理链路会把流量切换到另一条成员链路上。</li>
+<li>链路聚合<strong>在一个聚合口上实现负载均衡。</strong>一个聚合口可以把流量分散到多个不同的成员口上，通过成员链路把流量发送到同一个目的地，将网络产生拥塞的可能性降到最低。</li>
+</ul>
+<h2 id="三-链路聚合的工作原理："><a href="#三-链路聚合的工作原理：" class="headerlink" title="三. 链路聚合的工作原理："></a><strong>三. 链路聚合的工作原理：</strong></h2><p><strong>应用场景：</strong></p>
+<p>链路聚合一般部署在核心结点，以便提升整个网络的数据吞吐量。</p>
+<p>链路聚合能够提高链路带宽，增强网络可靠、可用性，支持负载分担。</p>
+<p><strong>链路聚合模式:</strong></p>
+<p>链路聚合包含两种模式：<strong>手动负载均衡模式</strong>和<strong>静态LACP（Link Aggregation Control Protocol）模式。</strong></p>
+<ol>
+<li><strong>手工负载分担模式：</strong></li>
+</ol>
+<ul>
+<li>手工负载分担模式下，Eth-Trunk的建立、<strong>成员接口</strong>的加入由<strong>手工配置</strong>，没有链路聚合控制协议的参与。</li>
+<li>该模式下所有<strong>活动链路</strong>都参与数据的转发，平均分担流量，因此称为<strong>负载分担模式</strong>。如果某条活动链路故障，链路聚合组自动在剩余的活动链路中平均分担流量。</li>
+</ul>
+<p><strong>使用场景：</strong></p>
+<p>当需要在两个直连设备间提供<strong>一个较大的链路带宽而设备又不支持LACP协议</strong>时，可以使用手工负载分担模式。</p>
+<p><strong>2. 静态LACP模式：</strong></p>
+<ul>
+<li>在静态LACP模式中，链路两端的设备相互发送<strong>LACP报文，协商聚合参数</strong>。协商完成后，两台设备确定活动接口和非活动接口。</li>
+<li>在静态LACP模式中，需要手动创建一个Eth-Trunk口，并添加成员口。</li>
+<li>静态LACP模式也叫<strong>M:N模式</strong>。M代表<strong>活动成员链路</strong>，用于在负载均衡模式中转发数据。N代表<strong>非活动链路</strong>，用于冗余备份。</li>
+<li>如果一条活动链路发生故障，该链路传输的数据被切换到一条优先级最高的备份链路上，这条备份链路转变为活动状态。</li>
+</ul>
+<p><strong>两种链路聚合模式的主要区别：</strong></p>
+<ul>
+<li>在<strong>静态LACP模式中</strong>，一些链路充当备份链路。</li>
+<li>在<strong>手动负载均衡模式</strong>中，所有的成员口都处于转发状态。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>手工模式</th>
+<th>LACP模式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Eth-Trunk的建立方式</td>
+<td>Eth-Trunk接口的创建、成员接口的加入由手工配置，没有链路聚合控制协议的参与。</td>
+<td>Eth-Trunk接口的创建、成员接口的加入由手工配置，LACP协议参与链路动态调整，负责链路状态维护。在聚合条件发生变化时，自动调整或解散链路聚合。</td>
+</tr>
+<tr>
+<td>设备是否需要支持LACP协议</td>
+<td>不需要</td>
+<td>需要</td>
+</tr>
+<tr>
+<td>数据转发</td>
+<td>正常情况下，所有链路都是活动链路。所有活动链路均参与数据转发。如果某条活动链路故障，链路聚合组自动在剩余的活动链路中分担流量。</td>
+<td>正常情况下，部分链路是活动链路。所有活动链路均参与数据转发。如果某条活动链路故障，链路聚合组自动在非活动链路中选择一条链路作为活动链路，参与数据转发的链路数目不变。</td>
+</tr>
+<tr>
+<td>检测故障</td>
+<td>只能检测到同一聚合组内的成员链路有断路等故障，无法检测到链路断连、错连等故障。</td>
+<td>不仅能够检测到同一聚合组内的成员链路有断路等故障，还可以检测到链路故障、链路错连等故障。</td>
+</tr>
+</tbody></table>
+<p><strong>数据流控制:</strong></p>
+<p>Eth-trunk链路两端相连的物理接口的数量、速率、双工方式、流控方式必须一致。</p>
+<h2 id="优先级"><a href="#优先级" class="headerlink" title="优先级"></a>优先级</h2><p>0-65535 </p>
+<p>默认32768</p>
+<p>小的优先</p>
+<p>优先级一样，看mac，mac小的优先</p>
+<h1 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h1><p><img src="/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/juhetuopu31207160429.png" alt="juhetuopu31207160429"></p>
+<h2 id="配置手工链路聚合"><a href="#配置手工链路聚合" class="headerlink" title="配置手工链路聚合"></a>配置手工链路聚合</h2><p># 创建Eth-Trunk接口</p>
+<p>[S1]interface Eth-Trunk 1 </p>
+<p><strong>interface eth-trunk</strong>命令用来进入已经存在的Eth-Trunk接口，或创建并进入Eth-Trunk接口。数字“1”代表接口编号，编号范围根据设备情况有所不同。</p>
+<p>[S2]interface Eth-Trunk 1</p>
+<p># 设置Eth-Trunk接口的聚合模式 </p>
+<p>[S1-Eth-Trunk1]mode manual load-balance</p>
+<p><strong>mode</strong>命令用来配置Eth-Trunk的工作模式，有LACP模式和手工负载分担模式（手工模式）两种，缺省情况下，Eth-Trunk的工作模式为手工负载分担模式。此处S1上的模式配置仅为示范目的，实际操作时不需要。</p>
+<p># 将成员接口加入聚合组</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;10 </p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10]eth-trunk 1 </p>
+<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10]quit</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;11</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11]eth-trunk 1</p>
+<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11]quit</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;12</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12]eth-trunk 1</p>
+<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12]quit</p>
+<p>可进入到成员接口的接口视图下，逐一添加到Eth-Trunk接口。也可以在Eth-Trunk接口视图下通过<strong>trunkport</strong>命令批量添加接口。</p>
+<p>[S2]interface Eth-Trunk 1</p>
+<p>[S2-Eth-Trunk1]trunkport GigabitEthernet 0&#x2F;0&#x2F;10 to 0&#x2F;0&#x2F;12 </p>
+<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
+<p>将成员接口加入Eth-Trunk时，需要注意以下问题：</p>
+<p>• 每个Eth-Trunk接口下最多可以包含8个成员接口。</p>
+<p>• Eth-Trunk接口不能嵌套，即Eth-Trunk接口的成员接口不能是Eth-Trunk接口。</p>
+<p>• 一个以太网接口只能加入到一个Eth-Trunk接口，如果需要加入其它Eth-Trunk接口，必须先退出原来的Eth-Trunk接口。</p>
+<p>• 如果本地设备使用了Eth-Trunk，与成员接口直连的对端接口也必须捆绑为Eth-Trunk接口，两端才能正常通信。</p>
+<p>Eth-Trunk链路两端相连的物理接口的数量、速率、双工方式等必须一致。</p>
+<p>#查看Eth-Trunk接口状态</p>
+<p>dis eth-trunk 1</p>
+<h2 id="配置LACP模式"><a href="#配置LACP模式" class="headerlink" title="配置LACP模式"></a>配置LACP模式</h2><p># 删除现有Eth-Trunk接口下的成员接口</p>
+<p>[S1]interface Eth-Trunk 1</p>
+<p>[S1-Eth-Trunk1]undo trunkport GigabitEthernet 0&#x2F;0&#x2F;10 to 0&#x2F;0&#x2F;12</p>
+<p>[S2]interface Eth-Trunk 1</p>
+<p>[S2-Eth-Trunk1]undo trunkport GigabitEthernet 0&#x2F;0&#x2F;10 to 0&#x2F;0&#x2F;12</p>
+<p><strong>在修改Eth-Trunk接口的聚合模式之前，需要确保Eth-Trunk中没有任何成员接口。</strong></p>
+<p># 修改聚合模式</p>
+<p>[S1]interface Eth-Trunk 1</p>
+<p>[S1-Eth-Trunk1]mode lacp</p>
+<p><strong>mode</strong> <strong>lacp</strong> 指定Eth-Trunk工作模式为LACP模式。</p>
+<p>注：部分版本的设备命令为 mode lacp-static</p>
+<p>[S2]interface Eth-Trunk 1</p>
+<p>[S2-Eth-Trunk1]mode lacp</p>
+<p># 将成员接口加入聚合组</p>
+<p>[S1]interface Eth-Trunk 1</p>
+<p>[S1-Eth-Trunk1]trunkport GigabitEthernet 0&#x2F;0&#x2F;10 to 0&#x2F;0&#x2F;12</p>
+<p>[S2]interface Eth-Trunk 1</p>
+<p>[S2-Eth-Trunk1]trunkport GigabitEthernet 0&#x2F;0&#x2F;10 to 0&#x2F;0&#x2F;12</p>
+<p>查看</p>
+<p><img src="/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/1chakan1207160903.png" alt="1chakan1207160903"></p>
+<p>注意此时三个接口都是Select的状态</p>
+<h2 id="选择接口"><a href="#选择接口" class="headerlink" title="选择接口"></a>选择接口</h2><p>​	考虑到网络流量情况，当网络正常时，只需要GigabitEthernet0&#x2F;0&#x2F;11和GigabitEthernet0&#x2F;0&#x2F;12接口处于转发状态，GigabitEthernet0&#x2F;0&#x2F;10接口作为备份。但当活动接口数量少于2时，直接关闭整个Eth-Trunk接口。</p>
+<p>全局配置优先级选举主动方，主动方设备的端口上配置接口优先级选举活动端口</p>
+<p># 配置设备S1的LACP优先级，使其成为主动端设备</p>
+<p>[S1]lacp priority 100 </p>
+<p># 配置接口优先级，优选GigabitEthernet0&#x2F;0&#x2F;11和GigabitEthernet0&#x2F;0&#x2F;12接口</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;10 </p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10]lacp priority 40000</p>
+<p># 配置接口优先级，优选GigabitEthernet0&#x2F;0&#x2F;11和GigabitEthernet0&#x2F;0&#x2F;12接口</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;10 </p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10]lacp priority 40000</p>
+<p>g0&#x2F;0&#x2F;10配置了大于32768的优先级4000，所以变为备份端口</p>
+<p>之后，g0&#x2F;0&#x2F;11和g0&#x2F;0&#x2F;12为活动端口</p>
+<p>使能了LACP模式链路聚合的两端设备均会收发的LACPDU报文。</p>
+<p>首先选举主动端设备：</p>
+<ol>
+<li>比较系统优先级字段，如果对端的系统优先级高于本端的系统优先级（默认为32768，越小越优），则确定对端为LACP主动端。</li>
+<li>如果系统优先级相同，比较两端设备的MAC地址，MAC地址小的一端为LACP主动端。</li>
+</ol>
+<p>选出主动端后，两端都会以主动端的接口优先级来选择活动接口，接口优先级越小越优，默认为32768。</p>
+<p># 配置Eth-trunk活动接口数上限阈值和下限阈值</p>
+<p>[S1]interface Eth-Trunk 1</p>
+<p>[S1-Eth-Trunk1]max active-linknumber 2</p>
+<p>[S1-Eth-Trunk1]least active-linknumber 2</p>
+<p>在一个Eth-Trunk接口内，活动接口数可以影响到Eth-Trunk接口的状态和带宽。Eth-Trunk接口的带宽是所有处于Up状态的成员口带宽之和。为保证Eth-Trunk接口的状态和带宽，可以设置以下两个阈值，以减小成员链路状态的变化带来的影响。</p>
+<p>• 活动接口数下限阈值：当活动接口数小于配置的下限阈值时，Eth-Trunk接口的状态转为Down。设置活动接口数下限阈值的目的是为了保证最小带宽。<strong>least active-linknumber</strong>命令用来配置链路聚合组活动接口数目的下限阈值。</p>
+<p>• 活动接口数上限阈值：当活动接口数达到上限阈值后，之后再发生成员链路状态变为Up都不会使Eth-Trunk接口的带宽增加。设置活动接口数上限阈值的目的是在保证了带宽的情况下提高网络的可靠性。<strong>max active-linknumber</strong>命令用来配置链路聚合组活动接口数目的上限阈值。</p>
+<p># 开启抢占功能</p>
+<p>[S1]interface Eth-Trunk 1</p>
+<p>[S1-Eth-Trunk1]lacp preempt enable</p>
+<p>在LACP模式下，当活动链路中出现故障链路时，系统会从备用链路中选择优先级最高的链路替代故障链路；如果被替代的故障链路恢复了正常，而且该链路的优先级又高于替代自己的链路。这种情况下，如果使能了LACP优先级抢占功能，高优先级链路会抢占低优先级链路，<strong>回切</strong>到活动状态。<strong>lacp preempt enable</strong>命令用来使能LACP模式下LACP优先级抢占的功能，缺省情况下，优先级抢占处于禁止状态。</p>
+<p># 查看当前 Eth-Trunk接口状态</p>
+<p><img src="/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/2chakan2207161758.png" alt="2chakan2207161758"></p>
+<p>shutdown接口g0&#x2F;0&#x2F;11和g0&#x2F;0&#x2F;12</p>
+<p>查看状态，发现都变为unselect状态</p>
+<p>由于设置了Eth-Trunk的活动链路下限阈值为2，所以聚合组中可用活动接口数量少于2时，整个聚合组对应的接口将会被关闭。尽管此时GigabitEthernet0&#x2F;0&#x2F;10处于UP状态，但是仍处于Unselect状态。</p>
+<h2 id="修改负载分担模式"><a href="#修改负载分担模式" class="headerlink" title="修改负载分担模式"></a>修改负载分担模式</h2><p># 开启上一步中关闭的接口 </p>
+<p>[S1]inter GigabitEthernet 0&#x2F;0&#x2F;11</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11]undo shutdown </p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11]quit</p>
+<p>[S1]inter GigabitEthernet 0&#x2F;0&#x2F;12</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12]undo shutdown</p>
+<p># 大约30秒后，查看当前Eth-Trunk1的接口状态</p>
+<p>由于使能了Eth-Trunk接口的抢占功能，所以当GigabitEthernet0&#x2F;0&#x2F;11和GigabitEthernet0&#x2F;0&#x2F;12接口进入UP状态之后，这两个接口的接口的优先级高于GigabitEthernet0&#x2F;0&#x2F;10，所以GigabitEthernet0&#x2F;0&#x2F;10会进入unselect状态。同时因为系统为了保证链路的稳定性，默认的抢占延时为30秒，所以要在30秒后才会发生抢占。</p>
+<p># 修改Eth-Trunk接口的负载分担模式为基于目的IP地址</p>
+<p>[S1]interface Eth-Trunk 1</p>
+<p>[S1-Eth-Trunk1]load-balance dst-ip</p>
+<p>当需要将Eth-Trunk接口的流量分散到不同的链路上，最后能到达统一目的地时，使用load-balance命令配置Eth-Trunk接口负载分担模式，以确保出方向的流量在各物理链路间进行合理的负载分担，避免链路阻塞。由于负载分担只对出方向的流量有效，因此链路两端接口的负载分担模式可以不一致，两端互不影响</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>链路聚合</tag>
+        <tag>lacp</tag>
+        <tag>eth-trunk</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>组播</title>
     <url>/2024/05/10/%E7%BB%84%E6%92%AD/</url>
     <content><![CDATA[<h1 id="组播简介"><a href="#组播简介" class="headerlink" title="组播简介"></a>组播简介</h1><p>组播（Multicast）是在一台源IP主机和多台（一组）IP主机之间进行，中间的网络设备根</p>
@@ -4411,191 +4636,6 @@
       </categories>
       <tags>
         <tag>路由策略</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>链路聚合</title>
-    <url>/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/</url>
-    <content><![CDATA[<h1 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h1><h2 id="什么是链路聚合"><a href="#什么是链路聚合" class="headerlink" title="什么是链路聚合"></a>什么是链路聚合</h2><p>在现网中，设备间如果通过一条链路连接，<strong>如果这条链路故障了，那么设备两端的终端就不能够通信了</strong>。有什么办法可以解决该问题呢？答案是——<strong>链路聚合</strong>。</p>
-<p><strong>从端口的角度定义：</strong></p>
-<p><strong>链路聚合（Link Aggregation）</strong>是指将<strong>多个物理端口</strong>汇聚在一起，形成一个<strong>逻辑端口</strong>，以实现出&#x2F;入流量吞吐量在各<strong>成员端口</strong>的负荷分担，交换机根据用户配置的端口负载分担方式决定数据包从哪个成员端口发送到对端的交换机。</p>
-<p><strong>从链路的角度定义：</strong></p>
-<p>链路聚合（Link Aggregation）是把两台设备之间的<strong>多条物理链路聚</strong>合在一起，当做一条<strong>逻辑链路</strong>来使用。这两台设备可以是一对路由器，一对交换机，或者是一台路由器和一台交换机。一条聚合链路可以包含多条成员链路，默认最多为<strong>8</strong>条。</p>
-<h2 id="链路聚合的作用"><a href="#链路聚合的作用" class="headerlink" title="链路聚合的作用"></a>链路聚合的作用</h2><ul>
-<li>链路聚合能够<strong>提高链路带宽</strong>。理论上，通过聚合几条链路，一个聚合口的带宽可以扩展为所有成员口带宽的总和，这样就有效地增加了逻辑链路的带宽。</li>
-<li>链路聚合<strong>为网络提供了高可靠性</strong>。配置了链路聚合之后，如果一个成员接口发生故障，该成员口的物理链路会把流量切换到另一条成员链路上。</li>
-<li>链路聚合<strong>在一个聚合口上实现负载均衡。</strong>一个聚合口可以把流量分散到多个不同的成员口上，通过成员链路把流量发送到同一个目的地，将网络产生拥塞的可能性降到最低。</li>
-</ul>
-<h2 id="三-链路聚合的工作原理："><a href="#三-链路聚合的工作原理：" class="headerlink" title="三. 链路聚合的工作原理："></a><strong>三. 链路聚合的工作原理：</strong></h2><p><strong>应用场景：</strong></p>
-<p>链路聚合一般部署在核心结点，以便提升整个网络的数据吞吐量。</p>
-<p>链路聚合能够提高链路带宽，增强网络可靠、可用性，支持负载分担。</p>
-<p><strong>链路聚合模式:</strong></p>
-<p>链路聚合包含两种模式：<strong>手动负载均衡模式</strong>和<strong>静态LACP（Link Aggregation Control Protocol）模式。</strong></p>
-<ol>
-<li><strong>手工负载分担模式：</strong></li>
-</ol>
-<ul>
-<li>手工负载分担模式下，Eth-Trunk的建立、<strong>成员接口</strong>的加入由<strong>手工配置</strong>，没有链路聚合控制协议的参与。</li>
-<li>该模式下所有<strong>活动链路</strong>都参与数据的转发，平均分担流量，因此称为<strong>负载分担模式</strong>。如果某条活动链路故障，链路聚合组自动在剩余的活动链路中平均分担流量。</li>
-</ul>
-<p><strong>使用场景：</strong></p>
-<p>当需要在两个直连设备间提供<strong>一个较大的链路带宽而设备又不支持LACP协议</strong>时，可以使用手工负载分担模式。</p>
-<p><strong>2. 静态LACP模式：</strong></p>
-<ul>
-<li>在静态LACP模式中，链路两端的设备相互发送<strong>LACP报文，协商聚合参数</strong>。协商完成后，两台设备确定活动接口和非活动接口。</li>
-<li>在静态LACP模式中，需要手动创建一个Eth-Trunk口，并添加成员口。</li>
-<li>静态LACP模式也叫<strong>M:N模式</strong>。M代表<strong>活动成员链路</strong>，用于在负载均衡模式中转发数据。N代表<strong>非活动链路</strong>，用于冗余备份。</li>
-<li>如果一条活动链路发生故障，该链路传输的数据被切换到一条优先级最高的备份链路上，这条备份链路转变为活动状态。</li>
-</ul>
-<p><strong>两种链路聚合模式的主要区别：</strong></p>
-<ul>
-<li>在<strong>静态LACP模式中</strong>，一些链路充当备份链路。</li>
-<li>在<strong>手动负载均衡模式</strong>中，所有的成员口都处于转发状态。</li>
-</ul>
-<table>
-<thead>
-<tr>
-<th>维度</th>
-<th>手工模式</th>
-<th>LACP模式</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Eth-Trunk的建立方式</td>
-<td>Eth-Trunk接口的创建、成员接口的加入由手工配置，没有链路聚合控制协议的参与。</td>
-<td>Eth-Trunk接口的创建、成员接口的加入由手工配置，LACP协议参与链路动态调整，负责链路状态维护。在聚合条件发生变化时，自动调整或解散链路聚合。</td>
-</tr>
-<tr>
-<td>设备是否需要支持LACP协议</td>
-<td>不需要</td>
-<td>需要</td>
-</tr>
-<tr>
-<td>数据转发</td>
-<td>正常情况下，所有链路都是活动链路。所有活动链路均参与数据转发。如果某条活动链路故障，链路聚合组自动在剩余的活动链路中分担流量。</td>
-<td>正常情况下，部分链路是活动链路。所有活动链路均参与数据转发。如果某条活动链路故障，链路聚合组自动在非活动链路中选择一条链路作为活动链路，参与数据转发的链路数目不变。</td>
-</tr>
-<tr>
-<td>检测故障</td>
-<td>只能检测到同一聚合组内的成员链路有断路等故障，无法检测到链路断连、错连等故障。</td>
-<td>不仅能够检测到同一聚合组内的成员链路有断路等故障，还可以检测到链路故障、链路错连等故障。</td>
-</tr>
-</tbody></table>
-<p><strong>数据流控制:</strong></p>
-<p>Eth-trunk链路两端相连的物理接口的数量、速率、双工方式、流控方式必须一致。</p>
-<h2 id="优先级"><a href="#优先级" class="headerlink" title="优先级"></a>优先级</h2><p>0-65535 </p>
-<p>默认32768</p>
-<p>小的优先</p>
-<p>优先级一样，看mac，mac小的优先</p>
-<h1 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h1><p><img src="/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/juhetuopu31207160429.png" alt="juhetuopu31207160429"></p>
-<h2 id="配置手工链路聚合"><a href="#配置手工链路聚合" class="headerlink" title="配置手工链路聚合"></a>配置手工链路聚合</h2><p># 创建Eth-Trunk接口</p>
-<p>[S1]interface Eth-Trunk 1 </p>
-<p><strong>interface eth-trunk</strong>命令用来进入已经存在的Eth-Trunk接口，或创建并进入Eth-Trunk接口。数字“1”代表接口编号，编号范围根据设备情况有所不同。</p>
-<p>[S2]interface Eth-Trunk 1</p>
-<p># 设置Eth-Trunk接口的聚合模式 </p>
-<p>[S1-Eth-Trunk1]mode manual load-balance</p>
-<p><strong>mode</strong>命令用来配置Eth-Trunk的工作模式，有LACP模式和手工负载分担模式（手工模式）两种，缺省情况下，Eth-Trunk的工作模式为手工负载分担模式。此处S1上的模式配置仅为示范目的，实际操作时不需要。</p>
-<p># 将成员接口加入聚合组</p>
-<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;10 </p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10]eth-trunk 1 </p>
-<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10]quit</p>
-<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;11</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11]eth-trunk 1</p>
-<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11]quit</p>
-<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;12</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12]eth-trunk 1</p>
-<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12]quit</p>
-<p>可进入到成员接口的接口视图下，逐一添加到Eth-Trunk接口。也可以在Eth-Trunk接口视图下通过<strong>trunkport</strong>命令批量添加接口。</p>
-<p>[S2]interface Eth-Trunk 1</p>
-<p>[S2-Eth-Trunk1]trunkport GigabitEthernet 0&#x2F;0&#x2F;10 to 0&#x2F;0&#x2F;12 </p>
-<p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
-<p>将成员接口加入Eth-Trunk时，需要注意以下问题：</p>
-<p>• 每个Eth-Trunk接口下最多可以包含8个成员接口。</p>
-<p>• Eth-Trunk接口不能嵌套，即Eth-Trunk接口的成员接口不能是Eth-Trunk接口。</p>
-<p>• 一个以太网接口只能加入到一个Eth-Trunk接口，如果需要加入其它Eth-Trunk接口，必须先退出原来的Eth-Trunk接口。</p>
-<p>• 如果本地设备使用了Eth-Trunk，与成员接口直连的对端接口也必须捆绑为Eth-Trunk接口，两端才能正常通信。</p>
-<p>Eth-Trunk链路两端相连的物理接口的数量、速率、双工方式等必须一致。</p>
-<p>#查看Eth-Trunk接口状态</p>
-<p>dis eth-trunk 1</p>
-<h2 id="配置LACP模式"><a href="#配置LACP模式" class="headerlink" title="配置LACP模式"></a>配置LACP模式</h2><p># 删除现有Eth-Trunk接口下的成员接口</p>
-<p>[S1]interface Eth-Trunk 1</p>
-<p>[S1-Eth-Trunk1]undo trunkport GigabitEthernet 0&#x2F;0&#x2F;10 to 0&#x2F;0&#x2F;12</p>
-<p>[S2]interface Eth-Trunk 1</p>
-<p>[S2-Eth-Trunk1]undo trunkport GigabitEthernet 0&#x2F;0&#x2F;10 to 0&#x2F;0&#x2F;12</p>
-<p><strong>在修改Eth-Trunk接口的聚合模式之前，需要确保Eth-Trunk中没有任何成员接口。</strong></p>
-<p># 修改聚合模式</p>
-<p>[S1]interface Eth-Trunk 1</p>
-<p>[S1-Eth-Trunk1]mode lacp</p>
-<p><strong>mode</strong> <strong>lacp</strong> 指定Eth-Trunk工作模式为LACP模式。</p>
-<p>注：部分版本的设备命令为 mode lacp-static</p>
-<p>[S2]interface Eth-Trunk 1</p>
-<p>[S2-Eth-Trunk1]mode lacp</p>
-<p># 将成员接口加入聚合组</p>
-<p>[S1]interface Eth-Trunk 1</p>
-<p>[S1-Eth-Trunk1]trunkport GigabitEthernet 0&#x2F;0&#x2F;10 to 0&#x2F;0&#x2F;12</p>
-<p>[S2]interface Eth-Trunk 1</p>
-<p>[S2-Eth-Trunk1]trunkport GigabitEthernet 0&#x2F;0&#x2F;10 to 0&#x2F;0&#x2F;12</p>
-<p>查看</p>
-<p><img src="/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/1chakan1207160903.png" alt="1chakan1207160903"></p>
-<p>注意此时三个接口都是Select的状态</p>
-<h2 id="选择接口"><a href="#选择接口" class="headerlink" title="选择接口"></a>选择接口</h2><p>​	考虑到网络流量情况，当网络正常时，只需要GigabitEthernet0&#x2F;0&#x2F;11和GigabitEthernet0&#x2F;0&#x2F;12接口处于转发状态，GigabitEthernet0&#x2F;0&#x2F;10接口作为备份。但当活动接口数量少于2时，直接关闭整个Eth-Trunk接口。</p>
-<p>全局配置优先级选举主动方，主动方设备的端口上配置接口优先级选举活动端口</p>
-<p># 配置设备S1的LACP优先级，使其成为主动端设备</p>
-<p>[S1]lacp priority 100 </p>
-<p># 配置接口优先级，优选GigabitEthernet0&#x2F;0&#x2F;11和GigabitEthernet0&#x2F;0&#x2F;12接口</p>
-<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;10 </p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10]lacp priority 40000</p>
-<p># 配置接口优先级，优选GigabitEthernet0&#x2F;0&#x2F;11和GigabitEthernet0&#x2F;0&#x2F;12接口</p>
-<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;10 </p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10]lacp priority 40000</p>
-<p>g0&#x2F;0&#x2F;10配置了大于32768的优先级4000，所以变为备份端口</p>
-<p>之后，g0&#x2F;0&#x2F;11和g0&#x2F;0&#x2F;12为活动端口</p>
-<p>使能了LACP模式链路聚合的两端设备均会收发的LACPDU报文。</p>
-<p>首先选举主动端设备：</p>
-<ol>
-<li>比较系统优先级字段，如果对端的系统优先级高于本端的系统优先级（默认为32768，越小越优），则确定对端为LACP主动端。</li>
-<li>如果系统优先级相同，比较两端设备的MAC地址，MAC地址小的一端为LACP主动端。</li>
-</ol>
-<p>选出主动端后，两端都会以主动端的接口优先级来选择活动接口，接口优先级越小越优，默认为32768。</p>
-<p># 配置Eth-trunk活动接口数上限阈值和下限阈值</p>
-<p>[S1]interface Eth-Trunk 1</p>
-<p>[S1-Eth-Trunk1]max active-linknumber 2</p>
-<p>[S1-Eth-Trunk1]least active-linknumber 2</p>
-<p>在一个Eth-Trunk接口内，活动接口数可以影响到Eth-Trunk接口的状态和带宽。Eth-Trunk接口的带宽是所有处于Up状态的成员口带宽之和。为保证Eth-Trunk接口的状态和带宽，可以设置以下两个阈值，以减小成员链路状态的变化带来的影响。</p>
-<p>• 活动接口数下限阈值：当活动接口数小于配置的下限阈值时，Eth-Trunk接口的状态转为Down。设置活动接口数下限阈值的目的是为了保证最小带宽。<strong>least active-linknumber</strong>命令用来配置链路聚合组活动接口数目的下限阈值。</p>
-<p>• 活动接口数上限阈值：当活动接口数达到上限阈值后，之后再发生成员链路状态变为Up都不会使Eth-Trunk接口的带宽增加。设置活动接口数上限阈值的目的是在保证了带宽的情况下提高网络的可靠性。<strong>max active-linknumber</strong>命令用来配置链路聚合组活动接口数目的上限阈值。</p>
-<p># 开启抢占功能</p>
-<p>[S1]interface Eth-Trunk 1</p>
-<p>[S1-Eth-Trunk1]lacp preempt enable</p>
-<p>在LACP模式下，当活动链路中出现故障链路时，系统会从备用链路中选择优先级最高的链路替代故障链路；如果被替代的故障链路恢复了正常，而且该链路的优先级又高于替代自己的链路。这种情况下，如果使能了LACP优先级抢占功能，高优先级链路会抢占低优先级链路，<strong>回切</strong>到活动状态。<strong>lacp preempt enable</strong>命令用来使能LACP模式下LACP优先级抢占的功能，缺省情况下，优先级抢占处于禁止状态。</p>
-<p># 查看当前 Eth-Trunk接口状态</p>
-<p><img src="/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/2chakan2207161758.png" alt="2chakan2207161758"></p>
-<p>shutdown接口g0&#x2F;0&#x2F;11和g0&#x2F;0&#x2F;12</p>
-<p>查看状态，发现都变为unselect状态</p>
-<p>由于设置了Eth-Trunk的活动链路下限阈值为2，所以聚合组中可用活动接口数量少于2时，整个聚合组对应的接口将会被关闭。尽管此时GigabitEthernet0&#x2F;0&#x2F;10处于UP状态，但是仍处于Unselect状态。</p>
-<h2 id="修改负载分担模式"><a href="#修改负载分担模式" class="headerlink" title="修改负载分担模式"></a>修改负载分担模式</h2><p># 开启上一步中关闭的接口 </p>
-<p>[S1]inter GigabitEthernet 0&#x2F;0&#x2F;11</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11]undo shutdown </p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11]quit</p>
-<p>[S1]inter GigabitEthernet 0&#x2F;0&#x2F;12</p>
-<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12]undo shutdown</p>
-<p># 大约30秒后，查看当前Eth-Trunk1的接口状态</p>
-<p>由于使能了Eth-Trunk接口的抢占功能，所以当GigabitEthernet0&#x2F;0&#x2F;11和GigabitEthernet0&#x2F;0&#x2F;12接口进入UP状态之后，这两个接口的接口的优先级高于GigabitEthernet0&#x2F;0&#x2F;10，所以GigabitEthernet0&#x2F;0&#x2F;10会进入unselect状态。同时因为系统为了保证链路的稳定性，默认的抢占延时为30秒，所以要在30秒后才会发生抢占。</p>
-<p># 修改Eth-Trunk接口的负载分担模式为基于目的IP地址</p>
-<p>[S1]interface Eth-Trunk 1</p>
-<p>[S1-Eth-Trunk1]load-balance dst-ip</p>
-<p>当需要将Eth-Trunk接口的流量分散到不同的链路上，最后能到达统一目的地时，使用load-balance命令配置Eth-Trunk接口负载分担模式，以确保出方向的流量在各物理链路间进行合理的负载分担，避免链路阻塞。由于负载分担只对出方向的流量有效，因此链路两端接口的负载分担模式可以不一致，两端互不影响</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>链路聚合</tag>
-        <tag>lacp</tag>
-        <tag>eth-trunk</tag>
       </tags>
   </entry>
 </search>
