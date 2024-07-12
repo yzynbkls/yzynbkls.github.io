@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"><title>链路聚合 | 沃德发</title><meta name="keywords" content="链路聚合,lacp,eth-trunk"><meta name="author" content="Yang"><meta name="copyright" content="Yang"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#f7f9fe"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-touch-fullscreen" content="yes"><meta name="apple-mobile-web-app-title" content="链路聚合"><meta name="application-name" content="链路聚合"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="#f7f9fe"><meta property="og:type" content="article"><meta property="og:title" content="链路聚合"><meta property="og:url" content="http://example.com/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/index.html"><meta property="og:site_name" content="沃德发"><meta property="og:description" content="概念 什么是链路聚合 在现网中，设备间如果通过一条链路连接，如果这条链路故障了，那么设备两端的终端就不能够通信了。有什么办法可以解决该问题呢？答案是——链路聚合。 从端口的角度定义： 链路聚合（Link Aggregation）是指将多个物理端口汇聚在一起，形成一个逻辑端口，以实现出&amp;#x2F;入流量吞吐量在"><meta property="og:locale" content="zh-CN"><meta property="og:image" content="http://example.com/img/toux.jpg"><meta property="article:author" content="Yang"><meta property="article:tag"><meta name="twitter:card" content="summary"><meta name="twitter:image" content="http://example.com/img/toux.jpg"><meta name="description" content="概念 什么是链路聚合 在现网中，设备间如果通过一条链路连接，如果这条链路故障了，那么设备两端的终端就不能够通信了。有什么办法可以解决该问题呢？答案是——链路聚合。 从端口的角度定义： 链路聚合（Link Aggregation）是指将多个物理端口汇聚在一起，形成一个逻辑端口，以实现出&amp;#x2F;入流量吞吐量在"><link rel="shortcut icon" href="/favicon.ico"><link rel="canonical" href="http://example.com/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/"><link rel="preconnect" href="//cdn.cbd.int"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta name="google-site-verification" content="xxx"/><meta name="baidu-site-verification" content="code-xxx"/><meta name="msvalidate.01" content="xxx"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.cbd.int/node-snackbar@0.1.16/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.cbd.int/@fancyapps/ui@5.0.20/dist/fancybox/fancybox.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"><title>链路聚合 | 沃德发</title><meta name="keywords" content="链路聚合,lacp,eth-trunk"><meta name="author" content="Yang"><meta name="copyright" content="Yang"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#f7f9fe"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-touch-fullscreen" content="yes"><meta name="apple-mobile-web-app-title" content="链路聚合"><meta name="application-name" content="链路聚合"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="#f7f9fe"><meta property="og:type" content="article"><meta property="og:title" content="链路聚合"><meta property="og:url" content="http://example.com/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/index.html"><meta property="og:site_name" content="沃德发"><meta property="og:description" content="概念什么是链路聚合在现网中，设备间如果通过一条链路连接，如果这条链路故障了，那么设备两端的终端就不能够通信了。有什么办法可以解决该问题呢？答案是——链路聚合。 从端口的角度定义： 链路聚合（Link Aggregation）是指将多个物理端口汇聚在一起，形成一个逻辑端口，以实现出&amp;#x2F;入流量吞"><meta property="og:locale" content="zh-CN"><meta property="og:image" content="http://example.com/img/toux.jpg"><meta property="article:author" content="Yang"><meta property="article:tag"><meta name="twitter:card" content="summary"><meta name="twitter:image" content="http://example.com/img/toux.jpg"><meta name="description" content="概念什么是链路聚合在现网中，设备间如果通过一条链路连接，如果这条链路故障了，那么设备两端的终端就不能够通信了。有什么办法可以解决该问题呢？答案是——链路聚合。 从端口的角度定义： 链路聚合（Link Aggregation）是指将多个物理端口汇聚在一起，形成一个逻辑端口，以实现出&amp;#x2F;入流量吞"><link rel="shortcut icon" href="/favicon.ico"><link rel="canonical" href="http://example.com/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/"><link rel="preconnect" href="//cdn.cbd.int"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta name="google-site-verification" content="xxx"/><meta name="baidu-site-verification" content="code-xxx"/><meta name="msvalidate.01" content="xxx"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.cbd.int/node-snackbar@0.1.16/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.cbd.int/@fancyapps/ui@5.0.20/dist/fancybox/fancybox.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
   linkPageTop: undefined,
   peoplecanvas: {"enable":true,"img":"https://upload-bbs.miyoushe.com/upload/2023/09/03/125766904/ee23df8517f3c3e3efc4145658269c06_5714860933110284659.png"},
   postHeadAiDescription: {"enable":true,"gptName":"AnZhiYu","mode":"local","switchBtn":false,"btnLink":"https://afdian.net/item/886a79d4db6711eda42a52540025c377","randomNum":3,"basicWordCount":1000,"key":"xxxx","Referer":"https://xx.xx/"},
@@ -54,12 +54,12 @@
   configTitle: '沃德发',
   title: '链路聚合',
   postAI: '',
-  pageFillDescription: '概念, 什么是链路聚合, 链路聚合的作用, 三. 链路聚合的工作原理：, 优先级, 配置, 配置手工链路聚合, 配置LACP模式, 选择接口, 修改负载分担模式概念什么是链路聚合在现网中设备间如果通过一条链路连接如果这条链路故障了那么设备两端的终端就不能够通信了有什么办法可以解决该问题呢答案是链路聚合从端口的角度定义链路聚合是指将多个物理端口汇聚在一起形成一个逻辑端口以实现出入流量吞吐量在各成员端口的负荷分担交换机根据用户配置的端口负载分担方式决定数据包从哪个成员端口发送到对端的交换机从链路的角度定义链路聚合是把两台设备之间的多条物理链路聚合在一起当做一条逻辑链路来使用这两台设备可以是一对路由器一对交换机或者是一台路由器和一台交换机一条聚合链路可以包含多条成员链路默认最多为条链路聚合的作用链路聚合能够提高链路带宽理论上通过聚合几条链路一个聚合口的带宽可以扩展为所有成员口带宽的总和这样就有效地增加了逻辑链路的带宽链路聚合为网络提供了高可靠性配置了链路聚合之后如果一个成员接口发生故障该成员口的物理链路会把流量切换到另一条成员链路上链路聚合在一个聚合口上实现负载均衡一个聚合口可以把流量分散到多个不同的成员口上通过成员链路把流量发送到同一个目的地将网络产生拥塞的可能性降到最低三链路聚合的工作原理应用场景链路聚合一般部署在核心结点以便提升整个网络的数据吞吐量链路聚合能够提高链路带宽增强网络可靠可用性支持负载分担链路聚合模式链路聚合包含两种模式手动负载均衡模式和静态模式手工负载分担模式手工负载分担模式下的建立成员接口的加入由手工配置没有链路聚合控制协议的参与该模式下所有活动链路都参与数据的转发平均分担流量因此称为负载分担模式如果某条活动链路故障链路聚合组自动在剩余的活动链路中平均分担流量使用场景当需要在两个直连设备间提供一个较大的链路带宽而设备又不支持协议时可以使用手工负载分担模式静态模式在静态模式中链路两端的设备相互发送报文协商聚合参数协商完成后两台设备确定活动接口和非活动接口在静态模式中需要手动创建一个口并添加成员口静态模式也叫模式代表活动成员链路用于在负载均衡模式中转发数据代表非活动链路用于冗余备份如果一条活动链路发生故障该链路传输的数据被切换到一条优先级最高的备份链路上这条备份链路转变为活动状态两种链路聚合模式的主要区别在静态模式中一些链路充当备份链路在手动负载均衡模式中所有的成员口都处于转发状态维度手工模式模式的建立方式接口的创建成员接口的加入由手工配置没有链路聚合控制协议的参与接口的创建成员接口的加入由手工配置协议参与链路动态调整负责链路状态维护在聚合条件发生变化时自动调整或解散链路聚合设备是否需要支持协议不需要需要数据转发正常情况下所有链路都是活动链路所有活动链路均参与数据转发如果某条活动链路故障链路聚合组自动在剩余的活动链路中分担流量正常情况下部分链路是活动链路所有活动链路均参与数据转发如果某条活动链路故障链路聚合组自动在非活动链路中选择一条链路作为活动链路参与数据转发的链路数目不变检测故障只能检测到同一聚合组内的成员链路有断路等故障无法检测到链路断连错连等故障不仅能够检测到同一聚合组内的成员链路有断路等故障还可以检测到链路故障链路错连等故障数据流控制链路两端相连的物理接口的数量速率双工方式流控方式必须一致优先级默认小的优先优先级一样看小的优先配置配置手工链路聚合创建接口命令用来进入已经存在的接口或创建并进入接口数字代表接口编号编号范围根据设备情况有所不同设置接口的聚合模式命令用来配置的工作模式有模式和手工负载分担模式手工模式两种缺省情况下的工作模式为手工负载分担模式此处上的模式配置仅为示范目的实际操作时不需要将成员接口加入聚合组可进入到成员接口的接口视图下逐一添加到接口也可以在接口视图下通过命令批量添加接口将成员接口加入时需要注意以下问题每个接口下最多可以包含个成员接口接口不能嵌套即接口的成员接口不能是接口一个以太网接口只能加入到一个接口如果需要加入其它接口必须先退出原来的接口如果本地设备使用了与成员接口直连的对端接口也必须捆绑为接口两端才能正常通信链路两端相连的物理接口的数量速率双工方式等必须一致查看接口状态配置模式删除现有接口下的成员接口在修改接口的聚合模式之前需要确保中没有任何成员接口修改聚合模式指定工作模式为模式注部分版本的设备命令为将成员接口加入聚合组查看注意此时三个接口都是的状态选择接口考虑到网络流量情况当网络正常时只需要和接口处于转发状态接口作为备份但当活动接口数量少于时直接关闭整个接口全局配置优先级选举主动方主动方设备的端口上配置接口优先级选举活动端口配置设备的优先级使其成为主动端设备配置接口优先级优选和接口配置接口优先级优选和接口配置了大于的优先级所以变为备份端口之后和为活动端口使能了模式链路聚合的两端设备均会收发的报文首先选举主动端设备比较系统优先级字段如果对端的系统优先级高于本端的系统优先级默认为越小越优则确定对端为主动端如果系统优先级相同比较两端设备的地址地址小的一端为主动端选出主动端后两端都会以主动端的接口优先级来选择活动接口接口优先级越小越优默认为配置活动接口数上限阈值和下限阈值在一个接口内活动接口数可以影响到接口的状态和带宽接口的带宽是所有处于状态的成员口带宽之和为保证接口的状态和带宽可以设置以下两个阈值以减小成员链路状态的变化带来的影响活动接口数下限阈值当活动接口数小于配置的下限阈值时接口的状态转为设置活动接口数下限阈值的目的是为了保证最小带宽命令用来配置链路聚合组活动接口数目的下限阈值活动接口数上限阈值当活动接口数达到上限阈值后之后再发生成员链路状态变为都不会使接口的带宽增加设置活动接口数上限阈值的目的是在保证了带宽的情况下提高网络的可靠性命令用来配置链路聚合组活动接口数目的上限阈值开启抢占功能在模式下当活动链路中出现故障链路时系统会从备用链路中选择优先级最高的链路替代故障链路如果被替代的故障链路恢复了正常而且该链路的优先级又高于替代自己的链路这种情况下如果使能了优先级抢占功能高优先级链路会抢占低优先级链路回切到活动状态命令用来使能模式下优先级抢占的功能缺省情况下优先级抢占处于禁止状态查看当前接口状态接口和查看状态发现都变为状态由于设置了的活动链路下限阈值为所以聚合组中可用活动接口数量少于时整个聚合组对应的接口将会被关闭尽管此时处于状态但是仍处于状态修改负载分担模式开启上一步中关闭的接口大约秒后查看当前的接口状态由于使能了接口的抢占功能所以当和接口进入状态之后这两个接口的接口的优先级高于所以会进入状态同时因为系统为了保证链路的稳定性默认的抢占延时为秒所以要在秒后才会发生抢占修改接口的负载分担模式为基于目的地址当需要将接口的流量分散到不同的链路上最后能到达统一目的地时使用命令配置接口负载分担模式以确保出方向的流量在各物理链路间进行合理的负载分担避免链路阻塞由于负载分担只对出方向的流量有效因此链路两端接口的负载分担模式可以不一致两端互不影响',
+  pageFillDescription: '概念, 什么是链路聚合, 链路聚合的作用, 三. 链路聚合的工作原理：, 优先级, LACPDU报文, 配置, 配置手工链路聚合, 配置LACP模式, 选择接口, 修改负载分担模式概念什么是链路聚合在现网中设备间如果通过一条链路连接如果这条链路故障了那么设备两端的终端就不能够通信了有什么办法可以解决该问题呢答案是链路聚合从端口的角度定义链路聚合是指将多个物理端口汇聚在一起形成一个逻辑端口以实现出入流量吞吐量在各成员端口的负荷分担交换机根据用户配置的端口负载分担方式决定数据包从哪个成员端口发送到对端的交换机从链路的角度定义链路聚合是把两台设备之间的多条物理链路聚合在一起当做一条逻辑链路来使用这两台设备可以是一对路由器一对交换机或者是一台路由器和一台交换机一条聚合链路可以包含多条成员链路默认最多为条链路聚合的作用链路聚合能够提高链路带宽理论上通过聚合几条链路一个聚合口的带宽可以扩展为所有成员口带宽的总和这样就有效地增加了逻辑链路的带宽链路聚合为网络提供了高可靠性配置了链路聚合之后如果一个成员接口发生故障该成员口的物理链路会把流量切换到另一条成员链路上链路聚合在一个聚合口上实现负载均衡一个聚合口可以把流量分散到多个不同的成员口上通过成员链路把流量发送到同一个目的地将网络产生拥塞的可能性降到最低三链路聚合的工作原理应用场景链路聚合一般部署在核心结点以便提升整个网络的数据吞吐量链路聚合能够提高链路带宽增强网络可靠可用性支持负载分担链路聚合模式链路聚合包含两种模式手动负载均衡模式和静态模式手工负载分担模式手工负载分担模式下的建立成员接口的加入由手工配置没有链路聚合控制协议的参与该模式下所有活动链路都参与数据的转发平均分担流量因此称为负载分担模式如果某条活动链路故障链路聚合组自动在剩余的活动链路中平均分担流量使用场景当需要在两个直连设备间提供一个较大的链路带宽而设备又不支持协议时可以使用手工负载分担模式静态模式在静态模式中链路两端的设备相互发送报文协商聚合参数协商完成后两台设备确定活动接口和非活动接口在静态模式中需要手动创建一个口并添加成员口静态模式也叫模式代表活动成员链路用于在负载均衡模式中转发数据代表非活动链路用于冗余备份如果一条活动链路发生故障该链路传输的数据被切换到一条优先级最高的备份链路上这条备份链路转变为活动状态两种链路聚合模式的主要区别在静态模式中一些链路充当备份链路在手动负载均衡模式中所有的成员口都处于转发状态维度手工模式模式的建立方式接口的创建成员接口的加入由手工配置没有链路聚合控制协议的参与接口的创建成员接口的加入由手工配置协议参与链路动态调整负责链路状态维护在聚合条件发生变化时自动调整或解散链路聚合设备是否需要支持协议不需要需要数据转发正常情况下所有链路都是活动链路所有活动链路均参与数据转发如果某条活动链路故障链路聚合组自动在剩余的活动链路中分担流量正常情况下部分链路是活动链路所有活动链路均参与数据转发如果某条活动链路故障链路聚合组自动在非活动链路中选择一条链路作为活动链路参与数据转发的链路数目不变检测故障只能检测到同一聚合组内的成员链路有断路等故障无法检测到链路断连错连等故障不仅能够检测到同一聚合组内的成员链路有断路等故障还可以检测到链路故障链路错连等故障数据流控制链路两端相连的物理接口的数量速率双工方式流控方式必须一致优先级系统优先级默认小的优先优先级一样看小的优先接口优先级也是小的优默认报文基于标准的是一种实现链路动态聚合与解聚合的协议通过链路聚合控制协议数据单元与对端交互信息在模式的中加入成员接口后这些接口将通过发送向对端通告自己的系统优先级地址接口优先级接口号和操作等信息对端接收到这些信息后将这些信息与自身接口所保存的信息比较用以选择能够聚合的接口双方对哪些接口能够成为活动接口达成一致确定活动链路帧基于标准是一种慢协议平均每秒发送的协议报文不超过个其目的地址是一个特殊的组播地址如果接口板收到报文的目的是该组播地址且二层协议类型字段为协议子类型为则说明此数据报文为帧报文格式链路聚合控制协议数据单元的报文格式如下字段长度字节说明目的地址是一个组播地址固定为源地址发送端口的地址长度类型协议类型报文子类型取值为代表是报文协议版本号固定为类型信息标识的类型值为代表字段信息字段长度取值为即以字节为单位本端系统优先级可以设置默认情况下为即本端系统本端系统的地址端口值系统根据端口的配置生成是端口能否成为聚合组成员的关键因素影响值的因素有接口的速率和双工模式本端接口优先级可以配置默认为本端端口号由接口所在的槽位号子卡号和端口号决定本端状态信息位比特的含义分别为代表链路所在的聚合组参与协商的方式主动的被编码为即主动方式下会主动发送报文给对方被动方式不会主动发送协商报文除非收到协商报文才会参与代表链路接收报文的周期有两种快周期秒和慢周期秒超时时间为周期的倍短超时被编码为长超时被编码为标识该链路能否被聚合组聚合如果编码为该链路被认为是独立的不能被聚合即这个链路只能作为一个个体链路运行代表该链路是否已被分配到一个正确的链路聚合组如果该链路已经关联了一个兼容的聚合器那么该链路聚合组的识别与系统和被发送的运行信息是一致的编码为代表链路当前不在正确的聚合里帧的收集使能位假如编码为表示在这个链路上进来的帧的收集是明确使能的即收集当前被使能并且不期望在没有管理变化或接收协议信息变化的情况下被禁止其它情况下这个值编码为帧的分配使能位假如编码为意味着在这个链路上的外出帧的分配被明确禁止并且不期望在没有管理变化或接收协议信息变化的情况下被使能其它情况下这个值编码为和用于诊断调试编码为代表接收到的对端的信息是管理配置的假如编码为正在使用的运行伙伴信息在接收到的里编码为代表本端的接收机是处于超时状态假如编码为本端接收状态机处于正常状态这两值不被正常协议使用仅用于诊断协议问题保留字段可用于功能调试以及扩展类型信息标识的类型值为代表字段信息字段长度取值为即以字节为单位对端系统优先级对端系统优先级对端系统对端系统的地址对端端口值对端端口值对端接口优先级对端接口优先级对端端口号对端端口号对端状态信息对端状态信息与字段含义一致保留字段可用于功能调试以及扩展类型信息标识的类型值为代表字段信息字段长度取值为即以字节为单位最大延时以微秒为单位保留字段可用于功能调试以及扩展类型信息标识的类型值为代表字段信息字段长度取值为即保留字段全置接收端忽略此字段帧校验序列用于帧内后续字节差错的循环两端互相发送报文在和上创建并配置为模式然后向中手工加入成员接口此时成员接口上便启用了协议两端互发报文以为例当收到发送的报文时会查看并记录对端信息然后比较系统优先级字段如果的系统优先级高于本端的系统优先级则确定为主动端如果和的系统优先级相同比较两端设备的地址确定地址小的一端为主动端选出主动端后两端都会以主动端的接口优先级来选择活动接口两端设备选择了一致的活动接口活动链路组便可以建立起来从这些活动链路中以负载分担的方式转发数据确定主动端基于系统优先级和和活动链路基于接口优先级两端设备均会收到对端发来的报文以为例当收到发送的报文时会查看并记录对端信息然后比较系统优先级字段如果的系统优先级高于本端的系统优先级则确定为主动端如果和的系统优先级相同比较两端设备的地址确定地址小的一端为主动端选出主动端后两端都会以主动端的接口优先级来选择活动接口两端设备选择了一致的活动接口活动链路组便可以建立起来从这些活动链路中以负载分担的方式转发数据抢占缺省不抢占使能抢占功能后聚合组会始终保持高优先级的接口作为活动接口的状态接口和为的成员接口为主动端活动接口数上限阈值为三个接口的优先级分别为当通过协议协商完毕后接口和因为优先级较高被选作活动接口成为备份接口以下两种情况需要使能的抢占功能接口出现故障而后又恢复了正常当接口出现故障时被所取代如果在接口下未使能抢占功能则故障恢复时将处于备份状态如果使能了抢占功能当故障恢复时由于接口优先级比高将重新成为活动接口再次成为备份接口如果希望接口替换中的一个接口成为活动接口可以使能了抢占功能并配置的接口优先级较高如果没有使能抢占功能即使将备份接口的优先级调整为高于当前活动接口的优先级系统也不会进行重新选择活动接口的过程不切换活动接口抢占延时默认抢占延时是抢占发生时处于备用状态的链路将会等待一段时间后再切换到转发状态配置抢占延时是为了避免由于某些链路状态频繁变化而导致数据传输不稳定的情况由于链路故障切换为非活动接口此后该链路又恢复了正常若系统使能了抢占功能并配置了抢占延时重新切换回活动状态就需要经过抢占延时的时间抢占延时的取值范围通常是秒抢占延时是指在启用抢占功能后当高优先级的链路恢复正常且当前活动链路数已达到上限阈值时等待多久后高优先级链路才会取代低优先级链路成为活动链路默认情况下抢占等待时间通常为秒但这个时间可以根据具体需求进行配置通过在接口视图下使用命令来设置其中为具体的时间值单位是秒配置抢占延时功能可以避免由于链路状态频繁变化而导致的数据传输不稳定但需注意配置抢占延时需要确保当前的工作模式为模式并且已经使能了优先级抢占否则配置不生效要使能优先级抢占可在接口视图下执行命令活动链路与非活动链路切换模式链路聚合组两端设备中任何一端检测到以下事件都会触发聚合组的链路切换链路事件以太网检测到链路失效协议发现链路故障接口不可用在使能了抢占功能的前提下更改备份接口的优先级高于当前活动接口的优先级当满足上述切换条件其中之一时按照如下步骤进行切换关闭故障链路从条备份链路中选择优先级最高的链路接替活动链路中的故障链路优先级最高的备份链路转为活动状态并转发数据完成切换配置配置手工链路聚合创建接口命令用来进入已经存在的接口或创建并进入接口数字代表接口编号编号范围根据设备情况有所不同设置接口的聚合模式命令用来配置的工作模式有模式和手工负载分担模式手工模式两种缺省情况下的工作模式为手工负载分担模式此处上的模式配置仅为示范目的实际操作时不需要将成员接口加入聚合组可进入到成员接口的接口视图下逐一添加到接口也可以在接口视图下通过命令批量添加接口将成员接口加入时需要注意以下问题每个接口下最多可以包含个成员接口接口不能嵌套即接口的成员接口不能是接口一个以太网接口只能加入到一个接口如果需要加入其它接口必须先退出原来的接口如果本地设备使用了与成员接口直连的对端接口也必须捆绑为接口两端才能正常通信链路两端相连的物理接口的数量速率双工方式等必须一致查看接口状态配置模式删除现有接口下的成员接口在修改接口的聚合模式之前需要确保中没有任何成员接口修改聚合模式指定工作模式为模式注部分版本的设备命令为将成员接口加入聚合组查看注意此时三个接口都是的状态选择接口考虑到网络流量情况当网络正常时只需要和接口处于转发状态接口作为备份但当活动接口数量少于时直接关闭整个接口全局配置优先级选举主动方主动方设备的端口上配置接口优先级选举活动端口配置设备的优先级使其成为主动端设备配置接口优先级优选和接口配置接口优先级优选和接口配置了大于的优先级所以变为备份端口之后和为活动端口使能了模式链路聚合的两端设备均会收发的报文首先选举主动端设备比较系统优先级字段如果对端的系统优先级高于本端的系统优先级默认为越小越优则确定对端为主动端如果系统优先级相同比较两端设备的地址地址小的一端为主动端选出主动端后两端都会以主动端的接口优先级来选择活动接口接口优先级越小越优默认为配置活动接口数上限阈值和下限阈值在一个接口内活动接口数可以影响到接口的状态和带宽接口的带宽是所有处于状态的成员口带宽之和为保证接口的状态和带宽可以设置以下两个阈值以减小成员链路状态的变化带来的影响活动接口数下限阈值当活动接口数小于配置的下限阈值时接口的状态转为设置活动接口数下限阈值的目的是为了保证最小带宽命令用来配置链路聚合组活动接口数目的下限阈值活动接口数上限阈值当活动接口数达到上限阈值后之后再发生成员链路状态变为都不会使接口的带宽增加设置活动接口数上限阈值的目的是在保证了带宽的情况下提高网络的可靠性命令用来配置链路聚合组活动接口数目的上限阈值开启抢占功能在模式下当活动链路中出现故障链路时系统会从备用链路中选择优先级最高的链路替代故障链路如果被替代的故障链路恢复了正常而且该链路的优先级又高于替代自己的链路这种情况下如果使能了优先级抢占功能高优先级链路会抢占低优先级链路回切到活动状态命令用来使能模式下优先级抢占的功能缺省情况下优先级抢占处于禁止状态查看当前接口状态接口和查看状态发现都变为状态由于设置了的活动链路下限阈值为所以聚合组中可用活动接口数量少于时整个聚合组对应的接口将会被关闭尽管此时处于状态但是仍处于状态修改负载分担模式开启上一步中关闭的接口大约秒后查看当前的接口状态由于使能了接口的抢占功能所以当和接口进入状态之后这两个接口的接口的优先级高于所以会进入状态同时因为系统为了保证链路的稳定性默认的抢占延时为秒所以要在秒后才会发生抢占修改接口的负载分担模式为基于目的地址当需要将接口的流量分散到不同的链路上最后能到达统一目的地时使用命令配置接口负载分担模式以确保出方向的流量在各物理链路间进行合理的负载分担避免链路阻塞由于负载分担只对出方向的流量有效因此链路两端接口的负载分担模式可以不一致两端互不影响',
   isPost: true,
   isHome: false,
   isHighlightShrink: false,
   isToc: true,
-  postUpdate: '2023-12-07 16:23:50',
+  postUpdate: '2024-07-12 10:06:01',
   postMainColor: '',
 }</script><noscript><style type="text/css">
   #nav {
@@ -202,21 +202,17 @@ setTimeout(function(){preloader.endLoading();},10000)
 if (true) {
   document.addEventListener('pjax:send', () => { preloader.initLoading() })
   document.addEventListener('pjax:complete', () => { preloader.endLoading() })
-}</script><link rel="stylesheet" href="https://cdn.cbd.int/anzhiyu-theme-static@1.1.10/progress_bar/progress_bar.css"/><script async="async" src="https://cdn.cbd.int/pace-js@1.2.4/pace.min.js" data-pace-options="{ &quot;restartOnRequestAfter&quot;:false,&quot;eventLag&quot;:false}"></script><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><div id="nav-group"><span id="blog_name"><a id="site-name" href="/" accesskey="h"><div class="title">沃德发</div><i class="anzhiyufont anzhiyu-icon-house-chimney"></i></a></span><div class="mask-name-container"><div id="name-container"><a id="page-name" href="javascript:anzhiyu.scrollToDest(0, 500)">PAGE_NAME</a></div></div><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 文章</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/categories/"><i class="anzhiyufont anzhiyu-icon-shapes faa-tada" style="font-size: 0.9em;"></i><span> 分类</span></a></li><li><a class="site-page child faa-parent animated-hover" href="/tags/"><i class="anzhiyufont anzhiyu-icon-tags faa-tada" style="font-size: 0.9em;"></i><span> 标签</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 友链</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/link/"><i class="anzhiyufont anzhiyu-icon-link faa-tada" style="font-size: 0.9em;"></i><span> 友人帐</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 关于</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="javascript:toRandomPost()"><i class="anzhiyufont anzhiyu-icon-shoe-prints1 faa-tada" style="font-size: 0.9em;"></i><span> 随便逛逛</span></a></li></ul></div></div></div><div id="nav-right"><div class="nav-button" id="randomPost_button"><a class="site-page" onclick="toRandomPost()" title="随机前往一个文章" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-dice"></i></a></div><div class="nav-button" id="search-button"><a class="site-page social-icon search" href="javascript:void(0);" title="搜索🔍" accesskey="s"><i class="anzhiyufont anzhiyu-icon-magnifying-glass"></i><span> 搜索</span></a></div><input id="center-console" type="checkbox"/><label class="widget" for="center-console" title="中控台" onclick="anzhiyu.switchConsole();"><i class="left"></i><i class="widget center"></i><i class="widget right"></i></label><div id="console"><div class="console-card-group-reward"><ul class="reward-all console-card"><li class="reward-item"><a href="/img/weixinfukuan.png" target="_blank"><img class="post-qr-code-img" alt="微信" src="/img/weixinfukuan.png"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/zhifubaofukuan.jpg" target="_blank"><img class="post-qr-code-img" alt="支付宝" src="/img/zhifubaofukuan.jpg"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div><div class="console-card-group"><div class="console-card-group-left"><div class="console-card" id="card-newest-comments"><div class="card-content"><div class="author-content-item-tips">互动</div><span class="author-content-item-title"> 最新评论</span></div><div class="aside-list"><span>正在加载中...</span></div></div></div><div class="console-card-group-right"><div class="console-card tags"><div class="card-content"><div class="author-content-item-tips">兴趣点</div><span class="author-content-item-title">寻找你感兴趣的领域</span><div class="card-tags"><div class="item-headline"></div><div class="card-tag-cloud"><a href="/tags/BFD/" style="font-size: 1.05rem;">BFD<sup>1</sup></a><a href="/tags/BGP/" style="font-size: 1.05rem;">BGP<sup>2</sup></a><a href="/tags/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/" style="font-size: 1.05rem;">BGP路由优选<sup>1</sup></a><a href="/tags/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/" style="font-size: 1.05rem;">BGP路由反射器<sup>1</sup></a><a href="/tags/DHCP/" style="font-size: 1.05rem;">DHCP<sup>1</sup></a><a href="/tags/DHCP-Relay/" style="font-size: 1.05rem;">DHCP Relay<sup>1</sup></a><a href="/tags/FTP/" style="font-size: 1.05rem;">FTP<sup>1</sup></a><a href="/tags/IS-IS/" style="font-size: 1.05rem;">IS-IS<sup>1</sup></a><a href="/tags/MSTP/" style="font-size: 1.05rem;">MSTP<sup>1</sup></a><a href="/tags/PPP/" style="font-size: 1.05rem;">PPP<sup>1</sup></a><a href="/tags/PPPoE/" style="font-size: 1.05rem;">PPPoE<sup>1</sup></a><a href="/tags/RSTP/" style="font-size: 1.05rem;">RSTP<sup>1</sup></a><a href="/tags/SSH/" style="font-size: 1.05rem;">SSH<sup>1</sup></a><a href="/tags/STP/" style="font-size: 1.05rem;">STP<sup>1</sup></a><a href="/tags/USG5500/" style="font-size: 1.05rem;">USG5500<sup>1</sup></a><a href="/tags/VRF/" style="font-size: 1.05rem;">VRF<sup>1</sup></a><a href="/tags/VRP%E7%B3%BB%E7%BB%9F/" style="font-size: 1.05rem;">VRP系统<sup>1</sup></a><a href="/tags/VRRP/" style="font-size: 1.05rem;">VRRP<sup>2</sup></a><a href="/tags/aaa/" style="font-size: 1.05rem;">aaa<sup>1</sup></a><a href="/tags/ap%E4%B8%8A%E7%BA%BF/" style="font-size: 1.05rem;">ap上线<sup>1</sup></a><a href="/tags/dot1q/" style="font-size: 1.05rem;">dot1q<sup>1</sup></a><a href="/tags/hybrid/" style="font-size: 1.05rem;">hybrid<sup>1</sup></a><a href="/tags/mpls/" style="font-size: 1.05rem;">mpls<sup>1</sup></a><a href="/tags/mstp/" style="font-size: 1.05rem;">mstp<sup>1</sup></a><a href="/tags/nat/" style="font-size: 1.05rem;">nat<sup>1</sup></a><a href="/tags/option-43/" style="font-size: 1.05rem;">option 43<sup>1</sup></a><a href="/tags/ospf/" style="font-size: 1.05rem;">ospf<sup>1</sup></a><a href="/tags/rstp/" style="font-size: 1.05rem;">rstp<sup>1</sup></a><a href="/tags/stp%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4/" style="font-size: 1.05rem;">stp拓扑变更<sup>1</sup></a><a href="/tags/tag/" style="font-size: 1.05rem;">tag<sup>1</sup></a><a href="/tags/telnet/" style="font-size: 1.05rem;">telnet<sup>1</sup></a><a href="/tags/vlan-pool/" style="font-size: 1.05rem;">vlan pool<sup>1</sup></a><a href="/tags/vlanif/" style="font-size: 1.05rem;">vlanif<sup>1</sup></a><a href="/tags/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/" style="font-size: 1.05rem;">vlan间通信<sup>1</sup></a><a href="/tags/wlan/" style="font-size: 1.05rem;">wlan<sup>1</sup></a><a href="/tags/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/" style="font-size: 1.05rem;">交换机工作原理<sup>1</sup></a><a href="/tags/%E5%AD%90%E7%BD%91%E5%88%92%E5%88%86/" style="font-size: 1.05rem;">子网划分<sup>1</sup></a><a href="/tags/%E6%95%B0%E9%80%9A%E5%9F%BA%E7%A1%80/" style="font-size: 1.05rem;">数通基础<sup>1</sup></a><a href="/tags/%E6%BC%AB%E6%B8%B8/" style="font-size: 1.05rem;">漫游<sup>1</sup></a><a href="/tags/%E9%98%B2%E7%81%AB%E5%A2%99nat/" style="font-size: 1.05rem;">防火墙nat<sup>1</sup></a></div></div><hr/></div></div><div class="console-card history"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-box-archiv"></i><span>文章</span></div><div class="card-archives"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-archive"></i><span>归档</span></div><ul class="card-archive-list"><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2024/07/"><span class="card-archive-list-date">七月 2024</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">2</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2024/06/"><span class="card-archive-list-date">六月 2024</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">3</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2024/05/"><span class="card-archive-list-date">五月 2024</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">8</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2024/04/"><span class="card-archive-list-date">四月 2024</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">2</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2024/03/"><span class="card-archive-list-date">三月 2024</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">2</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2023/12/"><span class="card-archive-list-date">十二月 2023</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">7</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2023/11/"><span class="card-archive-list-date">十一月 2023</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">9</span><span>篇</span></div></a></li></ul></div><hr/></div></div></div><div class="button-group"><div class="console-btn-item"><a class="darkmode_switchbutton" title="显示模式切换" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-moon"></i></a></div><div class="console-btn-item" id="consoleHideAside" onclick="anzhiyu.hideAsideBtn()" title="边栏显示控制"><a class="asideSwitch"><i class="anzhiyufont anzhiyu-icon-arrows-left-right"></i></a></div><div class="console-btn-item" id="consoleMusic" onclick="anzhiyu.musicToggle()" title="音乐开关"><a class="music-switch"><i class="anzhiyufont anzhiyu-icon-music"></i></a></div></div><div class="console-mask" onclick="anzhiyu.hideConsole()" href="javascript:void(0);"></div></div><div class="nav-button" id="nav-totop"><a class="totopbtn" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-arrow-up"></i><span id="percent" onclick="anzhiyu.scrollToDest(0,500)">0</span></a></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);" title="切换"><i class="anzhiyufont anzhiyu-icon-bars"></i></a></div></div></div></nav><div id="post-info"><div id="post-firstinfo"><div class="meta-firstline"><a class="post-meta-original">原创</a><span class="post-meta-categories"><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-inbox post-meta-icon"></i><a class="post-meta-categories" href="/categories/ip%E5%AE%9E%E9%AA%8C/" itemprop="url">ip实验</a></span><span class="article-meta tags"><a class="article-meta__tags" href="/tags/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/" tabindex="-1" itemprop="url"> <span> <i class="anzhiyufont anzhiyu-icon-hashtag"></i>链路聚合</span></a><a class="article-meta__tags" href="/tags/lacp/" tabindex="-1" itemprop="url"> <span> <i class="anzhiyufont anzhiyu-icon-hashtag"></i>lacp</span></a><a class="article-meta__tags" href="/tags/eth-trunk/" tabindex="-1" itemprop="url"> <span> <i class="anzhiyufont anzhiyu-icon-hashtag"></i>eth-trunk</span></a></span></div></div><h1 class="post-title" itemprop="name headline">链路聚合</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="anzhiyufont anzhiyu-icon-calendar-days post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" itemprop="dateCreated datePublished" datetime="2023-12-07T07:56:27.000Z" title="发表于 2023-12-07 15:56:27">2023-12-07</time><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-history post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" itemprop="dateCreated datePublished" datetime="2023-12-07T08:23:50.207Z" title="更新于 2023-12-07 16:23:50">2023-12-07</time></span></div><div class="meta-secondline"><span class="post-meta-separator"></span><span class="post-meta-wordcount"><i class="anzhiyufont anzhiyu-icon-file-word post-meta-icon" title="文章字数"></i><span class="post-meta-label" title="文章字数">字数总计:</span><span class="word-count" title="文章字数">3.4k</span><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-clock post-meta-icon" title="阅读时长"></i><span class="post-meta-label" title="阅读时长">阅读时长:</span><span>11分钟</span></span><span class="post-meta-separator"></span><span class="post-meta-pv-cv" id="" data-flag-title="链路聚合"><i class="anzhiyufont anzhiyu-icon-fw-eye post-meta-icon"></i><span class="post-meta-label" title="阅读量">阅读量:</span><span id="busuanzi_value_page_pv"><i class="anzhiyufont anzhiyu-icon-spinner anzhiyu-spin"></i></span></span><span class="post-meta-separator">       </span><span class="post-meta-position" title="作者IP属地为安阳"><i class="anzhiyufont anzhiyu-icon-location-dot"></i>安阳</span></div></div></div><section class="main-hero-waves-area waves-area"><svg class="waves-svg" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto"><defs><path id="gentle-wave" d="M -160 44 c 30 0 58 -18 88 -18 s 58 18 88 18 s 58 -18 88 -18 s 58 18 88 18 v 44 h -352 Z"></path></defs><g class="parallax"><use href="#gentle-wave" x="48" y="0"></use><use href="#gentle-wave" x="48" y="3"></use><use href="#gentle-wave" x="48" y="5"></use><use href="#gentle-wave" x="48" y="7"></use></g></svg></section><div id="post-top-cover"><img class="nolazyload" id="post-top-bg" src=""></div></header><main id="blog-container"><div class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container" itemscope itemtype="http://example.com/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/"><header><a class="post-meta-categories" href="/categories/ip%E5%AE%9E%E9%AA%8C/" itemprop="url">ip实验</a><a href="/tags/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/" tabindex="-1" itemprop="url">链路聚合</a><a href="/tags/lacp/" tabindex="-1" itemprop="url">lacp</a><a href="/tags/eth-trunk/" tabindex="-1" itemprop="url">eth-trunk</a><h1 id="CrawlerTitle" itemprop="name headline">链路聚合</h1><span itemprop="author" itemscope itemtype="http://schema.org/Person">Yang</span><time itemprop="dateCreated datePublished" datetime="2023-12-07T07:56:27.000Z" title="发表于 2023-12-07 15:56:27">2023-12-07</time><time itemprop="dateCreated datePublished" datetime="2023-12-07T08:23:50.207Z" title="更新于 2023-12-07 16:23:50">2023-12-07</time></header><h1>概念</h1>
-<h2 id="什么是链路聚合">什么是链路聚合</h2>
-<p>在现网中，设备间如果通过一条链路连接，<strong>如果这条链路故障了，那么设备两端的终端就不能够通信了</strong>。有什么办法可以解决该问题呢？答案是——<strong>链路聚合</strong>。</p>
+}</script><link rel="stylesheet" href="https://cdn.cbd.int/anzhiyu-theme-static@1.1.10/progress_bar/progress_bar.css"/><script async="async" src="https://cdn.cbd.int/pace-js@1.2.4/pace.min.js" data-pace-options="{ &quot;restartOnRequestAfter&quot;:false,&quot;eventLag&quot;:false}"></script><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><div id="nav-group"><span id="blog_name"><a id="site-name" href="/" accesskey="h"><div class="title">沃德发</div><i class="anzhiyufont anzhiyu-icon-house-chimney"></i></a></span><div class="mask-name-container"><div id="name-container"><a id="page-name" href="javascript:anzhiyu.scrollToDest(0, 500)">PAGE_NAME</a></div></div><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 文章</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/categories/"><i class="anzhiyufont anzhiyu-icon-shapes faa-tada" style="font-size: 0.9em;"></i><span> 分类</span></a></li><li><a class="site-page child faa-parent animated-hover" href="/tags/"><i class="anzhiyufont anzhiyu-icon-tags faa-tada" style="font-size: 0.9em;"></i><span> 标签</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 友链</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/link/"><i class="anzhiyufont anzhiyu-icon-link faa-tada" style="font-size: 0.9em;"></i><span> 友人帐</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 关于</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="javascript:toRandomPost()"><i class="anzhiyufont anzhiyu-icon-shoe-prints1 faa-tada" style="font-size: 0.9em;"></i><span> 随便逛逛</span></a></li></ul></div></div></div><div id="nav-right"><div class="nav-button" id="randomPost_button"><a class="site-page" onclick="toRandomPost()" title="随机前往一个文章" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-dice"></i></a></div><div class="nav-button" id="search-button"><a class="site-page social-icon search" href="javascript:void(0);" title="搜索🔍" accesskey="s"><i class="anzhiyufont anzhiyu-icon-magnifying-glass"></i><span> 搜索</span></a></div><input id="center-console" type="checkbox"/><label class="widget" for="center-console" title="中控台" onclick="anzhiyu.switchConsole();"><i class="left"></i><i class="widget center"></i><i class="widget right"></i></label><div id="console"><div class="console-card-group-reward"><ul class="reward-all console-card"><li class="reward-item"><a href="/img/weixinfukuan.png" target="_blank"><img class="post-qr-code-img" alt="微信" src="/img/weixinfukuan.png"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/zhifubaofukuan.jpg" target="_blank"><img class="post-qr-code-img" alt="支付宝" src="/img/zhifubaofukuan.jpg"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div><div class="console-card-group"><div class="console-card-group-left"><div class="console-card" id="card-newest-comments"><div class="card-content"><div class="author-content-item-tips">互动</div><span class="author-content-item-title"> 最新评论</span></div><div class="aside-list"><span>正在加载中...</span></div></div></div><div class="console-card-group-right"><div class="console-card tags"><div class="card-content"><div class="author-content-item-tips">兴趣点</div><span class="author-content-item-title">寻找你感兴趣的领域</span><div class="card-tags"><div class="item-headline"></div><div class="card-tag-cloud"><a href="/tags/BFD/" style="font-size: 1.05rem;">BFD<sup>1</sup></a><a href="/tags/BGP/" style="font-size: 1.05rem;">BGP<sup>2</sup></a><a href="/tags/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/" style="font-size: 1.05rem;">BGP路由优选<sup>1</sup></a><a href="/tags/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/" style="font-size: 1.05rem;">BGP路由反射器<sup>1</sup></a><a href="/tags/DHCP/" style="font-size: 1.05rem;">DHCP<sup>1</sup></a><a href="/tags/DHCP-Relay/" style="font-size: 1.05rem;">DHCP Relay<sup>1</sup></a><a href="/tags/FTP/" style="font-size: 1.05rem;">FTP<sup>1</sup></a><a href="/tags/IS-IS/" style="font-size: 1.05rem;">IS-IS<sup>1</sup></a><a href="/tags/MSTP/" style="font-size: 1.05rem;">MSTP<sup>1</sup></a><a href="/tags/PPP/" style="font-size: 1.05rem;">PPP<sup>1</sup></a><a href="/tags/PPPoE/" style="font-size: 1.05rem;">PPPoE<sup>1</sup></a><a href="/tags/RSTP/" style="font-size: 1.05rem;">RSTP<sup>1</sup></a><a href="/tags/SSH/" style="font-size: 1.05rem;">SSH<sup>1</sup></a><a href="/tags/STP/" style="font-size: 1.05rem;">STP<sup>1</sup></a><a href="/tags/USG5500/" style="font-size: 1.05rem;">USG5500<sup>1</sup></a><a href="/tags/VRF/" style="font-size: 1.05rem;">VRF<sup>1</sup></a><a href="/tags/VRP%E7%B3%BB%E7%BB%9F/" style="font-size: 1.05rem;">VRP系统<sup>1</sup></a><a href="/tags/VRRP/" style="font-size: 1.05rem;">VRRP<sup>2</sup></a><a href="/tags/aaa/" style="font-size: 1.05rem;">aaa<sup>1</sup></a><a href="/tags/ap%E4%B8%8A%E7%BA%BF/" style="font-size: 1.05rem;">ap上线<sup>1</sup></a><a href="/tags/dot1q/" style="font-size: 1.05rem;">dot1q<sup>1</sup></a><a href="/tags/hybrid/" style="font-size: 1.05rem;">hybrid<sup>1</sup></a><a href="/tags/mpls/" style="font-size: 1.05rem;">mpls<sup>1</sup></a><a href="/tags/mstp/" style="font-size: 1.05rem;">mstp<sup>1</sup></a><a href="/tags/nat/" style="font-size: 1.05rem;">nat<sup>1</sup></a><a href="/tags/option-43/" style="font-size: 1.05rem;">option 43<sup>1</sup></a><a href="/tags/ospf/" style="font-size: 1.05rem;">ospf<sup>1</sup></a><a href="/tags/rstp/" style="font-size: 1.05rem;">rstp<sup>1</sup></a><a href="/tags/stp%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4/" style="font-size: 1.05rem;">stp拓扑变更<sup>1</sup></a><a href="/tags/tag/" style="font-size: 1.05rem;">tag<sup>1</sup></a><a href="/tags/telnet/" style="font-size: 1.05rem;">telnet<sup>1</sup></a><a href="/tags/vlan-pool/" style="font-size: 1.05rem;">vlan pool<sup>1</sup></a><a href="/tags/vlanif/" style="font-size: 1.05rem;">vlanif<sup>1</sup></a><a href="/tags/vlan%E9%97%B4%E9%80%9A%E4%BF%A1/" style="font-size: 1.05rem;">vlan间通信<sup>1</sup></a><a href="/tags/wlan/" style="font-size: 1.05rem;">wlan<sup>1</sup></a><a href="/tags/%E4%BA%A4%E6%8D%A2%E6%9C%BA%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/" style="font-size: 1.05rem;">交换机工作原理<sup>1</sup></a><a href="/tags/%E5%AD%90%E7%BD%91%E5%88%92%E5%88%86/" style="font-size: 1.05rem;">子网划分<sup>1</sup></a><a href="/tags/%E6%95%B0%E9%80%9A%E5%9F%BA%E7%A1%80/" style="font-size: 1.05rem;">数通基础<sup>1</sup></a><a href="/tags/%E6%BC%AB%E6%B8%B8/" style="font-size: 1.05rem;">漫游<sup>1</sup></a><a href="/tags/%E9%98%B2%E7%81%AB%E5%A2%99nat/" style="font-size: 1.05rem;">防火墙nat<sup>1</sup></a></div></div><hr/></div></div><div class="console-card history"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-box-archiv"></i><span>文章</span></div><div class="card-archives"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-archive"></i><span>归档</span></div><ul class="card-archive-list"><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2024/07/"><span class="card-archive-list-date">七月 2024</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">2</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2024/06/"><span class="card-archive-list-date">六月 2024</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">3</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2024/05/"><span class="card-archive-list-date">五月 2024</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">8</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2024/04/"><span class="card-archive-list-date">四月 2024</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">2</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2024/03/"><span class="card-archive-list-date">三月 2024</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">2</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2023/12/"><span class="card-archive-list-date">十二月 2023</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">7</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2023/11/"><span class="card-archive-list-date">十一月 2023</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">9</span><span>篇</span></div></a></li></ul></div><hr/></div></div></div><div class="button-group"><div class="console-btn-item"><a class="darkmode_switchbutton" title="显示模式切换" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-moon"></i></a></div><div class="console-btn-item" id="consoleHideAside" onclick="anzhiyu.hideAsideBtn()" title="边栏显示控制"><a class="asideSwitch"><i class="anzhiyufont anzhiyu-icon-arrows-left-right"></i></a></div><div class="console-btn-item" id="consoleMusic" onclick="anzhiyu.musicToggle()" title="音乐开关"><a class="music-switch"><i class="anzhiyufont anzhiyu-icon-music"></i></a></div></div><div class="console-mask" onclick="anzhiyu.hideConsole()" href="javascript:void(0);"></div></div><div class="nav-button" id="nav-totop"><a class="totopbtn" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-arrow-up"></i><span id="percent" onclick="anzhiyu.scrollToDest(0,500)">0</span></a></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);" title="切换"><i class="anzhiyufont anzhiyu-icon-bars"></i></a></div></div></div></nav><div id="post-info"><div id="post-firstinfo"><div class="meta-firstline"><a class="post-meta-original">原创</a><span class="post-meta-categories"><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-inbox post-meta-icon"></i><a class="post-meta-categories" href="/categories/ip%E5%AE%9E%E9%AA%8C/" itemprop="url">ip实验</a></span><span class="article-meta tags"><a class="article-meta__tags" href="/tags/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/" tabindex="-1" itemprop="url"> <span> <i class="anzhiyufont anzhiyu-icon-hashtag"></i>链路聚合</span></a><a class="article-meta__tags" href="/tags/lacp/" tabindex="-1" itemprop="url"> <span> <i class="anzhiyufont anzhiyu-icon-hashtag"></i>lacp</span></a><a class="article-meta__tags" href="/tags/eth-trunk/" tabindex="-1" itemprop="url"> <span> <i class="anzhiyufont anzhiyu-icon-hashtag"></i>eth-trunk</span></a></span></div></div><h1 class="post-title" itemprop="name headline">链路聚合</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="anzhiyufont anzhiyu-icon-calendar-days post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" itemprop="dateCreated datePublished" datetime="2023-12-07T07:56:27.000Z" title="发表于 2023-12-07 15:56:27">2023-12-07</time><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-history post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" itemprop="dateCreated datePublished" datetime="2024-07-12T02:06:01.313Z" title="更新于 2024-07-12 10:06:01">2024-07-12</time></span></div><div class="meta-secondline"><span class="post-meta-separator"></span><span class="post-meta-wordcount"><i class="anzhiyufont anzhiyu-icon-file-word post-meta-icon" title="文章字数"></i><span class="post-meta-label" title="文章字数">字数总计:</span><span class="word-count" title="文章字数">6.3k</span><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-clock post-meta-icon" title="阅读时长"></i><span class="post-meta-label" title="阅读时长">阅读时长:</span><span>21分钟</span></span><span class="post-meta-separator"></span><span class="post-meta-pv-cv" id="" data-flag-title="链路聚合"><i class="anzhiyufont anzhiyu-icon-fw-eye post-meta-icon"></i><span class="post-meta-label" title="阅读量">阅读量:</span><span id="busuanzi_value_page_pv"><i class="anzhiyufont anzhiyu-icon-spinner anzhiyu-spin"></i></span></span><span class="post-meta-separator">       </span><span class="post-meta-position" title="作者IP属地为安阳"><i class="anzhiyufont anzhiyu-icon-location-dot"></i>安阳</span></div></div></div><section class="main-hero-waves-area waves-area"><svg class="waves-svg" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto"><defs><path id="gentle-wave" d="M -160 44 c 30 0 58 -18 88 -18 s 58 18 88 18 s 58 -18 88 -18 s 58 18 88 18 v 44 h -352 Z"></path></defs><g class="parallax"><use href="#gentle-wave" x="48" y="0"></use><use href="#gentle-wave" x="48" y="3"></use><use href="#gentle-wave" x="48" y="5"></use><use href="#gentle-wave" x="48" y="7"></use></g></svg></section><div id="post-top-cover"><img class="nolazyload" id="post-top-bg" src=""></div></header><main id="blog-container"><div class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container" itemscope itemtype="http://example.com/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/"><header><a class="post-meta-categories" href="/categories/ip%E5%AE%9E%E9%AA%8C/" itemprop="url">ip实验</a><a href="/tags/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/" tabindex="-1" itemprop="url">链路聚合</a><a href="/tags/lacp/" tabindex="-1" itemprop="url">lacp</a><a href="/tags/eth-trunk/" tabindex="-1" itemprop="url">eth-trunk</a><h1 id="CrawlerTitle" itemprop="name headline">链路聚合</h1><span itemprop="author" itemscope itemtype="http://schema.org/Person">Yang</span><time itemprop="dateCreated datePublished" datetime="2023-12-07T07:56:27.000Z" title="发表于 2023-12-07 15:56:27">2023-12-07</time><time itemprop="dateCreated datePublished" datetime="2024-07-12T02:06:01.313Z" title="更新于 2024-07-12 10:06:01">2024-07-12</time></header><h1 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h1><h2 id="什么是链路聚合"><a href="#什么是链路聚合" class="headerlink" title="什么是链路聚合"></a>什么是链路聚合</h2><p>在现网中，设备间如果通过一条链路连接，<strong>如果这条链路故障了，那么设备两端的终端就不能够通信了</strong>。有什么办法可以解决该问题呢？答案是——<strong>链路聚合</strong>。</p>
 <p><strong>从端口的角度定义：</strong></p>
-<p><strong>链路聚合（Link Aggregation）<strong>是指将</strong>多个物理端口</strong>汇聚在一起，形成一个<strong>逻辑端口</strong>，以实现出/入流量吞吐量在各<strong>成员端口</strong>的负荷分担，交换机根据用户配置的端口负载分担方式决定数据包从哪个成员端口发送到对端的交换机。</p>
+<p><strong>链路聚合（Link Aggregation）</strong>是指将<strong>多个物理端口</strong>汇聚在一起，形成一个<strong>逻辑端口</strong>，以实现出&#x2F;入流量吞吐量在各<strong>成员端口</strong>的负荷分担，交换机根据用户配置的端口负载分担方式决定数据包从哪个成员端口发送到对端的交换机。</p>
 <p><strong>从链路的角度定义：</strong></p>
 <p>链路聚合（Link Aggregation）是把两台设备之间的<strong>多条物理链路聚</strong>合在一起，当做一条<strong>逻辑链路</strong>来使用。这两台设备可以是一对路由器，一对交换机，或者是一台路由器和一台交换机。一条聚合链路可以包含多条成员链路，默认最多为<strong>8</strong>条。</p>
-<h2 id="链路聚合的作用">链路聚合的作用</h2>
-<ul>
+<h2 id="链路聚合的作用"><a href="#链路聚合的作用" class="headerlink" title="链路聚合的作用"></a>链路聚合的作用</h2><ul>
 <li>链路聚合能够<strong>提高链路带宽</strong>。理论上，通过聚合几条链路，一个聚合口的带宽可以扩展为所有成员口带宽的总和，这样就有效地增加了逻辑链路的带宽。</li>
 <li>链路聚合<strong>为网络提供了高可靠性</strong>。配置了链路聚合之后，如果一个成员接口发生故障，该成员口的物理链路会把流量切换到另一条成员链路上。</li>
-<li>链路聚合**在一个聚合口上实现负载均衡。**一个聚合口可以把流量分散到多个不同的成员口上，通过成员链路把流量发送到同一个目的地，将网络产生拥塞的可能性降到最低。</li>
+<li>链路聚合<strong>在一个聚合口上实现负载均衡。</strong>一个聚合口可以把流量分散到多个不同的成员口上，通过成员链路把流量发送到同一个目的地，将网络产生拥塞的可能性降到最低。</li>
 </ul>
-<h2 id="三-链路聚合的工作原理："><strong>三. 链路聚合的工作原理：</strong></h2>
-<p><strong>应用场景：</strong></p>
+<h2 id="三-链路聚合的工作原理："><a href="#三-链路聚合的工作原理：" class="headerlink" title="三. 链路聚合的工作原理："></a><strong>三. 链路聚合的工作原理：</strong></h2><p><strong>应用场景：</strong></p>
 <p>链路聚合一般部署在核心结点，以便提升整个网络的数据吞吐量。</p>
 <p>链路聚合能够提高链路带宽，增强网络可靠、可用性，支持负载分担。</p>
 <p><strong>链路聚合模式:</strong></p>
@@ -250,8 +246,7 @@ if (true) {
 <th>LACP模式</th>
 </tr>
 </thead>
-<tbody>
-<tr>
+<tbody><tr>
 <td>Eth-Trunk的建立方式</td>
 <td>Eth-Trunk接口的创建、成员接口的加入由手工配置，没有链路聚合控制协议的参与。</td>
 <td>Eth-Trunk接口的创建、成员接口的加入由手工配置，LACP协议参与链路动态调整，负责链路状态维护。在聚合条件发生变化时，自动调整或解散链路聚合。</td>
@@ -271,41 +266,257 @@ if (true) {
 <td>只能检测到同一聚合组内的成员链路有断路等故障，无法检测到链路断连、错连等故障。</td>
 <td>不仅能够检测到同一聚合组内的成员链路有断路等故障，还可以检测到链路故障、链路错连等故障。</td>
 </tr>
-</tbody>
-</table>
+</tbody></table>
 <p><strong>数据流控制:</strong></p>
 <p>Eth-trunk链路两端相连的物理接口的数量、速率、双工方式、流控方式必须一致。</p>
-<h2 id="优先级">优先级</h2>
-<p>0-65535</p>
+<h2 id="优先级"><a href="#优先级" class="headerlink" title="优先级"></a>优先级</h2><p>系统优先级：</p>
+<p>0-65535 </p>
 <p>默认32768</p>
 <p>小的优先</p>
 <p>优先级一样，看mac，mac小的优先</p>
-<h1>配置</h1>
-<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/juhetuopu31207160429.png" alt="juhetuopu31207160429"></p>
-<h2 id="配置手工链路聚合">配置手工链路聚合</h2>
-<p># 创建Eth-Trunk接口</p>
-<p>[S1]interface Eth-Trunk 1</p>
+<p>接口优先级：</p>
+<p>也是0-65535</p>
+<p>小的优</p>
+<p>默认32768</p>
+<h1 id="LACPDU报文"><a href="#LACPDU报文" class="headerlink" title="LACPDU报文"></a>LACPDU报文</h1><p>基于IEEE802.3ad标准的LACP是一种实现链路动态聚合与解聚合的协议。LACP通过链路聚合控制协议数据单元LACPDU（Link Aggregation Control Protocol Data Unit）与对端交互信息。</p>
+<p>在LACP模式的Eth-Trunk中加入成员接口后，这些接口将通过发送LACPDU向对端通告自己的系统<strong>优先级、MAC地址、接口优先级、接口号和操作Key等</strong>信息。对端接收到这些信息后，将这些信息与自身接口所保存的信息比较，用以选择能够聚合的接口，双方对哪些接口能够成为活动接口达成一致，确定活动链路。</p>
+<p>LACPDU 帧基于 IEEE 802.3ad 标准，是一种慢协议（平均每秒发送的协议报文不超过 5 个），其目的 MAC 地址是一个特殊的组播地址 <strong>0x01-80-c2-00-00-02。</strong></p>
+<p>如果接口板收到报文的目的 MAC 是该组播地址，且二层协议类型字段为 0x8809、协议子类型为 0x01，则说明此数据报文为 LACPDU 帧。</p>
+<p>报文格式：</p>
+<p>LACPDU（Link Aggregation Control Protocol Data Unit，链路聚合控制协议数据单元）的报文格式如下：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>长度（字节）</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Destination Address（目的MAC地址）</td>
+<td>6</td>
+<td>是一个组播地址，固定为01-80-c2-00-00-02</td>
+</tr>
+<tr>
+<td>Source Address（源MAC地址）</td>
+<td>6</td>
+<td>发送端口的MAC地址</td>
+</tr>
+<tr>
+<td>Length&#x2F;Type（长度&#x2F;类型）</td>
+<td>2</td>
+<td>协议类型：0x8809</td>
+</tr>
+<tr>
+<td>Subtype（报文子类型）</td>
+<td>1</td>
+<td>取值为0x01，代表是LACP报文</td>
+</tr>
+<tr>
+<td>Version Number（协议版本号）</td>
+<td>1</td>
+<td>固定为0x01</td>
+</tr>
+<tr>
+<td>TLV_Type&#x3D;Actor Information（TLV类型&#x3D;Actor信息）</td>
+<td>1</td>
+<td>标识TLV的类型，值为0x01代表Actor字段</td>
+</tr>
+<tr>
+<td>Actor_Information_Length（Actor信息字段长度）</td>
+<td>1</td>
+<td>取值为20（即0x14），以字节为单位</td>
+</tr>
+<tr>
+<td>Actor_System_Priority（本端系统优先级）</td>
+<td>2</td>
+<td>可以设置，默认情况下为32768（即0x8000）</td>
+</tr>
+<tr>
+<td>Actor_System（本端系统ID）</td>
+<td>6</td>
+<td>本端系统的MAC地址</td>
+</tr>
+<tr>
+<td>Actor_Key（端口Key值）</td>
+<td>2</td>
+<td>系统根据端口的配置生成，是端口能否成为聚合组成员的关键因素，影响Key值的因素有Trunk ID、接口的速率和双工模式</td>
+</tr>
+<tr>
+<td>Actor_Port_Priority（本端接口优先级）</td>
+<td>2</td>
+<td>可以配置，默认为0x8000</td>
+</tr>
+<tr>
+<td>Actor_Port（本端端口号）</td>
+<td>2</td>
+<td>由接口所在的槽位号、子卡号和端口号决定</td>
+</tr>
+<tr>
+<td>Actor_State（本端状态信息）</td>
+<td>1</td>
+<td>8位比特的含义分别为： Bit0：lacp_activity，代表链路所在的聚合组参与LACP协商的方式。主动的LACP被编码为1，即主动方式下会主动发送LACPDU报文给对方，被动方式不会主动发送协商报文，除非收到协商报文才会参与； Bit1：lacp_timeout，代表链路接收LACPDU报文的周期，有两种，快周期1秒和慢周期30秒，超时时间为周期的3倍。短超时被编码为1，长超时被编码为0； Bit2：aggregation，标识该链路能否被聚合组聚合。如果编码为0，该链路被认为是独立的，不能被聚合，即这个链路只能作为一个个体链路运行； Bit3：synchronization，代表该链路是否已被分配到一个正确的链路聚合组，如果该链路已经关联了一个兼容的聚合器，那么该链路聚合组的识别与系统ID和被发送的运行Key信息是一致的。编码为0，代表链路当前不在正确的聚合里； Bit4：collecting，帧的收集使能位，假如编码为1，表示在这个链路上进来的帧的收集是明确使能的，即收集当前被使能，并且不期望在没有管理变化或接收协议信息变化的情况下被禁止。其它情况下这个值编码为0； Bit5：distributing，帧的分配使能位，假如编码为0，意味着在这个链路上的外出帧的分配被明确禁止，并且不期望在没有管理变化或接收协议信息变化的情况下被使能。其它情况下这个值编码为1； Bit6-7：default和expired，用于诊断调试，default编码为1代表接收到的对端的信息是管理配置的。假如编码为0，正在使用的运行伙伴信息在接收到的LACPDU里。expired编码为1代表本端的接收机是处于expired超时状态；假如编码为0，本端接收状态机处于正常状态。这两值不被正常LACP协议使用，仅用于诊断协议问题</td>
+</tr>
+<tr>
+<td>Reserved（保留字段）</td>
+<td>3</td>
+<td>可用于功能调试以及扩展</td>
+</tr>
+<tr>
+<td>TLV_Type&#x3D;Partner Information（TLV类型&#x3D;Partner信息）</td>
+<td>1</td>
+<td>标识TLV的类型，值为0x02代表Partner字段</td>
+</tr>
+<tr>
+<td>Partner_Information_Length（Partner信息字段长度）</td>
+<td>1</td>
+<td>取值为20（即0x14），以字节为单位</td>
+</tr>
+<tr>
+<td>Partner_System_Priority（对端系统优先级）</td>
+<td>2</td>
+<td>对端系统优先级</td>
+</tr>
+<tr>
+<td>Partner_System（对端系统ID）</td>
+<td>6</td>
+<td>对端系统的MAC地址</td>
+</tr>
+<tr>
+<td>Partner_Key（对端端口Key值）</td>
+<td>2</td>
+<td>对端端口Key值</td>
+</tr>
+<tr>
+<td>Partner_Port_Priority（对端接口优先级）</td>
+<td>2</td>
+<td>对端接口优先级</td>
+</tr>
+<tr>
+<td>Partner_Port（对端端口号）</td>
+<td>2</td>
+<td>对端端口号</td>
+</tr>
+<tr>
+<td>Partner_State（对端状态信息）</td>
+<td>2</td>
+<td>对端状态信息，与Actor_State字段含义一致</td>
+</tr>
+<tr>
+<td>Reserved（保留字段）</td>
+<td>3</td>
+<td>可用于功能调试以及扩展</td>
+</tr>
+<tr>
+<td>TLV_Type&#x3D;Collector Information（TLV类型&#x3D;Collector信息）</td>
+<td>1</td>
+<td>标识TLV的类型，值为0x03代表Collector字段</td>
+</tr>
+<tr>
+<td>Collector_Information_Length（Collector信息字段长度）</td>
+<td>1</td>
+<td>取值为16（即0x10），以字节为单位</td>
+</tr>
+<tr>
+<td>CollectorMaxDelay（最大延时）</td>
+<td>2</td>
+<td>以10微秒为单位</td>
+</tr>
+<tr>
+<td>Reserved（保留字段）</td>
+<td>12</td>
+<td>可用于功能调试以及扩展</td>
+</tr>
+<tr>
+<td>TLV_Type&#x3D;Terminator Information（TLV类型&#x3D;Terminator信息）</td>
+<td>1</td>
+<td>标识TLV的类型，值为0x00代表Terminator字段</td>
+</tr>
+<tr>
+<td>Terminator_Length（Terminator信息字段长度）</td>
+<td>1</td>
+<td>取值为0（即0x00）</td>
+</tr>
+<tr>
+<td>Reserved（保留字段）</td>
+<td>50</td>
+<td>全置0，接收端忽略此字段</td>
+</tr>
+<tr>
+<td>FCS（帧校验序列）</td>
+<td>4</td>
+<td>用于帧内后续字节差错的循环</td>
+</tr>
+</tbody></table>
+<p>1.两端互相发送LACPDU报文</p>
+<p>在DeviceA和DeviceB上创建Eth-Trunk并配置为LACP模式，然后向Eth-Trunk中手工加入成员接口。此时成员接口上便启用了LACP协议，两端互发LACPDU报文。</p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="http://127.0.0.1:51299/icslite/hdx/pages/HDXAZH05262_14_zh/HDXAZH05262_14_zh/resources/dc/images/fig_dc_fd_eth-trunk_000704ar.gif" alt="img"></p>
+<p>以DeviceB为例，当DeviceB收到DeviceA发送的报文时，DeviceB会查看并记录对端信息，然后比较系统优先级字段，如果DeviceA的系统优先级高于本端的系统优先级，则确定DeviceA为LACP主动端。如果DeviceA和DeviceB的系统优先级相同，比较两端设备的MAC地址，确定MAC地址小的一端为LACP主动端。</p>
+<p>选出主动端后，两端都会<strong>以主动端的接口优先级来选择活动接口</strong>，两端设备选择了一致的活动接口，活动链路组便可以建立起来，从这些活动链路中以负载分担的方式转发数据。</p>
+<p>2.确定主动端(基于系统优先级和MAC)和活动链路（基于接口优先级）</p>
+<p>两端设备均会收到对端发来的LACPDU报文。以DeviceB为例，当DeviceB收到DeviceA发送的报文时，DeviceB会查看并记录对端信息，然后比较<strong>系统优先级</strong>字段，如果DeviceA的系统优先级高于本端的系统优先级，则确定DeviceA为LACP主动端。如果DeviceA和DeviceB的系统优先级相同，比较两端设备的MAC地址，确定MAC地址小的一端为LACP主动端。</p>
+<p>选出主动端后，两端都会以主动端的<strong>接口优先级</strong>来选择活动接口，两端设备选择了一致的活动接口，活动链路组便可以建立起来，从这些活动链路中以负载分担的方式转发数据。</p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="http://127.0.0.1:51299/icslite/hdx/pages/HDXAZH05262_14_zh/HDXAZH05262_14_zh/resources/dc/images/fig_dc_fd_eth-trunk_000705ar.gif" alt="img"></p>
+<p>3.LACP抢占（缺省不抢占）</p>
+<p>使能LACP抢占功能后，聚合组会<strong>始终保持高优先级</strong>的接口作为活动接口的状态。</p>
+<p>接口Port1、Port2和Port3为Eth-Trunk的成员接口，DeviceA为主动端，活动接口数上限阈值为2，三个接口的LACP优先级分别为10、20、30。当通过LACP协议协商完毕后，接口Port1和Port2因为优先级较高被选作活动接口，Port3成为备份接口。</p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="http://127.0.0.1:51299/icslite/hdx/pages/HDXAZH05262_14_zh/HDXAZH05262_14_zh/resources/dc/images/fig_dc_fd_eth-trunk_000706ar.gif" alt="img"></p>
+<ul>
+<li><p>以下两种情况需要使能LACP的抢占功能。</p>
+<ul>
+<li>Port1接口出现故障而后又恢复了正常。当接口Port1出现故障时被Port3所取代，如果在Eth-Trunk接口下未使能LACP抢占功能，则故障恢复时Port1将处于备份状态；如果使能了LACP抢占功能，当Port1故障恢复时，由于接口优先级比Port3高，将重新成为活动接口，Port3再次成为备份接口。</li>
+<li>如果希望Port3接口替换Port1、Port2中的一个接口成为活动接口，可以使能了LACP抢占功能，并配置Port3的接口LACP优先级较高。如果没有使能LACP抢占功能，即使将备份接口的优先级调整为高于当前活动接口的优先级，系统也不会进行重新选择活动接口的过程，不切换活动接口。</li>
+</ul>
+</li>
+<li><p>LACP抢占延时（默认30s，10-180）</p>
+<p>抢占延时是LACP抢占发生时，处于备用状态的链路将会等待一段时间后再切换到转发状态。配置抢占延时是为了避免由于某些链路状态频繁变化而导致Eth-Trunk数据传输不稳定的情况。</p>
+<p>Port1由于链路故障切换为非活动接口，此后该链路又恢复了正常。若系统使能了LACP抢占功能并配置了抢占延时，Port1重新切换回活动状态就需要经过抢占延时的时间。</p>
+<p>LACP 抢占延时的取值范围通常是<strong>10～180</strong>秒。</p>
+<p>LACP 抢占延时是指在启用 LACP 抢占功能后，当高优先级的链路恢复正常，且当前活动链路数已达到上限阈值时，等待多久后高优先级链路才会取代低优先级链路成为活动链路。</p>
+<p>默认情况下，LACP 抢占等待时间通常为<strong>30秒</strong>。但这个时间可以根据具体需求进行配置，通过在Eth-Trunk接口视图下使用“<strong>lacp preempt delay delay-time”</strong>命令来设置，其中“delay-time”为具体的时间值，单位是秒。</p>
+<p>配置抢占延时功能可以避免由于链路状态频繁变化而导致的数据传输不稳定。<strong>但需注意，配置抢占延时需要确保当前的Eth-Trunk工作模式为LACP模式，并且已经使能了优先级抢占，否则配置不生效</strong>。要使能优先级抢占，可在Eth-Trunk接口视图下执行“lacp preempt enable”命令。</p>
+</li>
+<li><p>活动链路与非活动链路切换</p>
+<p>LACP模式链路聚合组两端设备中任何一端检测到以下事件，都会触发聚合组的链路切换：</p>
+<ul>
+<li>链路Down事件。</li>
+<li>以太网OAM检测到链路失效。</li>
+<li>LACP协议发现链路故障。</li>
+<li>接口不可用。</li>
+<li>在使能了LACP抢占功能的前提下，更改备份接口的优先级高于当前活动接口的优先级。</li>
+</ul>
+<p>当满足上述切换条件其中之一时，按照如下步骤进行切换：</p>
+<ol>
+<li>关闭故障链路。</li>
+<li>从N条备份链路中选择优先级最高的链路接替活动链路中的故障链路。</li>
+<li>优先级最高的备份链路转为活动状态并转发数据，完成切换。</li>
+</ol>
+</li>
+</ul>
+<h1 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h1><p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/juhetuopu31207160429.png" alt="juhetuopu31207160429"></p>
+<h2 id="配置手工链路聚合"><a href="#配置手工链路聚合" class="headerlink" title="配置手工链路聚合"></a>配置手工链路聚合</h2><p># 创建Eth-Trunk接口</p>
+<p>[S1]interface Eth-Trunk 1 </p>
 <p><strong>interface eth-trunk</strong>命令用来进入已经存在的Eth-Trunk接口，或创建并进入Eth-Trunk接口。数字“1”代表接口编号，编号范围根据设备情况有所不同。</p>
 <p>[S2]interface Eth-Trunk 1</p>
-<p># 设置Eth-Trunk接口的聚合模式</p>
+<p># 设置Eth-Trunk接口的聚合模式 </p>
 <p>[S1-Eth-Trunk1]mode manual load-balance</p>
 <p><strong>mode</strong>命令用来配置Eth-Trunk的工作模式，有LACP模式和手工负载分担模式（手工模式）两种，缺省情况下，Eth-Trunk的工作模式为手工负载分担模式。此处S1上的模式配置仅为示范目的，实际操作时不需要。</p>
 <p># 将成员接口加入聚合组</p>
-<p>[S1]interface GigabitEthernet 0/0/10</p>
-<p>[S1-GigabitEthernet0/0/10]eth-trunk 1</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;10 </p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10]eth-trunk 1 </p>
 <p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
-<p>[S1-GigabitEthernet0/0/10]quit</p>
-<p>[S1]interface GigabitEthernet 0/0/11</p>
-<p>[S1-GigabitEthernet0/0/11]eth-trunk 1</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10]quit</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;11</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11]eth-trunk 1</p>
 <p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
-<p>[S1-GigabitEthernet0/0/11]quit</p>
-<p>[S1]interface GigabitEthernet 0/0/12</p>
-<p>[S1-GigabitEthernet0/0/12]eth-trunk 1</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11]quit</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;12</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12]eth-trunk 1</p>
 <p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
-<p>[S1-GigabitEthernet0/0/12]quit</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12]quit</p>
 <p>可进入到成员接口的接口视图下，逐一添加到Eth-Trunk接口。也可以在Eth-Trunk接口视图下通过<strong>trunkport</strong>命令批量添加接口。</p>
 <p>[S2]interface Eth-Trunk 1</p>
-<p>[S2-Eth-Trunk1]trunkport GigabitEthernet 0/0/10 to 0/0/12</p>
+<p>[S2-Eth-Trunk1]trunkport GigabitEthernet 0&#x2F;0&#x2F;10 to 0&#x2F;0&#x2F;12 </p>
 <p>Info: This operation may take a few seconds. Please wait for a moment…done.</p>
 <p>将成员接口加入Eth-Trunk时，需要注意以下问题：</p>
 <p>• 每个Eth-Trunk接口下最多可以包含8个成员接口。</p>
@@ -315,12 +526,11 @@ if (true) {
 <p>Eth-Trunk链路两端相连的物理接口的数量、速率、双工方式等必须一致。</p>
 <p>#查看Eth-Trunk接口状态</p>
 <p>dis eth-trunk 1</p>
-<h2 id="配置LACP模式">配置LACP模式</h2>
-<p># 删除现有Eth-Trunk接口下的成员接口</p>
+<h2 id="配置LACP模式"><a href="#配置LACP模式" class="headerlink" title="配置LACP模式"></a>配置LACP模式</h2><p># 删除现有Eth-Trunk接口下的成员接口</p>
 <p>[S1]interface Eth-Trunk 1</p>
-<p>[S1-Eth-Trunk1]undo trunkport GigabitEthernet 0/0/10 to 0/0/12</p>
+<p>[S1-Eth-Trunk1]undo trunkport GigabitEthernet 0&#x2F;0&#x2F;10 to 0&#x2F;0&#x2F;12</p>
 <p>[S2]interface Eth-Trunk 1</p>
-<p>[S2-Eth-Trunk1]undo trunkport GigabitEthernet 0/0/10 to 0/0/12</p>
+<p>[S2-Eth-Trunk1]undo trunkport GigabitEthernet 0&#x2F;0&#x2F;10 to 0&#x2F;0&#x2F;12</p>
 <p><strong>在修改Eth-Trunk接口的聚合模式之前，需要确保Eth-Trunk中没有任何成员接口。</strong></p>
 <p># 修改聚合模式</p>
 <p>[S1]interface Eth-Trunk 1</p>
@@ -331,27 +541,26 @@ if (true) {
 <p>[S2-Eth-Trunk1]mode lacp</p>
 <p># 将成员接口加入聚合组</p>
 <p>[S1]interface Eth-Trunk 1</p>
-<p>[S1-Eth-Trunk1]trunkport GigabitEthernet 0/0/10 to 0/0/12</p>
+<p>[S1-Eth-Trunk1]trunkport GigabitEthernet 0&#x2F;0&#x2F;10 to 0&#x2F;0&#x2F;12</p>
 <p>[S2]interface Eth-Trunk 1</p>
-<p>[S2-Eth-Trunk1]trunkport GigabitEthernet 0/0/10 to 0/0/12</p>
+<p>[S2-Eth-Trunk1]trunkport GigabitEthernet 0&#x2F;0&#x2F;10 to 0&#x2F;0&#x2F;12</p>
 <p>查看</p>
 <p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/1chakan1207160903.png" alt="1chakan1207160903"></p>
 <p>注意此时三个接口都是Select的状态</p>
-<h2 id="选择接口">选择接口</h2>
-<p>​	考虑到网络流量情况，当网络正常时，只需要GigabitEthernet0/0/11和GigabitEthernet0/0/12接口处于转发状态，GigabitEthernet0/0/10接口作为备份。但当活动接口数量少于2时，直接关闭整个Eth-Trunk接口。</p>
+<h2 id="选择接口"><a href="#选择接口" class="headerlink" title="选择接口"></a>选择接口</h2><p>​	考虑到网络流量情况，当网络正常时，只需要GigabitEthernet0&#x2F;0&#x2F;11和GigabitEthernet0&#x2F;0&#x2F;12接口处于转发状态，GigabitEthernet0&#x2F;0&#x2F;10接口作为备份。但当活动接口数量少于2时，直接关闭整个Eth-Trunk接口。</p>
 <p>全局配置优先级选举主动方，主动方设备的端口上配置接口优先级选举活动端口</p>
 <p># 配置设备S1的LACP优先级，使其成为主动端设备</p>
-<p>[S1]lacp priority 100</p>
-<p># 配置接口优先级，优选GigabitEthernet0/0/11和GigabitEthernet0/0/12接口</p>
-<p>[S1]interface GigabitEthernet 0/0/10</p>
-<p>[S1-GigabitEthernet0/0/10]lacp priority 40000</p>
-<p># 配置接口优先级，优选GigabitEthernet0/0/11和GigabitEthernet0/0/12接口</p>
-<p>[S1]interface GigabitEthernet 0/0/10</p>
-<p>[S1-GigabitEthernet0/0/10]lacp priority 40000</p>
-<p>g0/0/10配置了大于32768的优先级4000，所以变为备份端口</p>
-<p>之后，g0/0/11和g0/0/12为活动端口</p>
+<p>[S1]lacp priority 100 </p>
+<p># 配置接口优先级，优选GigabitEthernet0&#x2F;0&#x2F;11和GigabitEthernet0&#x2F;0&#x2F;12接口</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;10 </p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10]lacp priority 40000</p>
+<p># 配置接口优先级，优选GigabitEthernet0&#x2F;0&#x2F;11和GigabitEthernet0&#x2F;0&#x2F;12接口</p>
+<p>[S1]interface GigabitEthernet 0&#x2F;0&#x2F;10 </p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;10]lacp priority 40000</p>
+<p>g0&#x2F;0&#x2F;10配置了大于32768的优先级4000，所以变为备份端口</p>
+<p>之后，g0&#x2F;0&#x2F;11和g0&#x2F;0&#x2F;12为活动端口</p>
 <p>使能了LACP模式链路聚合的两端设备均会收发的LACPDU报文。</p>
-<p>首先选举主动端设备：</p>
+<p>首先<strong>选举主动端设备</strong>：</p>
 <ol>
 <li>比较系统优先级字段，如果对端的系统优先级高于本端的系统优先级（默认为32768，越小越优），则确定对端为LACP主动端。</li>
 <li>如果系统优先级相同，比较两端设备的MAC地址，MAC地址小的一端为LACP主动端。</li>
@@ -370,18 +579,17 @@ if (true) {
 <p>在LACP模式下，当活动链路中出现故障链路时，系统会从备用链路中选择优先级最高的链路替代故障链路；如果被替代的故障链路恢复了正常，而且该链路的优先级又高于替代自己的链路。这种情况下，如果使能了LACP优先级抢占功能，高优先级链路会抢占低优先级链路，<strong>回切</strong>到活动状态。<strong>lacp preempt enable</strong>命令用来使能LACP模式下LACP优先级抢占的功能，缺省情况下，优先级抢占处于禁止状态。</p>
 <p># 查看当前 Eth-Trunk接口状态</p>
 <p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/2chakan2207161758.png" alt="2chakan2207161758"></p>
-<p>shutdown接口g0/0/11和g0/0/12</p>
+<p>shutdown接口g0&#x2F;0&#x2F;11和g0&#x2F;0&#x2F;12</p>
 <p>查看状态，发现都变为unselect状态</p>
-<p>由于设置了Eth-Trunk的活动链路下限阈值为2，所以聚合组中可用活动接口数量少于2时，整个聚合组对应的接口将会被关闭。尽管此时GigabitEthernet0/0/10处于UP状态，但是仍处于Unselect状态。</p>
-<h2 id="修改负载分担模式">修改负载分担模式</h2>
-<p># 开启上一步中关闭的接口</p>
-<p>[S1]inter GigabitEthernet 0/0/11</p>
-<p>[S1-GigabitEthernet0/0/11]undo shutdown</p>
-<p>[S1-GigabitEthernet0/0/11]quit</p>
-<p>[S1]inter GigabitEthernet 0/0/12</p>
-<p>[S1-GigabitEthernet0/0/12]undo shutdown</p>
+<p>由于设置了Eth-Trunk的活动链路下限阈值为2，所以聚合组中可用活动接口数量少于2时，整个聚合组对应的接口将会被关闭。尽管此时GigabitEthernet0&#x2F;0&#x2F;10处于UP状态，但是仍处于Unselect状态。</p>
+<h2 id="修改负载分担模式"><a href="#修改负载分担模式" class="headerlink" title="修改负载分担模式"></a>修改负载分担模式</h2><p># 开启上一步中关闭的接口 </p>
+<p>[S1]inter GigabitEthernet 0&#x2F;0&#x2F;11</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11]undo shutdown </p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;11]quit</p>
+<p>[S1]inter GigabitEthernet 0&#x2F;0&#x2F;12</p>
+<p>[S1-GigabitEthernet0&#x2F;0&#x2F;12]undo shutdown</p>
 <p># 大约30秒后，查看当前Eth-Trunk1的接口状态</p>
-<p>由于使能了Eth-Trunk接口的抢占功能，所以当GigabitEthernet0/0/11和GigabitEthernet0/0/12接口进入UP状态之后，这两个接口的接口的优先级高于GigabitEthernet0/0/10，所以GigabitEthernet0/0/10会进入unselect状态。同时因为系统为了保证链路的稳定性，默认的抢占延时为30秒，所以要在30秒后才会发生抢占。</p>
+<p>由于使能了Eth-Trunk接口的抢占功能，所以当GigabitEthernet0&#x2F;0&#x2F;11和GigabitEthernet0&#x2F;0&#x2F;12接口进入UP状态之后，这两个接口的接口的优先级高于GigabitEthernet0&#x2F;0&#x2F;10，所以GigabitEthernet0&#x2F;0&#x2F;10会进入unselect状态。同时因为系统为了保证链路的稳定性，默认的抢占延时为30秒，所以要在30秒后才会发生抢占。</p>
 <p># 修改Eth-Trunk接口的负载分担模式为基于目的IP地址</p>
 <p>[S1]interface Eth-Trunk 1</p>
 <p>[S1-Eth-Trunk1]load-balance dst-ip</p>
@@ -395,7 +603,7 @@ if (true) {
   input.setSelectionRange(0, 99999);
   document.execCommand("copy");
   document.body.removeChild(input);
-}</script><div class="share-link copyurl"><div class="share-button" id="post-share-url" title="复制链接" onclick="copyCurrentPageUrl()"><i class="anzhiyufont anzhiyu-icon-link"></i></div></div></div></div></div><div class="post-copyright__notice"><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://example.com" target="_blank">沃德发</a>！</span></div></div><div class="post-tools-right"><div class="tag_share"><div class="post-meta__box"><div class="post-meta__box__tag-list"><a class="post-meta__box__tags" href="/tags/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/"><span class="tags-punctuation"> <i class="anzhiyufont anzhiyu-icon-tag"></i></span>链路聚合<span class="tagsPageCount">1</span></a><a class="post-meta__box__tags" href="/tags/lacp/"><span class="tags-punctuation"> <i class="anzhiyufont anzhiyu-icon-tag"></i></span>lacp<span class="tagsPageCount">1</span></a><a class="post-meta__box__tags" href="/tags/eth-trunk/"><span class="tags-punctuation"> <i class="anzhiyufont anzhiyu-icon-tag"></i></span>eth-trunk<span class="tagsPageCount">1</span></a></div></div></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2023/12/05/mpls%E5%AE%9E%E9%AA%8C/"><img class="prev-cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">mpls实验</div></div></a></div><div class="next-post pull-right"><a href="/2023/12/07/rstp%E5%92%8Cmstp/"><img class="next-cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">rstp和mstp</div></div></a></div></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="card-content"><div class="author-info-avatar"><img class="avatar-img" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/toux.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__description"></div><div class="author-info__bottom-group"><a class="author-info__bottom-group-left" href="/"><h1 class="author-info__name">Yang</h1><div class="author-info__desc">相互吹捧，共同进步😍😍😍</div></a><div class="card-info-social-icons is-center"><a class="social-icon faa-parent animated-hover" href="https://github.com/anzhiyu-c" target="_blank" title="Github"><i class="anzhiyufont anzhiyu-icon-github"></i></a></div></div></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-bullhorn anzhiyu-shake"></i><span>公告</span></div><div class="announcement_content">今天也在努力划水。</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-bars"></i><span>文章目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">概念</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88"><span class="toc-number">1.1.</span> <span class="toc-text">什么是链路聚合</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88%E7%9A%84%E4%BD%9C%E7%94%A8"><span class="toc-number">1.2.</span> <span class="toc-text">链路聚合的作用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89-%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88%E7%9A%84%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86%EF%BC%9A"><span class="toc-number">1.3.</span> <span class="toc-text">三. 链路聚合的工作原理：</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BC%98%E5%85%88%E7%BA%A7"><span class="toc-number">1.4.</span> <span class="toc-text">优先级</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">配置</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE%E6%89%8B%E5%B7%A5%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88"><span class="toc-number">2.1.</span> <span class="toc-text">配置手工链路聚合</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%85%8D%E7%BD%AELACP%E6%A8%A1%E5%BC%8F"><span class="toc-number">2.2.</span> <span class="toc-text">配置LACP模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%89%E6%8B%A9%E6%8E%A5%E5%8F%A3"><span class="toc-number">2.3.</span> <span class="toc-text">选择接口</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BF%AE%E6%94%B9%E8%B4%9F%E8%BD%BD%E5%88%86%E6%8B%85%E6%A8%A1%E5%BC%8F"><span class="toc-number">2.4.</span> <span class="toc-text">修改负载分担模式</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-history"></i><span>最近发布</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/07/08/%E6%95%B0%E6%8D%AE%E9%80%9A%E4%BF%A1%E5%9F%BA%E7%A1%80/" title="数据通信基础">数据通信基础</a><time datetime="2024-07-08T10:53:28.000Z" title="发表于 2024-07-08 18:53:28">2024-07-08</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/" title="MPLSVPN实验">MPLSVPN实验</a><time datetime="2024-07-01T08:19:01.000Z" title="发表于 2024-07-01 16:19:01">2024-07-01</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/06/29/ip%E7%BB%BC%E5%90%88%E5%AE%9E%E9%AA%8C/" title="ip综合实验">ip综合实验</a><time datetime="2024-06-29T13:27:12.000Z" title="发表于 2024-06-29 21:27:12">2024-06-29</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/06/23/VRF/" title="VRF">VRF</a><time datetime="2024-06-23T09:34:15.000Z" title="发表于 2024-06-23 17:34:15">2024-06-23</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/06/21/IA%E7%BB%BC%E5%90%88%E5%AE%9E%E9%AA%8C/" title="IA综合实验">IA综合实验</a><time datetime="2024-06-21T13:03:16.000Z" title="发表于 2024-06-21 21:03:16">2024-06-21</time></div></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"></div><div id="footer-bar"><div class="footer-bar-links"><div class="footer-bar-left"><div id="footer-bar-tips"><div class="copyright">&copy;2020 - 2024 By <a class="footer-bar-link" href="/" title="Yang" target="_blank">Yang</a></div></div><div id="footer-type-tips"></div><div class="js-pjax"><script>function subtitleType () {
+}</script><div class="share-link copyurl"><div class="share-button" id="post-share-url" title="复制链接" onclick="copyCurrentPageUrl()"><i class="anzhiyufont anzhiyu-icon-link"></i></div></div></div></div></div><div class="post-copyright__notice"><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://example.com" target="_blank">沃德发</a>！</span></div></div><div class="post-tools-right"><div class="tag_share"><div class="post-meta__box"><div class="post-meta__box__tag-list"><a class="post-meta__box__tags" href="/tags/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/"><span class="tags-punctuation"> <i class="anzhiyufont anzhiyu-icon-tag"></i></span>链路聚合<span class="tagsPageCount">1</span></a><a class="post-meta__box__tags" href="/tags/lacp/"><span class="tags-punctuation"> <i class="anzhiyufont anzhiyu-icon-tag"></i></span>lacp<span class="tagsPageCount">1</span></a><a class="post-meta__box__tags" href="/tags/eth-trunk/"><span class="tags-punctuation"> <i class="anzhiyufont anzhiyu-icon-tag"></i></span>eth-trunk<span class="tagsPageCount">1</span></a></div></div></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2023/12/05/mpls%E5%AE%9E%E9%AA%8C/"><img class="prev-cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">mpls实验</div></div></a></div><div class="next-post pull-right"><a href="/2023/12/07/rstp%E5%92%8Cmstp/"><img class="next-cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">rstp和mstp</div></div></a></div></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="card-content"><div class="author-info-avatar"><img class="avatar-img" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/toux.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__description"></div><div class="author-info__bottom-group"><a class="author-info__bottom-group-left" href="/"><h1 class="author-info__name">Yang</h1><div class="author-info__desc">相互吹捧，共同进步😍😍😍</div></a><div class="card-info-social-icons is-center"><a class="social-icon faa-parent animated-hover" href="https://github.com/anzhiyu-c" target="_blank" title="Github"><i class="anzhiyufont anzhiyu-icon-github"></i></a></div></div></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-bullhorn anzhiyu-shake"></i><span>公告</span></div><div class="announcement_content">今天也在努力划水。</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-bars"></i><span>文章目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%A6%82%E5%BF%B5"><span class="toc-number">1.</span> <span class="toc-text">概念</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88"><span class="toc-number">1.1.</span> <span class="toc-text">什么是链路聚合</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88%E7%9A%84%E4%BD%9C%E7%94%A8"><span class="toc-number">1.2.</span> <span class="toc-text">链路聚合的作用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89-%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88%E7%9A%84%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86%EF%BC%9A"><span class="toc-number">1.3.</span> <span class="toc-text">三. 链路聚合的工作原理：</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BC%98%E5%85%88%E7%BA%A7"><span class="toc-number">1.4.</span> <span class="toc-text">优先级</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#LACPDU%E6%8A%A5%E6%96%87"><span class="toc-number">2.</span> <span class="toc-text">LACPDU报文</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE"><span class="toc-number">3.</span> <span class="toc-text">配置</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE%E6%89%8B%E5%B7%A5%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88"><span class="toc-number">3.1.</span> <span class="toc-text">配置手工链路聚合</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%85%8D%E7%BD%AELACP%E6%A8%A1%E5%BC%8F"><span class="toc-number">3.2.</span> <span class="toc-text">配置LACP模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%89%E6%8B%A9%E6%8E%A5%E5%8F%A3"><span class="toc-number">3.3.</span> <span class="toc-text">选择接口</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BF%AE%E6%94%B9%E8%B4%9F%E8%BD%BD%E5%88%86%E6%8B%85%E6%A8%A1%E5%BC%8F"><span class="toc-number">3.4.</span> <span class="toc-text">修改负载分担模式</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-history"></i><span>最近发布</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/07/08/%E6%95%B0%E6%8D%AE%E9%80%9A%E4%BF%A1%E5%9F%BA%E7%A1%80/" title="数据通信基础">数据通信基础</a><time datetime="2024-07-08T10:53:28.000Z" title="发表于 2024-07-08 18:53:28">2024-07-08</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/" title="MPLSVPN实验">MPLSVPN实验</a><time datetime="2024-07-01T08:19:01.000Z" title="发表于 2024-07-01 16:19:01">2024-07-01</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/06/29/ip%E7%BB%BC%E5%90%88%E5%AE%9E%E9%AA%8C/" title="ip综合实验">ip综合实验</a><time datetime="2024-06-29T13:27:12.000Z" title="发表于 2024-06-29 21:27:12">2024-06-29</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/06/23/VRF/" title="VRF">VRF</a><time datetime="2024-06-23T09:34:15.000Z" title="发表于 2024-06-23 17:34:15">2024-06-23</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/06/21/IA%E7%BB%BC%E5%90%88%E5%AE%9E%E9%AA%8C/" title="IA综合实验">IA综合实验</a><time datetime="2024-06-21T13:03:16.000Z" title="发表于 2024-06-21 21:03:16">2024-06-21</time></div></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"></div><div id="footer-bar"><div class="footer-bar-links"><div class="footer-bar-left"><div id="footer-bar-tips"><div class="copyright">&copy;2020 - 2024 By <a class="footer-bar-link" href="/" title="Yang" target="_blank">Yang</a></div></div><div id="footer-type-tips"></div><div class="js-pjax"><script>function subtitleType () {
   fetch('https://v1.hitokoto.cn')
     .then(response => response.json())
     .then(data => {
