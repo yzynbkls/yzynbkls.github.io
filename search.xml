@@ -1350,8 +1350,7 @@
 <h1 id="报文格式"><a href="#报文格式" class="headerlink" title="报文格式"></a>报文格式</h1><img src="/2024/04/20/IS-IS%E6%80%BB%E7%BB%93/QQ截图20240721215844.png" alt="QQ截图20240721215844" style="zoom:50%;">
 
 <p>通用头部解释：</p>
-<pre><code>                 &lt;img src=&quot;IS-IS总结/QQ截图20240721220027.png&quot; alt=&quot;QQ截图20240721220027&quot; style=&quot;zoom:50%;&quot; /&gt;
-</code></pre>
+<p><img src="/2024/04/20/IS-IS%E6%80%BB%E7%BB%93/QQ%E6%88%AA%E5%9B%BE20240721220027.png" alt="QQ截图20240721220027"></p>
 <img src="/2024/04/20/IS-IS%E6%80%BB%E7%BB%93/QQ截图20240721220242.png" alt="QQ截图20240721220242" style="zoom:50%;">
 
 <p>TLV：</p>
