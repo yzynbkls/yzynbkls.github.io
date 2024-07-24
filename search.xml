@@ -174,84 +174,112 @@
   <entry>
     <title>BGP总结</title>
     <url>/2024/05/11/BGP%E6%80%BB%E7%BB%93/</url>
-    <content><![CDATA[<p>BGP使用<strong>TCP</strong>作为其传输层协议（端口号为<strong>179</strong>），使用<strong>触发式路由更新</strong>，而不是周期性路由更新。—BGP要想建立邻居关系，必须保证建立邻居关系的两端能够ping通<br>BGP能够承载大批量的路由信息，能够支撑大规模网络。<br>BGP提供了丰富的路由策略，能够灵活的进行路由选路，并能指导对等体按策略发布路由。<br>BGP能够支撑MPLS&#x2F;VPN的应用，传递客户VPN路由。<br>BGP提供了路由聚合和路由衰减功能用于防止路由振荡，通过这两项功能有效地提高了网络稳定性。</p>
+    <content><![CDATA[<p>BGP使用<strong>TCP</strong>作为其传输层协议（端口号为<strong>179</strong>），使用<strong>触发式路由更新</strong>，而不是周期性路由更新。—BGP要想建立邻居关系，必须保证建立邻居关系的两端能够ping通<br>
+BGP能够承载大批量的路由信息，能够支撑大规模网络。<br>
+BGP提供了丰富的路由策略，能够灵活的进行路由选路，并能指导对等体按策略发布路由。<br>
+BGP能够支撑MPLS/VPN的应用，传递客户VPN路由。<br>
+BGP提供了路由聚合和路由衰减功能用于防止路由振荡，通过这两项功能有效地提高了网络稳定性。</p>
 <p>AS范围：1-65535</p>
 <p>BGP版本：BGP4+</p>
 <p>一台路由器不能配置多个BGP进程</p>
 <p>只传递路由信息，不会暴露AS内拓扑信息</p>
-<h1 id="BGP对等体"><a href="#BGP对等体" class="headerlink" title="BGP对等体"></a>BGP对等体</h1><p>EBGP：对等体两端属于不同的AS</p>
+<h1>BGP对等体</h1>
+<p>EBGP：对等体两端属于不同的AS</p>
 <p>IBGP：对等体两端属于同一个AS</p>
 <p>建立BGP对等体的时候可以使用物理接口建立，也可以使用loopback接口建立</p>
-<p><strong>EBGP对等体</strong>：建议使用物理接口建立 </p>
-<p>①使用物理接口建立：<br>[AR1]bgp 100</p>
-<p>[AR1-bgp]router-id 1.1.1.1  </p>
+<p><strong>EBGP对等体</strong>：建议使用物理接口建立</p>
+<p>①使用物理接口建立：<br>
+[AR1]bgp 100</p>
+<p>[AR1-bgp]router-id 1.1.1.1</p>
 <p>[AR1-bgp]peer 10.0.12.2 as-number 200</p>
 <p>②使用loopback接口建立：</p>
-<p>[Ar4]bgp 200    </p>
-<p>[Ar4-bgp]peer 5.5.5.5 as-number 300   </p>
+<p>[Ar4]bgp 200</p>
+<p>[Ar4-bgp]peer 5.5.5.5 as-number 300</p>
 <p>[Ar4-bgp]peer 5.5.5.5 connect-interface loopback0     <strong>如果使用loopback接口建立对等体，必须要指明建立对等体的接口</strong></p>
 <p>[Ar4-bgp]router-id 4.4.4.4  指定router id</p>
 <p>[Ar4-bgp]peer 5.5.5.5  ebgp-max-hop   EBGP建立对等体关系默认发出报文TTL值为1，如果用loopback接口建立，到达loopback接口TTL值变成0，此时报文会丢弃，所以需要更改接口的TTL，peer 5.5.5.5  ebgp-max-hop命令可以直接设置TTL，至少设置为2，如果不设置，此时TTL值为255</p>
 <p>I<strong>BGP对等体</strong>：建议使用loopback接口建立（更稳定）</p>
 <p>IBGP建立对等体关系，发送报文TTL值为255，所以不用考虑TTL不可达问题</p>
 <p>①使用loopback接口建立：</p>
-<p>[Ar4]bgp 200   </p>
-<p>[Ar4-bgp]peer 2.2.2.2 as-number 200  </p>
+<p>[Ar4]bgp 200</p>
+<p>[Ar4-bgp]peer 2.2.2.2 as-number 200</p>
 <p>[Ar4-bgp]peer 2.2.2.2 connect-interface loopback0</p>
 <p>②使用物理接口建立：</p>
-<p>[Ar4]bgp 200    </p>
+<p>[Ar4]bgp 200</p>
 <p>[Ar4-bgp]peer 10.0.34.4 as-number 200</p>
-<h1 id="BGP对等体关系建立"><a href="#BGP对等体关系建立" class="headerlink" title="BGP对等体关系建立"></a>BGP对等体关系建立</h1><p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/image-20240511132855207.png" alt="image-20240511132855207"></p>
+<h1>BGP对等体关系建立</h1>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/image-20240511132855207.png" alt="image-20240511132855207"></p>
+<p><strong>报文头部</strong></p>
+<img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/QQ截图20240724222453.png" alt="QQ截图20240724222453" style="zoom:67%;">
 <ul>
-<li><p>Open消息：是TCP连接建立后发送的第一个消息，用于建立BGP对等体之间的连接关系。对等体在接收到Open消息并协商成功后，将发送Keepalive消息确认并保持连接的有效性。确认后，对等体间可以进行Update、Notification、Keepalive和Route-refresh消息的交换。</p>
-</li>
-<li><p>Update消息：用于在对等体之间交换路由信息。Update消息可以发布多条属性相同的可达路由信息，也可以撤销多条不可达路由信息。</p>
+<li>Open消息：是TCP连接建立后发送的第一个消息，用于建立BGP对等体之间的连接关系。对等体在接收到Open消息并协商成功后，将发送Keepalive消息确认并保持连接的有效性。确认后，对等体间可以进行Update、Notification、Keepalive和Route-refresh消息的交换。</li>
+</ul>
+<img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/QQ截图20240724222709.png" alt="QQ截图20240724222709" style="zoom:67%;">
+<ul>
+<li>
+<p>Update消息：用于在对等体之间交换路由信息。Update消息可以发布多条属性相同的可达路由信息，也可以撤销多条不可达路由信息。</p>
+<img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/QQ截图20240724222847.png" alt="QQ截图20240724222847" style="zoom:67%;">
 <ul>
 <li>一条Update消息可以发布多条具有相同路由属性的可达路由，这些路由可共享一组路由属性。所有包含在一个给定的Update消息里的路由属性适用于该Update消息中的NLRI（Network Layer Reachability Information）字段里的所有目的地（用IP前缀表示）。</li>
 <li>一条Update消息可以撤销多条不可达路由。每一个路由通过目的地（用IP前缀表示）清楚的定义了BGP Speaker之间先前通告过的路由。</li>
 <li>一条Update消息可以同时发布可达路由，并且撤销另一部分不可达路由。一条Update消息也可以只用于撤销路由，这样就不需要包括路径属性或者NLRI。相反，也可以只用于通告可达路由，就不需要携带撤销路由信息了。</li>
 </ul>
 </li>
-<li><p>Notification消息：当BGP检测到错误状态时，就向对等体发出Notification消息，之后BGP连接会立即中断。</p>
-</li>
-<li><p>Keepalive消息：BGP会周期性的向对等体发出Keepalive消息，用来保持连接的有效性。缺省情况下，间隔60s，保持180s</p>
-</li>
-<li><p>Route-refresh消息：Route-refresh消息用来请求对等体重新发送所有的可达路由信息。</p>
-<p>在所有BGP设备使能Route-refresh能力的情况下，如果BGP的入口路由策略发生了变化，本地BGP设备会向对等体发布Route-refresh消息，收到此消息的对等体会将其路由信息重新发给本地BGP设备。这样，可以在不中断BGP连接的情况下，对BGP路由表进行动态刷新，并应用新的路由策略。</p>
+<li>
+<p>Notification消息：当BGP检测到错误状态时，就向对等体发出Notification消息，之后BGP连接会立即中断。</p>
 </li>
 </ul>
-<h1 id="BGP状态机"><a href="#BGP状态机" class="headerlink" title="BGP状态机"></a>BGP状态机</h1><p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/image-20240511133639233.png" alt="image-20240511133639233"></p>
+<img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/QQ截图20240724222950.png" alt="QQ截图20240724222950" style="zoom:67%;">
+<ul>
+<li>Keepalive消息：BGP会周期性的向对等体发出Keepalive消息，用来保持连接的有效性。缺省情况下，间隔60s，保持180s</li>
+</ul>
+<img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/QQ截图20240724223005.png" alt="QQ截图20240724223005" style="zoom:67%;">
+<ul>
+<li>
+<p>Route-refresh消息：Route-refresh消息用来请求对等体重新发送所有的可达路由信息。</p>
+<p>在所有BGP设备使能Route-refresh能力的情况下，如果BGP的入口路由策略发生了变化，本地BGP设备会向对等体发布Route-refresh消息，收到此消息的对等体会将其路由信息重新发给本地BGP设备。这样，可以在不中断BGP连接的情况下，对BGP路由表进行动态刷新，并应用新的路由策略。</p>
+<img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/QQ截图20240724223027.png" alt="QQ截图20240724223027" style="zoom:67%;">
+</li>
+</ul>
+<h1>BGP状态机</h1>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/image-20240511133639233.png" alt="image-20240511133639233"></p>
 <ol>
-<li><p>Idle状态是BGP初始状态。在Idle状态下，BGP拒绝邻居发送的连接请求。只有在收到本设备的Start事件后，BGP才开始尝试和其他BGP对等体进行TCP连接，并转至Connect状态。</p>
-<p> <strong>注意：</strong></p>
+<li>
+<p>Idle状态是BGP初始状态。在Idle状态下，BGP拒绝邻居发送的连接请求。只有在收到本设备的Start事件后，BGP才开始尝试和其他BGP对等体进行TCP连接，并转至Connect状态。</p>
+<p><strong>注意：</strong></p>
 <ul>
 <li>Start事件是由一个操作者配置一个BGP进程，或者重置一个已经存在的进程或者设备软件重置BGP进程引起的。</li>
 <li>任何状态中收到Notification报文或TCP拆链通知等Error事件后，BGP都会转至Idle状态。</li>
 </ul>
 </li>
-<li><p>在Connect状态下，BGP启动连接重传定时器（Connect Retry），等待TCP完成连接。</p>
+<li>
+<p>在Connect状态下，BGP启动连接重传定时器（Connect Retry），等待TCP完成连接。</p>
 <ul>
 <li>如果TCP连接成功，那么BGP向对等体发送Open报文，并转至OpenSent状态。</li>
 <li>如果TCP连接失败，那么BGP转至Active状态。</li>
 <li>如果连接重传定时器超时，BGP仍没有收到BGP对等体的响应，那么BGP继续尝试和对等体进行TCP连接，停留在Connect状态。</li>
 </ul>
 </li>
-<li><p>在Active状态下，BGP总是在试图建立TCP连接。</p>
+<li>
+<p>在Active状态下，BGP总是在试图建立TCP连接。</p>
 <ul>
 <li>如果TCP连接成功，那么BGP向对等体发送Open报文，关闭连接重传定时器，并转至OpenSent状态。</li>
 <li>如果TCP连接失败，那么BGP停留在Active状态。</li>
 <li>如果连接重传定时器超时，BGP仍没有收到BGP对等体的响应，那么BGP转至Connect状态。</li>
 </ul>
 </li>
-<li><p>在OpenSent状态下，BGP等待对等体的Open报文，并对收到的Open报文中的AS号、版本号、认证码等进行检查。</p>
+<li>
+<p>在OpenSent状态下，BGP等待对等体的Open报文，并对收到的Open报文中的AS号、版本号、认证码等进行检查。</p>
 <ul>
 <li>如果收到的Open报文正确，那么BGP发送Keepalive报文，并转至OpenConfirm状态。</li>
 <li>如果发现收到的Open报文有错误，那么BGP发送Notification报文给对等体，并转至Idle状态。</li>
 </ul>
 </li>
-<li><p>在OpenConfirm状态下，BGP等待Keepalive或Notification报文。如果收到Keepalive报文，则转至Established状态，如果收到Notification报文，则转至Idle状态。</p>
+<li>
+<p>在OpenConfirm状态下，BGP等待Keepalive或Notification报文。如果收到Keepalive报文，则转至Established状态，如果收到Notification报文，则转至Idle状态。</p>
 </li>
-<li><p>在Established状态下，BGP可以和对等体交换Update、Keepalive、Route-refresh报文和Notification报文。</p>
+<li>
+<p>在Established状态下，BGP可以和对等体交换Update、Keepalive、Route-refresh报文和Notification报文。</p>
 <ul>
 <li>如果收到正确的Update或Keepalive报文，那么BGP就认为对端处于正常运行状态，将保持BGP连接。</li>
 <li>如果收到错误的Update或Keepalive报文，那么BGP发送Notification报文通知对端，并转至Idle状态。</li>
@@ -262,68 +290,79 @@
 </li>
 </ol>
 <p>BGP对等体双方的状态必须都为Established，BGP对等体（也可以称为BGP邻居）关系才能成立，双方通过Update报文交换路由信息。</p>
-<h1 id="BGP路由的生成"><a href="#BGP路由的生成" class="headerlink" title="BGP路由的生成"></a>BGP路由的生成</h1><p>1）network：逐条在BGP协议中注入路由（其中origin属性位“i”）</p>
-<p>注意：network注入的路由必须是路由器的路由表存在的路由</p>
-<p>2）import-route：将某个协议的路由引入到路由表中，直连路由、静态路由、OSPF路由、IS-IS路由等（origin属性位“incomplete”）<br>3）路由聚合</p>
-<p>bgp 200<br>aggregate 10.1.0.0 22 detail-suppressed</p>
+<h1>BGP路由的生成</h1>
+<p>1）network：逐条在BGP协议中注入路由（其中origin属性位“i”）</p>
+<p><strong>注意：network注入的路由必须是路由器的路由表存在的路由</strong></p>
+<p>2）import-route：将某个协议的路由引入到路由表中，直连路由、静态路由、OSPF路由、IS-IS路由等（origin属性位“incomplete”）<br>
+3）路由聚合</p>
+<p>bgp 200<br>
+aggregate 10.1.0.0 22 detail-suppressed</p>
 <p>（detail-suppressed：BGP只会向对等体通告聚合后的路由，而不通告聚合前的明细路由）</p>
 <p>自动聚合：summary automatic</p>
 <ul>
-<li>自动聚合：对BGP引入的路由进行聚合。配置自动聚合后，对参加聚合的具体路由进行抑制。配置自动聚合后，BGP将按照自然网段聚合路由（如10.1.1.1&#x2F;24和10.2.1.1&#x2F;24将聚合为A类地址10.0.0.0&#x2F;8），并且BGP向对等体只发送聚合后的路由。</li>
+<li>自动聚合：对BGP引入的路由进行聚合。配置自动聚合后，对参加聚合的具体路由进行抑制。配置自动聚合后，BGP将按照自然网段聚合路由（如10.1.1.1/24和10.2.1.1/24将聚合为A类地址10.0.0.0/8），并且BGP向对等体只发送聚合后的路由。</li>
 </ul>
 <p>（自动聚合只能聚合import引入的路由）</p>
 <p>优先级：手动＞自动＞network＞import＞从对等体学到</p>
-<h1 id="BGP对等体通告原则"><a href="#BGP对等体通告原则" class="headerlink" title="BGP对等体通告原则"></a>BGP对等体通告原则</h1><p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/image-20240511134752905.png" alt="image-20240511134752905"></p>
+<h1>BGP对等体通告原则</h1>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/image-20240511134752905.png" alt="image-20240511134752905"></p>
 <p>只发布最优路由—下一跳可达、最优路由</p>
 <p>从EBGP对等体获取的路由，会发布给所有对等体。</p>
-<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps1.jpg" alt="img"> </p>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps1.jpg" alt="img"></p>
 <ol start="3">
 <li>IBGP水平分割：从IBGP对等体获取的路由，不会发送给IBGP对等体。</li>
 </ol>
-<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps2.jpg" alt="img"> </p>
-<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps3.jpg" alt="img"> </p>
-<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps4.jpg" alt="img"> </p>
-<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps5.jpg" alt="img"> </p>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps2.jpg" alt="img"></p>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps3.jpg" alt="img"></p>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps4.jpg" alt="img"></p>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps5.jpg" alt="img"></p>
 <ol start="4">
-<li>BGP同步规则指的是：当一台路由器从自己的IBGP对等体学习到一条BGP路由时（这类路由被称为IBGP路由），它将不能使用该条路由或把这条路由通告给自己的EBGP对等体，除非它又从IGP协议（例如OSPF等，此处也包含静态路由）学习到这条路由，也就是要求IBGP路由与IGP路由同步。同步规则主要用于规避BGP路由黑洞问题。</li>
+<li>BGP同步规则指的是：当一台路由器从自己的IBGP对等体学习到一条BGP路由时（这类路由被称为IBGP路由），它将不能使用该条路由或把这条路由通告给自己的EBGP对等体，<strong>除非它又从IGP协议（例如OSPF等，此处也包含静态路由）学习到这条路由</strong>，也就是<strong>要求IBGP路由与IGP路由同步</strong>。同步规则主要用于规避BGP路由黑洞问题。</li>
 </ol>
-<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps6.jpg" alt="img"> </p>
+<img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps6.jpg" alt="img" style="zoom:67%;"> 
 <p>路由黑洞：解决办法：</p>
 <p>①BGP–IGP互相引入   该方法不建议</p>
 <p>②IBGP全互联</p>
 <p>③MPLS</p>
-<h1 id="BGP属性"><a href="#BGP属性" class="headerlink" title="BGP属性"></a>BGP属性</h1><p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/image-20240511135334705.png" alt="image-20240511135334705"></p>
-<h1 id="AS-path属性："><a href="#AS-path属性：" class="headerlink" title="AS_path属性："></a>AS_path属性：</h1><p>该属性为公认必遵属性，是前往目标网络的路由经过的AS号列表；<br>作用：确保路由在EBGP对等体之间传递无环；另外也作为路由优选的衡量标准之一；<br>路由在被通告给EBGP对等体时，路由器会在该路由的AS_Path中追加上本地的AS号；路由被通告给IBGP对等体时，AS_Path不会发生改变。</p>
+<h1>BGP属性</h1>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/image-20240511135334705.png" alt="image-20240511135334705"></p>
+<h1>AS_path属性：</h1>
+<p>该属性为公认必遵属性，是前往目标网络的路由经过的AS号列表；<br>
+作用：确保路由在EBGP对等体之间传递无环；另外也作为路由优选的衡量标准之一；<br>
+路由在被通告给EBGP对等体时，路由器会在该路由的AS_Path中追加上本地的AS号；路由被通告给IBGP对等体时，AS_Path不会发生改变。</p>
 <p><strong>AS_path防环机制</strong>：路由每经过一个AS就会在AS_path中记录经过的AS 号，当路由器收到update报文，检查发现AS_path中含有本AS号，不接收该路由，从而防止了路由环路的产生。</p>
 <p>AS_path影响路由优选：收到同一个网段多条路，比较AS_path属性，哪条路由的AS_Path属性值较短，也即AS号的个数更少，就优选哪条路由。</p>
 <p><strong>AS-PATH类型：</strong></p>
-<p>AS_SEQENCE：AS在传递时是有序的，默认就是该类型<br>AS_SET：无序的，在做路由聚合时可以使用该类型。路由聚合解决了两类问题，一是减轻了设备的负担，二是隐藏了明细的路由信息，减少了路由震荡的影响。但是路由聚合后，AS_Path属性丢失，存在产生环路的风险，为此可以通过AS_SET类型的AS_Path属性携带聚合前的AS路径信息。</p>
+<p>AS_SEQENCE：AS在传递时是有序的，默认就是该类型<br>
+AS_SET：无序的，在做路由聚合时可以使用该类型。路由聚合解决了两类问题，一是减轻了设备的负担，二是隐藏了明细的路由信息，减少了路由震荡的影响。但是路由聚合后，AS_Path属性丢失，存在产生环路的风险，为此可以通过AS_SET类型的AS_Path属性携带聚合前的AS路径信息。</p>
 <p>修改AS_path：</p>
-<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps7.jpg" alt="img"> </p>
-<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps8.jpg" alt="img"> </p>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps7.jpg" alt="img"></p>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps8.jpg" alt="img"></p>
+<p>在export方向上修改，修改完之后，再加上本as再发布出去。例如：添加一个100as号：发布出去是64512（加上本as）、100（追加的）、64513（上一个经历的as号）</p>
 <p>①additive</p>
 <p>#</p>
-<p> acl number 2000  </p>
-<p> rule 5 permit source 10.10.10.10 0 </p>
+<p>acl number 2000</p>
+<p>rule 5 permit source 10.10.10.10 0</p>
 <p>#</p>
-<p>route-policy aa permit node 10 </p>
-<p> if-match acl 2000 </p>
-<p> apply as-path 500 additive</p>
+<p>route-policy aa permit node 10</p>
+<p>if-match acl 2000</p>
+<p>apply as-path 500 additive</p>
 <p>#</p>
 <p>bgp 200</p>
-<p> peer 5.5.5.5 route-policy aa export</p>
+<p>peer 5.5.5.5 route-policy aa export</p>
 <p>②overwrite</p>
 <p>#</p>
-<p> acl number 2000  </p>
-<p> rule 5 permit source 10.10.10.10 0 </p>
+<p>acl number 2000</p>
+<p>rule 5 permit source 10.10.10.10 0</p>
 <p>#</p>
-<p>route-policy aa permit node 10 </p>
-<p> if-match acl 2000 </p>
-<p> apply as-path 500 overwrite</p>
+<p>route-policy aa permit node 10</p>
+<p>if-match acl 2000</p>
+<p>apply as-path 500 overwrite</p>
 <p>#</p>
 <p>bgp 200</p>
-<p> peer 5.5.5.5 route-policy aa export</p>
-<h1 id="Origin属性"><a href="#Origin属性" class="headerlink" title="Origin属性"></a>Origin属性</h1><p>Origin属性用来定义路径信息的来源，标记一条路由是怎么成为BGP路由的。它有以下3种类型：</p>
+<p>peer 5.5.5.5 route-policy aa export</p>
+<h1>Origin属性</h1>
+<p>Origin属性用来定义路径信息的来源，标记一条路由是怎么成为BGP路由的。它有以下3种类型：</p>
 <ul>
 <li>IGP：具有最高的优先级。通过路由始发AS的IGP得到的路由信息，比如通过<strong>network</strong>命令注入到BGP路由表的路由，其Origin属性为IGP。</li>
 <li>EGP：优先级次之。通过EGP得到的路由信息，其Origin属性为EGP。</li>
@@ -331,42 +370,75 @@
 </ul>
 <p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/image-20240511140106339.png" alt="image-20240511140106339"></p>
 <p>当去往同一个目的地存在多条不同Origin属性的路由时，在其他条件都相同的情况下，BGP将按如Origin的下顺序优选路由：IGP &gt; EGP &gt; Incomplete。也就是i &gt; e &gt; ?</p>
-<h1 id="Next-Hop"><a href="#Next-Hop" class="headerlink" title="Next-Hop"></a>Next-Hop</h1><ul>
-<li><p>BGP的下一跳属性和IGP的有所不同，不一定就是邻居的IP地址。通常情况下，Next_Hop属性遵循下面的规则：</p>
+<p>（注意：如果ospf学习到1.1.1.1一条路由，bgp中network1.1.1.1，bgp路由表中不会通告这个路由，因为ospf学习到的优先，bgp传递的一个机制）</p>
+<h1>Next-Hop</h1>
+<ul>
+<li>
+<p>BGP的下一跳属性和IGP的有所不同，不一定就是邻居的IP地址。通常情况下，Next_Hop属性遵循下面的规则：</p>
 <ul>
 <li>BGP Speaker在向EBGP对等体发布某条路由时，会把该路由信息的下一跳属性设置为本地与对端建立BGP邻居关系的接口地址。</li>
 <li>BGP Speaker将本地始发路由发布给IBGP对等体时，会把该路由信息的下一跳属性设置为本地与对端建立BGP邻居关系的接口地址。</li>
 <li>BGP Speaker在向IBGP对等体发布从EBGP对等体学来的路由时，并不改变该路由信息的下一跳属性。</li>
+<li>BGP路由器本身始发的路由，下一跳是0.0.0.0</li>
 </ul>
 </li>
 </ul>
 <p>IBGP在进行路由传递时，下一跳地址 不变会造成路由不可达这种情况，可以使用一下命令修改</p>
 <p>[AR2-bgp]peer 4.4.4.4 next-hop-local</p>
-<h1 id="Local-Preference"><a href="#Local-Preference" class="headerlink" title="Local_Preference"></a>Local_Preference</h1><p>Local_Preference即本地优先级属性，是公认任意属性，可以用于告诉AS中的路由器，哪条路径是离开本AS的首选路径。<br>Local_Preference属性值越大则BGP路由越优。缺省的Local_Preference值为<strong>100</strong>。<br>该属性<strong>只能被传递给IBGP对等体</strong>，而不能传递给EBGP对等体。<strong>越大越优。</strong></p>
+<h1>Local_Preference</h1>
+<p>Local_Preference即本地优先级属性，是公认任意属性，可以用于告诉AS中的路由器，哪条路径是<strong>离开本AS的首选路径</strong>。<br>
+Local_Preference属性值越大则BGP路由越优。缺省的Local_Preference值为<strong>100</strong>。<br>
+该属性<strong>只能被传递给IBGP对等体</strong>，而不能传递给EBGP对等体。<strong>越大越优。</strong></p>
 <p>注意事项：</p>
-<p>Local_Preference属性只能在IBGP对等体间传递（除非做了策略否则Local_Preference值在IBGP对等体间传递过程中不会丢失），而不能在EBGP对等体间传递，如果在EBGP对等体间收到的路由的路径属性中携带了Local_Preference，则会进行错误处理。<br>但是可以在AS边界路由器上使用Import方向的策略来修改Local_Preference属性值。也就是在收到路由之后，在本地为路由赋予Local_Preference。<br>使用bgp default local-preference命令修改缺省Local_Preference值，该值缺省为100。<br>路由器在向其EBGP对等体发送路由更新时，不能携带Local_Preference属性，但是对方接收路由之后，会在本地为这条路由赋一个缺省Local_Preference值（100），然后再将路由传递给自己的IBGP对等体。<br>本地使用network命令及import-route命令引入的路由， Local_Preference为缺省值100，并能在AS内向其他IBGP对等体传递，传递过程中除非受路由策略影响，否则Local_Preference不变</p>
-<h1 id="Community（团体）"><a href="#Community（团体）" class="headerlink" title="Community（团体）"></a>Community（团体）</h1><p>Community属性为可选过渡属性，是一种路由标记，用于简化路由策略的执行。<br>可以将某些路由分配一个特定的Community属性值，之后就可以基于Community值而不是网络前缀&#x2F;掩码信息来匹配路由并执行相应的策略了。</p>
-<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps9.jpg" alt="img"> </p>
-<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps10.jpg" alt="img"> </p>
-<h1 id="MED"><a href="#MED" class="headerlink" title="MED"></a>MED</h1><p>（Multi-Exit Discriminator，多出口鉴别器）是可选非过渡属性，是一种度量值，用于向外部对等体指出进入本AS的首选路径，即当进入本AS的入口有多个时，AS可以使用MED动态地影响其他AS选择进入的路径。<br>MED属性值<strong>越小则BGP路由越优</strong>。<br>MED主要用于在AS之间影响BGP的选路。MED被传递给EBGP对等体后，对等体在其AS内传递路由时，携带该MED值，但将路由再次传递给其EBGP对等体时，<strong>缺省不会携带MED属性</strong>。0-4294967295</p>
+<p>Local_Preference属性只能在IBGP对等体间传递（除非做了策略否则Local_Preference值在IBGP对等体间传递过程中不会丢失），而不能在EBGP对等体间传递，如果在EBGP对等体间收到的路由的路径属性中携带了Local_Preference，则会进行错误处理。<br>
+但是可以在**AS边界路由器上使用Import方向的策略来修改Local_Preference属性值。**也就是在收到路由之后，在本地为路由赋予Local_Preference。<br>
+使用bgp default local-preference命令修改缺省Local_Preference值，该值缺省为100。<br>
+<strong>路由器在向其EBGP对等体发送路由更新时，不能携带Local_Preference属性，但是对方接收路由之后，会在本地为这条路由赋一个缺省Local_Preference值（100），然后再将路由传递给自己的IBGP对等体。</strong><br>
+本地使用network命令及import-route命令引入的路由， Local_Preference为缺省值100，并能在AS内向其他IBGP对等体传递，传递过程中除非受路由策略影响，否则Local_Preference不变</p>
+<h1>Community（团体）</h1>
+<p>Community属性为可选过渡属性，是一种路由标记，用于简化路由策略的执行。<br>
+可以将某些路由分配一个特定的Community属性值，之后就可以基于Community值而不是网络前缀/掩码信息来匹配路由并执行相应的策略了。</p>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps9.jpg" alt="img"></p>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps10.jpg" alt="img"></p>
+<h1>MED</h1>
+<p>（Multi-Exit Discriminator，多出口鉴别器）是可选非过渡属性，是一种度量值，用于向外部对等体指出进入本AS的首选路径，即当进入本AS的入口有多个时，AS可以使用MED动态地影响其他AS选择进入的路径。<br>
+MED属性值<strong>越小则BGP路由越优</strong>。<br>
+MED主要用于在AS之间影响BGP的选路。MED被传递给EBGP对等体后，对等体在其AS内传递路由时，携带该MED值，但将路由再次传递给其EBGP对等体时，<strong>缺省不会携带MED属性</strong>。0-4294967295</p>
 <p>注意事项：</p>
-<p>缺省情况下，<strong>路由器只比较来自同一相邻AS的BGP路由的MED值</strong>，也就是说如果去往同一个目的地的两条路由来自不同的相邻AS，则不进行MED值的比较。<br>一台BGP路由器将路由通告给EBGP对等体时，是否携带MED属性，需要根据以下条件进行判断（不对EBGP对等体使用策略的情况下）：<br>如果该BGP路由是本地始发（本地通过network或import-route命令引入）的，则缺省携带MED属性发送给EBGP对等体。<br>如果该BGP路由为从BGP对等体学习到，那么该路由传递给EBGP对等体时缺省不会携带MED属性。<br>在IBGP对等体之间传递路由时，MED值会被保留并传递，除非部署了策略，否则MED值在传递过程中不发生改变也不会丢失。<br>如果路由器通过IGP学习到一条路由，并通过network或import-route的方式将路由引入BGP，产生的BGP路由的MED值继承路由在IGP中的metric。</p>
+<p>缺省情况下，<strong>路由器只比较来自同一相邻AS的BGP路由的MED值</strong>，也就是说如果去往同一个目的地的两条路由来自不同的相邻AS，则不进行MED值的比较。<br>
+一台BGP路由器将路由通告给EBGP对等体时，是否携带MED属性，需要根据以下条件进行判断（不对EBGP对等体使用策略的情况下）：<br>
+如果该BGP路由是本地始发（本地通过network或import-route命令引入）的，则缺省携带MED属性发送给EBGP对等体。<br>
+如果该BGP路由为从BGP对等体学习到，那么该路由传递给EBGP对等体时缺省不会携带MED属性。<br>
+在IBGP对等体之间传递路由时，MED值会被保留并传递，除非部署了策略，否则MED值在传递过程中不发生改变也不会丢失。<br>
+如果路由器通过IGP学习到一条路由，并通过network或import-route的方式将路由引入BGP，产生的BGP路由的MED值继承路由在IGP中的metric。</p>
 <p>可以使用default med命令修改缺省的MED值，default med命令只对本设备上用import-route命令引入的路由和BGP的聚合路由生效。</p>
-<h1 id="Preferred-Value（协议首选值）"><a href="#Preferred-Value（协议首选值）" class="headerlink" title="Preferred-Value（协议首选值）"></a>Preferred-Value（协议首选值）</h1><p>是华为设备的特有属性，该属性仅在本地有效。当BGP路由表中存在到相同目的地的路由时，将优先选择Preferred-Value值高的路由。<br>取值范围：0~65535；该值越大，则路由越优先。<br>Preferred-Value只能在路由器本地配置，而且只影响本设备的路由优选。该属性不会传递给任何BGP对等体。</p>
-<h1 id="路由反射器"><a href="#路由反射器" class="headerlink" title="路由反射器"></a>路由反射器</h1><p>作用：解决IBGP全互联的问题</p>
-<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps1-1715409454233-11.jpg" alt="img"> </p>
+<h1>Preferred-Value（协议首选值）</h1>
+<p>是华为设备的特有属性，该属性仅在本地有效。当BGP路由表中存在到相同目的地的路由时，将优先选择Preferred-Value值高的路由。<br>
+取值范围：0~65535；该值越大，则路由越优先。<br>
+Preferred-Value只能在路由器本地配置，而且只影响本设备的路由优选。该属性不会传递给任何BGP对等体。</p>
+<h1>路由反射器</h1>
+<p>作用：解决IBGP全互联的问题</p>
+<p><img src="/2024/05/11/BGP%E6%80%BB%E7%BB%93/wps1-1715409454233-11.jpg" alt="img"></p>
 <p>1、RR从EBGP学习到的，会发送给client和非client</p>
 <p>2、RR从非client学习到的路由，会反射给自己的client，但是不会给非client</p>
 <p>3、RR从client学习到的路由，会反射非自己的非client和client</p>
 <p>非非不传</p>
-<p>路由反射器中的防环：<strong>Originator_ID，Cluster_List</strong><br>RR将一条BGP路由进行反射时会在反射出去的路由中增加Originator_ID，其值为本地AS中通告该路由的BGP路由器Router ID。<br>若AS内存在多个RR，则Originator_ID属性由第一个RR创建，并且不被后续的RR（若有）所更改。<br>当BGP路由器收到一条携带Originator_ID属性的IBGP路由，并且Originator_ID属性值与自身的Router ID相同，则它会忽略关于该条路由的更新。</p>
-<p>路由反射簇包括反射器RR及其Client。一个AS内允许存在多个路由反射簇（如下图）。<br>每一个簇都有唯一的簇ID（Cluster_ID，缺省时为RR的BGP Router ID ）。<br>当一条路由被反射器反射后，该RR（该簇）的Cluster_ID就会被添加至路由的Cluster_list属性中。<br>当RR收到一条携带Cluster_list属性的BGP路由，且该属性值中包含该簇的Cluster_ID时，RR认为该条路由存在环路，因此将忽略关于该条路由的更新。</p>
+<p>路由反射器中的防环：<strong>Originator_ID，Cluster_List</strong><br>
+RR将一条BGP路由进行反射时会在反射出去的路由中增加Originator_ID，其值为本地AS中通告该路由的BGP路由器Router ID。<br>
+若AS内存在多个RR，则Originator_ID属性由第一个RR创建，并且不被后续的RR（若有）所更改。<br>
+当BGP路由器收到一条携带Originator_ID属性的IBGP路由，并且Originator_ID属性值与自身的Router ID相同，则它会忽略关于该条路由的更新。</p>
+<p>路由反射簇包括反射器RR及其Client。一个AS内允许存在多个路由反射簇（如下图）。<br>
+每一个簇都有唯一的簇ID（Cluster_ID，缺省时为RR的BGP Router ID ）。<br>
+当一条路由被反射器反射后，该RR（该簇）的Cluster_ID就会被添加至路由的Cluster_list属性中。<br>
+当RR收到一条携带Cluster_list属性的BGP路由，且该属性值中包含该簇的Cluster_ID时，RR认为该条路由存在环路，因此将忽略关于该条路由的更新。</p>
 <p>配置：</p>
 <p>在RR路由器上配置：</p>
 <p>Bgp 200</p>
-<p>   peer 6.6.6.6 reflect-client  –谁是client，就peer谁</p>
-<p>缺省情况下，每个路由反射器使用自己的Router ID作为集群ID。<br>[Huawei-bgp] reflector cluster-id  20.2.2.2</p>
-<h1 id="路由优选原则："><a href="#路由优选原则：" class="headerlink" title="路由优选原则："></a>路由优选原则：</h1><p>P   L  L  A  O  M  E  N 漂亮老男人</p>
+<p>peer 6.6.6.6 reflect-client  --谁是client，就peer谁</p>
+<p>缺省情况下，每个路由反射器使用自己的Router ID作为集群ID。<br>
+[Huawei-bgp] reflector cluster-id  20.2.2.2</p>
+<h1>路由优选原则：</h1>
+<p>P   L  L  A  O  M  E  N 漂亮老男人</p>
 <p>p—Preference Value (越大越优，仅限路由器本地)</p>
 <p>L— Local Preference，本地优先级 (越大越优，同一AS内的路由器）</p>
 <p>L— 手动聚合-&gt;自动聚合-&gt;network-&gt;import，为本地始发</p>
