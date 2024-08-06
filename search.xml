@@ -3824,6 +3824,95 @@
       </tags>
   </entry>
   <entry>
+    <title>堆叠</title>
+    <url>/2024/07/29/%E5%A0%86%E5%8F%A0/</url>
+    <content><![CDATA[<h1 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h1><p>堆叠（iStack），将多台支持堆叠特性的交换机通过堆叠线缆连接在一起，从逻辑上虚拟成一台交换设备，作为一个整体参与数据转发。</p>
+<p>集群（Cluster Switch System，CSS），将两台支持集群特性的交换机设备组合在一起，从逻辑上虚拟成一台交换设备。</p>
+<p>集群只支持两台设备，一般高端框式交换机支持CSS、盒式设备支持iStack。通过使用堆叠、集群技术结合链路聚合技术可以简单构建高可靠、无环的园区网络。</p>
+<img src="/2024/07/29/%E5%A0%86%E5%8F%A0/QQ截图20240729221559.png" alt="QQ截图20240729221559" style="zoom:67%;">
+
+<p>一般接入、汇聚层盒式交换机采用堆叠技术，汇聚、核心层交换机采用集群技术。</p>
+<p>在逻辑交换机之间使用链路聚合技术，无需部署STP、VRRP实现高可靠性。</p>
+<p>实现高可靠性的同时设备之间的链路可以同时传输流量，链路利用率得以提升。</p>
+<h2 id="角色"><a href="#角色" class="headerlink" title="角色"></a>角色</h2><ul>
+<li><p>主交换机（Master）</p>
+<p>主交换机负责管理整个堆叠。堆叠系统中只有一台主交换机。</p>
+</li>
+<li><p>备交换机（Standby）</p>
+<p>备交换机是主交换机的备份交换机。堆叠系统中只有一台备交换机。当主交换机故障时，备交换机会接替原主交换机的所有业务。</p>
+</li>
+<li><p>从交换机（Slave）</p>
+<p>从交换机用于业务转发，堆叠系统中可以有多台从交换机。从交换机数量越多，堆叠系统的转发带宽越大。</p>
+<p>除主交换机和备交换机外，堆叠中其他所有的成员交换机都是从交换机。当备交换机不可用时，从交换机承担备交换机的角色。</p>
+</li>
+</ul>
+<h2 id="堆叠ID"><a href="#堆叠ID" class="headerlink" title="堆叠ID"></a>堆叠ID</h2><p>堆叠ID用来标识堆叠成员交换机，是成员交换机的槽位号，取值范围是<strong>0～8</strong>，默认是0。每个堆叠成员交换机在堆叠系统中具有唯一的堆叠ID。</p>
+<p>当堆叠系统有新成员加入时，如果新成员与已有成员堆叠ID冲突，则堆叠主交换机从0～最大的堆叠ID进行遍历，找到第一个空闲的ID分配给该新成员。</p>
+<p>在建立堆叠时，建议提前规划好设备的堆叠ID。</p>
+<img src="/2024/07/29/%E5%A0%86%E5%8F%A0/QQ截图20240729222232.png" alt="QQ截图20240729222232" style="zoom:67%;">
+
+<p>当堆叠成员从堆叠系统中移除时，会继续使用堆叠系统使用的堆叠ID，可以执行命令<strong>stack slot</strong> <em>slot-id</em> <strong>renumber</strong> <strong>0</strong>手动恢复堆叠ID为缺省值0。如果不手动恢复堆叠ID，该交换机再次加入其它堆叠系统，和新堆叠系统的堆叠ID冲突时，才会被重新分配新的堆叠ID。</p>
+<h2 id="堆叠建立"><a href="#堆叠建立" class="headerlink" title="堆叠建立"></a>堆叠建立</h2><p><strong>堆叠优先级</strong>：</p>
+<p>主要用于角色选举过程中确定成员交换机的角色，<strong>优先级值越大表示优先级越高</strong>，优先级越高当选为主交换机的可能性越大。</p>
+<p>堆叠主交换机的选举过程是：先比较交换机启动时间，再比较堆叠优先级。当两台交换机启动时间相差20秒以内时，则认为交换机启动时间相同，此时堆叠优先级大的交换机将被选举为主交换机。所以建议将优先级最大值分配给希望成为主交换机的设备。</p>
+<p><strong>堆叠优先级取值范围为1～255，缺省优先级值为100</strong>，可以通过<strong>display stack</strong>查看，通过命令<strong>stack slot</strong> <em>slot-id</em> <strong>priority</strong> <em>priority</em>修改。修改后的堆叠优先级不影响当前主交换机。只有堆叠系统复位重新选举时，修改后的堆叠优先级才生效。</p>
+<p>堆叠优先级相同时，<strong>MAC地址小的交</strong>换机优先竞争为主交换机</p>
+<ol>
+<li>物理连接：根据网络需求，选择适当的连接方式和连接拓扑，组建堆叠网络。</li>
+<li>主交换机选举：成员交换机之间相互发送堆叠竞争报文，并根据选举原则，选出堆叠系统主交换机。</li>
+<li>堆叠ID分配和备交换机选举：主交换机收集所有成员交换机的拓扑信息，向所有成员交换机分配堆叠ID，之后选出堆叠系统备交换机。</li>
+<li>软件版本和配置文件同步：主交换机将整个堆叠系统的拓扑信息同步给所有成员交换机，成员交换机同步主交换机的系统软件和配置文件，之后进入稳定运行状态。</li>
+</ol>
+<p>堆叠主交换机选举超时时间为20s，堆叠成员交换机上电或重启时，由于不同成员交换机所需的启动时间可能差异比较大，因此不是所有成员交换机都有机会参与主交换机的第一次选举。20s后启动的交换机加入堆叠系统时，会重新进行主交换机的竞争。原主交换机竞争失败时会重启然后再以非主交换机加入堆叠，</p>
+<p><img src="/2024/07/29/%E5%A0%86%E5%8F%A0/QQ%E6%88%AA%E5%9B%BE20240729224300.png" alt="QQ截图20240729224300"></p>
+<h2 id="堆叠加入"><a href="#堆叠加入" class="headerlink" title="堆叠加入"></a>堆叠加入</h2><p>（不带电）</p>
+<p>新加入的交换机会选举为从交换机，堆叠系统中原有主备从角色不变。新加入的是从</p>
+<h2 id="堆叠合并"><a href="#堆叠合并" class="headerlink" title="堆叠合并"></a>堆叠合并</h2><p>堆叠合并是指稳定运行的两个堆叠系统合并成一个新的堆叠系统。</p>
+<p>两个堆叠系统的主交换机通过竞争，选举出一个更优的作为新堆叠系统的主交换机。</p>
+<p>竞争成功的主交换机所在的堆叠系统将<strong>保持原有主备从角色</strong>和配置不变，业务也不会受到影响；而另外一个堆叠系统的所有成员交换机将重新启动，<strong>以从交换机的角色加入到新堆叠系统</strong>，其堆叠ID将由新主交换机重新分配，并将同步新主交换机的配置文件和系统软件，该堆叠系统的原有业务也将中断。</p>
+<p>堆叠系统合并流程与堆叠成员加入流程类似，堆叠合并时主交换机的选举规则为：比较运行时间，运行时间较早的堆叠系统竞争为主；如果两个堆叠系统的运行时间一样，其主交换机的选举规则与堆叠建立时一样。</p>
+<h2 id="堆叠分裂与多主检测"><a href="#堆叠分裂与多主检测" class="headerlink" title="堆叠分裂与多主检测"></a>堆叠分裂与多主检测</h2><p>堆叠分裂后，原主备交换机被分裂到同一个堆叠系统中：原主交换机会重新计算堆叠拓扑，将移出的成员交换机的拓扑信息删除，并将新的拓扑信息同步给其他成员交换机；而移出的成员交换机检测到堆叠协议报文超时，将自行复位，重新进行选举。</p>
+<p>堆叠分裂后，原主备交换机被分裂到不同的堆叠系统中：原主交换机所在堆叠系统重新指定备交换机，重新计算拓扑信息并同步给其他成员交换机；原备交换机所在堆叠系统将发生备升主，原备交换机升级为主交换机，重新计算堆叠拓扑并同步到其他成员交换机，并指定新的备交换机。</p>
+<p><strong>多主检测MAD</strong>（Multi-Active Detection），是一种检测和处理堆叠分裂的协议。链路故障导致堆叠系统分裂后，MAD可以实现堆叠分裂的检测、冲突处理和故障恢复，降低堆叠分裂对业务的影响。</p>
+<p><strong>直连检测方式</strong></p>
+<p>直连检测方式是指堆叠成员交换机间通过普通线缆直连的专用链路进行多主检测。在直连检测方式中，堆叠系统正常运行时，不发送MAD报文；堆叠系统分裂后，分裂后的两台交换机以<strong>1s为</strong>周期通过检测链路发送MAD报文进行多主冲突处理。</p>
+<ul>
+<li>通过中间设备直连：堆叠系统的所有成员交换机之间至少有一条检测链路与中间设备相连。</li>
+<li>Full-mesh方式直连：堆叠系统的各成员交换机之间通过检测链路建立Full-mesh全连接，即每两台成员交换机之间至少有一条检测链路。</li>
+</ul>
+<img src="/2024/07/29/%E5%A0%86%E5%8F%A0/QQ截图20240729225105.png" alt="QQ截图20240729225105" style="zoom:67%;">
+
+<img src="/2024/07/29/%E5%A0%86%E5%8F%A0/QQ截图20240729225113.png" alt="QQ截图20240729225113" style="zoom:67%;">
+
+<p><strong>代理检测方式</strong></p>
+<p>代理检测方式是在堆叠系统Eth-Trunk上启用代理检测，在代理设备上启用MAD检测功能。此种检测方式要求堆叠系统中的所有成员交换机都与代理设备连接，并将这些链路加入同一个Eth-Trunk内。与直连检测方式相比，代理检测方式无需占用额外的接口，Eth-Trunk接口可同时运行MAD代理检测和其他业务。</p>
+<p>在代理检测方式中，堆叠系统正常运行时，堆叠成员交换机以30s为周期通过检测链路发送MAD报文。堆叠成员交换机对在正常工作状态下收到的MAD报文不做任何处理；堆叠分裂后，分裂后的两台交换机以1s为周期通过检测链路发送MAD报文进行多主冲突处理。</p>
+<img src="/2024/07/29/%E5%A0%86%E5%8F%A0/QQ截图20240729225336.png" alt="QQ截图20240729225336" style="zoom:67%;">
+
+<img src="/2024/07/29/%E5%A0%86%E5%8F%A0/QQ截图20240729225342.png" alt="QQ截图20240729225342" style="zoom:67%;">
+
+<p>堆叠分裂后，MAD冲突处理机制会使分裂后的堆叠系统处于Detect状态或Recovery状态。Detect状态表示堆叠正常工作状态，Recovery状态表示堆叠禁用状态。</p>
+<p>MAD冲突处理机制如下：MAD分裂检测机制会检测到网络中存在多个处于Detect状态的堆叠系统，这些堆叠系统之间相互竞争，竞争成功的堆叠系统保持Detect状态，竞争失败的堆叠系统会转入Recovery状态；并且在Recovery状态堆叠系统的所有成员交换机上，关闭除保留端口以外的其它所有物理端口包括管理口，以保证该堆叠系统不再转发业务报文。</p>
+<ol>
+<li>先比较启动时间，启动完成时间早的堆叠系统成为Detect状态。启动完成时间差在20秒内则认为堆叠的启动完成时间相同。</li>
+<li>启动完成时间相同时，比较堆叠中主交换机的优先级，优先级高的堆叠系统成为Detect状态。</li>
+<li>优先级相同时，比较堆叠系统的MAC，MAC小的堆叠系统成为Detect状态。</li>
+</ol>
+<h2 id="主备倒换"><a href="#主备倒换" class="headerlink" title="主备倒换"></a>主备倒换</h2><ol>
+<li>原来的备交换机升为主交换机。</li>
+<li>新主交换机重新指定备交换机。</li>
+<li>原来的主交换机重启后重新加入堆叠系统，并被选举为从交换机。</li>
+</ol>
+<h2 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h2><p><img src="/2024/07/29/%E5%A0%86%E5%8F%A0/QQ%E6%88%AA%E5%9B%BE20240729225604.png" alt="QQ截图20240729225604"></p>
+]]></content>
+      <categories>
+        <category>基础知识</category>
+      </categories>
+      <tags>
+        <tag>堆叠</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>大型WLAN技术(1)</title>
     <url>/2024/05/26/%E5%A4%A7%E5%9E%8BWLAN%E6%8A%80%E6%9C%AF(1)/</url>
     <content><![CDATA[<h1 id="VLAN-Pool"><a href="#VLAN-Pool" class="headerlink" title="VLAN Pool"></a>VLAN Pool</h1><p>通过vlan pool把接入的用户分配到不同的vlan，减少广播域，减少网络中的广播报文，提升网络性能。</p>
@@ -4526,386 +4615,6 @@
       </tags>
   </entry>
   <entry>
-    <title>路由策略</title>
-    <url>/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/</url>
-    <content><![CDATA[<h1 id="ACL"><a href="#ACL" class="headerlink" title="ACL"></a>ACL</h1><p>访问控制列表ACL（Access Control List）是由一条或多条规则组成的集合。所谓规则，是指描述报文匹配条件的判断语句，这些条件可以是报文的源地址、目的地址、端口号等。</p>
-<p>ACL本质上是一种报文过滤器，规则是过滤器的滤芯。设备基于这些规则进行报文匹配，可以过滤出特定的报文，并根据应用ACL的业务模块的处理策略来允许或阻止该报文通过。</p>
-<p>ACL可以实现对网络中报文流的精确识别和控制，达到控制网络访问行为、防止网络攻击和提高网络带宽利用率的目的，从而切实保障网络环境的安全性和网络服务质量的可靠性。</p>
-<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722195623.png" alt="QQ截图20240722195623" style="zoom:67%;">
-
-<h2 id="ACL匹配机制"><a href="#ACL匹配机制" class="headerlink" title="ACL匹配机制"></a>ACL匹配机制</h2><p>设备将报文与ACL规则进行匹配时，遵循“一旦命中即停止匹配”的机制，当找到一条符合匹配条件的规则时，结束查找。</p>
-<p>报文与ACL规则匹配后，会产生两种结果：“命中规则”和“未命中规则”。</p>
-<ul>
-<li>命中规则：指存在ACL，且在ACL中查找到了符合匹配条件的规则</li>
-<li>未命中规则：指不存在ACL，或ACL中无规则，再或者在ACL中遍历了所有规则都没有找到符合匹配条件的规则。</li>
-</ul>
-<p>报文最终是被允许通过还是拒绝通过，实际是ACL规则中的指定动作和应用ACL的各个业务模块来共同决定。不同的业务模块，对命中和未命中规则报文的处理方式也各不相同。</p>
-<p>系统按照ACL规则编号从小到大的顺序进行报文匹配，规则编号越小越容易被匹配。</p>
-<ul>
-<li>如果配置规则时指定了规则编号，则规则编号越小，规则插入位置越靠前，该规则越先被匹配。</li>
-<li>如果配置规则时未指定规则编号，则由系统自动为其分配一个编号。该编号是一个大于当前ACL内最大规则编号且是步长整数倍的最小整数，因此该规则会被最后匹配。</li>
-</ul>
-<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722195941.png" alt="QQ截图20240722195941" style="zoom:67%;">
-
-<h1 id="IP前缀列表"><a href="#IP前缀列表" class="headerlink" title="IP前缀列表"></a>IP前缀列表</h1><p>IP前缀列表（IP-Prefix List）是将路由条目的网络地址、掩码长度作为匹配条件的过滤器，可在各路由协议发布和接收路由时使用。</p>
-<p>不同于ACL，IP-Prefix List能够同时匹配IP地址前缀长度以及掩码长度，增强了匹配的精确度。</p>
-<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722200123.png" alt="QQ截图20240722200123" style="zoom:67%;">
-
-<p>匹配机制和ACL一样</p>
-<h1 id="Filter-Policy"><a href="#Filter-Policy" class="headerlink" title="Filter-Policy"></a>Filter-Policy</h1><p>Filter-Policy（过滤-策略）是一个很常用的路由信息过滤工具，能够对接收、发布、引入的路由进行过滤，可应用于IS-IS、OSPF、BGP等协议。</p>
-<p>filter-policy在距离矢量路由协议中的应用</p>
-<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722204905.png" alt="QQ截图20240722204905" style="zoom:67%;">
-
-<p>filter-policy在链路状态路由协议中的应用</p>
-<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722205009.png" alt="QQ截图20240722205009" style="zoom:67%;">
-
-<p>在链路状态路由协议中，各路由设备之间传递的是LSA信息，然后设备根据LSA汇总成的LSDB信息计算出路由表。以OSPF为例，filter-policy生效规则如下：</p>
-<ul>
-<li><p><strong>filter-policy import</strong>命令实际上是对OSPF计算出来的路由进行过滤，不是对发布和接收的LSA进行过滤。filter-policy import命令对接收的路由设置过滤策略，只有通过过滤策略的路由才被添加到路由表中，没有通过过滤策略的路由不会被添加进路由表，<strong>但不影响对外发布出去。</strong>（只影响本地全局路由表）</p>
-</li>
-<li><p><strong>filter-policy export</strong>命令用来对引入的路由在发布时进行过滤，只将满足条件的外部路由转换为Type5 LSA（AS-external-LSA）并发布出去。这样可以在引入外部路由时进行特定的过滤，防止形成路由环路。</p>
-<p>OSPF通过命令import-route引入外部路由后，为了避免路由环路的产生，通过filter-policy export命令对引入的路由在发布时进行过滤，只将满足条件的外部路由转换为Type5 LSA（AS-external-LSA）并发布出去。（影响后边的路由器的ospf路由表和全局路由表）</p>
-</li>
-</ul>
-<p>import示例：</p>
-<p>（1）通过filter-policy对OSPF接收的路由过滤（区域内）示例</p>
-<p>三台交换机同属于OSPF Area 0区域，SwitchA发布测试网段10.1.1.0&#x2F;24，要求在SwitchB上部署<strong>filter-policy import</strong>，使得SwitchB的路由表中不允许出现10.1.1.0&#x2F;24这条路由。</p>
-<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722211024.png" alt="QQ截图20240722211024" style="zoom:67%;">
-
-<p><strong>配置方法</strong></p>
-<ol>
-<li><p>在SwitchB上定义一个地址前缀列表，“抓取”符合条件的路由。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[SwitchB] ip ip-prefix huawei index 10 deny 10.1.1.0 24           //拒绝这条</span><br><span class="line">[SwitchB] ip ip-prefix huawei index 20 permit 0.0.0.0 0 less-equal 32     //允许所有</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>在SwitchB的OSPF视图中，部署filter-policy import。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[SwitchB] ospf</span><br><span class="line">[SwitchB-ospf-1] filter-policy ip-prefix huawei import</span><br></pre></td></tr></table></figure></li>
-</ol>
-<p><strong>结果验证</strong></p>
-<p>做完上述配置以后，查看SwitchB和SwitchC的路由表如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[SwitchB] display ip routing-table</span><br><span class="line">Route Flags: R - relay, D - download to fib</span><br><span class="line">-----------------------------------------------------------------------------</span><br><span class="line">Routing Tables: Public</span><br><span class="line">         Destinations : 6        Routes : 6        </span><br><span class="line"></span><br><span class="line">Destination/Mask    Proto   Pre  Cost      Flags NextHop         Interface</span><br><span class="line"></span><br><span class="line">      127.0.0.0/8   Direct  0    0           D   127.0.0.1       InLoopBack0</span><br><span class="line">      127.0.0.1/32  Direct  0    0           D   127.0.0.1       InLoopBack0</span><br><span class="line">   192.168.12.0/24  Direct  0    0           D   192.168.12.2    Vlanif12</span><br><span class="line">   192.168.12.2/32  Direct  0    0           D   127.0.0.1       Vlanif12</span><br><span class="line">   192.168.23.0/24  Direct  0    0           D   192.168.23.1    Vlanif23</span><br><span class="line">   192.168.23.1/32  Direct  0    0           D   127.0.0.1       Vlanif23</span><br><span class="line">（B的ip路由表中被过滤，但ospf路由表在仍然存在）</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">[SwitchC] display ip routing-table</span><br><span class="line">Route Flags: R - relay, D - download to fib</span><br><span class="line">------------------------------------------------------------------------------</span><br><span class="line">Routing Tables: Public</span><br><span class="line">         Destinations : 6        Routes : 6        </span><br><span class="line"></span><br><span class="line">Destination/Mask    Proto   Pre  Cost      Flags NextHop         Interface</span><br><span class="line"></span><br><span class="line">       10.1.1.0/24  OSPF    10   3           D   192.168.23.1    Vlanif23</span><br><span class="line">      127.0.0.0/8   Direct  0    0           D   127.0.0.1       InLoopBack0</span><br><span class="line">      127.0.0.1/32  Direct  0    0           D   127.0.0.1       InLoopBack0</span><br><span class="line">   192.168.12.0/24  OSPF    10   2           D   192.168.23.1    Vlanif23</span><br><span class="line">   192.168.23.0/24  Direct  0    0           D   192.168.23.2    Vlanif23</span><br><span class="line">   192.168.23.2/32  Direct  0    0           D   127.0.0.1       Vlanif23</span><br></pre></td></tr></table></figure>
-
-<p>通过SwitchB和SwitchC的路由表可以看到，虽然在SwitchB上10.1.1.0&#x2F;24这条路由已经被过滤掉，但是LSA信息会继续传递给SwitchC，所以SwitchC的路由表中继续存在10.1.1.0&#x2F;24这条路由。这样的结果也验证了一开始在注意事项中给出的结论：在链路状态路由协议中，filter-policy只能过滤路由信息，不能过滤LSA信息。</p>
-<p>同时SwitchB和SwitchC的LSDB中仍然存在描述10.1.1.0&#x2F;24这条路由的LSA信息，此处可以通过查看SwitchB和SwitchC的LSA信息进行验证。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[SwitchB] display ospf lsdb router</span><br><span class="line"></span><br><span class="line">   OSPF Process 1 with Router ID 10.10.10.2</span><br><span class="line">              Area: 0.0.0.0</span><br><span class="line">      Link State Database </span><br><span class="line">………</span><br><span class="line"></span><br><span class="line">  Type      : Router</span><br><span class="line">  Ls id     : 10.10.10.1</span><br><span class="line">  Adv rtr   : 10.10.10.1  </span><br><span class="line">  Ls age    : 139 </span><br><span class="line">  Len       : 48 </span><br><span class="line">  Options   :  E  </span><br><span class="line">  seq#      : 80000005 </span><br><span class="line">  chksum    : 0x41c4</span><br><span class="line">  Link count: 2</span><br><span class="line">   * Link ID: 10.1.1.0     </span><br><span class="line">     Data   : 255.255.255.0 </span><br><span class="line">     Link Type: StubNet      </span><br><span class="line">     Metric : 1 </span><br><span class="line">     Priority : Low</span><br><span class="line">   * Link ID: 192.168.12.2 </span><br><span class="line">     Data   : 192.168.12.1 </span><br><span class="line">     Link Type: TransNet     </span><br><span class="line">     Metric : 1</span><br><span class="line">[SwitchC] display ospf lsdb router</span><br><span class="line"></span><br><span class="line">   OSPF Process 1 with Router ID 10.10.10.3</span><br><span class="line">             Area: 0.0.0.0</span><br><span class="line">     Link State Database </span><br><span class="line">…………</span><br><span class="line"></span><br><span class="line">  Type      : Router</span><br><span class="line">  Ls id     : 10.10.10.1</span><br><span class="line">  Adv rtr   : 10.10.10.1  </span><br><span class="line">  Ls age    : 81 </span><br><span class="line">  Len       : 48 </span><br><span class="line">  Options   :  E  </span><br><span class="line">  seq#      : 80000005 </span><br><span class="line">  chksum    : 0x41c4</span><br><span class="line">  Link count: 2</span><br><span class="line">   * Link ID: 10.1.1.0     </span><br><span class="line">     Data   : 255.255.255.0 </span><br><span class="line">     Link Type: StubNet      </span><br><span class="line">     Metric : 1 </span><br><span class="line">     Priority : Low</span><br><span class="line">   * Link ID: 192.168.12.2 </span><br><span class="line">     Data   : 192.168.12.1 </span><br><span class="line">     Link Type: TransNet     </span><br><span class="line">     Metric : 1</span><br></pre></td></tr></table></figure>
-
-<p>可以看到SwitchB和SwitchC的LSDB中仍然存在描述10.1.1.0&#x2F;24这条路由的LSA信息。</p>
-<p>（2）通过filter-policy对OSPF接收的路由过滤（区域间）</p>
-<p>相对于上一个场景，这个场景的区别之处是划分了两个不同的区域，SwitchB和SwitchC之间传递的是Type3 LSA，这个Type3 LSA是SwitchB上根据区域间路由生成的。配置方法跟上一个场景一样，此处不再赘述。</p>
-<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722211339.png" alt="QQ截图20240722211339" style="zoom:67%;">
-
-<p>在部署路由过滤策略之前，SwitchB和SwitchC的路由表中都有10.1.1.0&#x2F;24这条路由。</p>
-<p>在SwitchB上部署filter-policy import以后，查看SwitchB和SwitchC的路由表，结果如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[SwitchB] display  ip routing-table</span><br><span class="line">Route Flags: R - relay, D - download to fib</span><br><span class="line">-----------------------------------------------------------------------------</span><br><span class="line">Routing Tables: Public</span><br><span class="line">         Destinations : 6        Routes : 6        </span><br><span class="line"></span><br><span class="line">Destination/Mask    Proto   Pre  Cost      Flags NextHop         Interface</span><br><span class="line"></span><br><span class="line">      127.0.0.0/8   Direct  0    0           D   127.0.0.1       InLoopBack0</span><br><span class="line">      127.0.0.1/32  Direct  0    0           D   127.0.0.1       InLoopBack0</span><br><span class="line">   192.168.12.0/24  Direct  0    0           D   192.168.12.2    Vlanif12</span><br><span class="line">   192.168.12.2/32  Direct  0    0           D   127.0.0.1       Vlanif12</span><br><span class="line">   192.168.23.0/24  Direct  0    0           D   192.168.23.1    Vlanif23</span><br><span class="line">   192.168.23.1/32  Direct  0    0           D   127.0.0.1       Vlanif23</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">[SwitchC] display ip routing-table</span><br><span class="line">Route Flags: R - relay, D - download to fib</span><br><span class="line">------------------------------------------------------------------------------</span><br><span class="line">Routing Tables: Public</span><br><span class="line">         Destinations : 5        Routes : 5        </span><br><span class="line"></span><br><span class="line">Destination/Mask    Proto   Pre  Cost      Flags NextHop         Interface</span><br><span class="line"></span><br><span class="line">      127.0.0.0/8   Direct  0    0           D   127.0.0.1       InLoopBack0</span><br><span class="line">      127.0.0.1/32  Direct  0    0           D   127.0.0.1       InLoopBack0</span><br><span class="line">   192.168.12.0/24  OSPF    10   2           D   192.168.23.1    Vlanif23</span><br><span class="line">   192.168.23.0/24  Direct  0    0           D   192.168.23.2    Vlanif23</span><br><span class="line">   192.168.23.2/32  Direct  0    0           D   127.0.0.1       Vlanif23</span><br></pre></td></tr></table></figure>
-
-<p>由于现在划分不同的区域，SwitchC上的10.1.1.0&#x2F;24这条路由是由SwitchB根据自身学习的路由产生的Type3-LSA描述的，而SwitchB上的这条路由被过滤掉了，因此不能够再产生描述区域间路由的这个Type3-LSA，因此SwitchC上不会再学习到10.1.1.0&#x2F;24这条路由。</p>
-<p>export示例：</p>
-<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722213321.png" alt="QQ截图20240722213321" style="zoom:67%;">
-
-<p>在R1上创建四个环回口，IP地址分别为192.168.1.0&#x2F;24，192.168.2.0&#x2F;24、192.168.3.0&#x2F;24、192.168.4.0&#x2F;24，并且全部宣告进OSPF。</p>
-<p>引入直连，但是要保证R2和R3上只能收到192.168.1.0这条路由</p>
-<p>通过Filter-policy让R2和R3只能收到192.168.1.0这条路由</p>
-<p>[R1]ip ip-prefix ly permit 192.168.1.0 24  </p>
-<p>[R1]ospf</p>
-<p>[R1-ospf-1]filter-policy ip-prefix ly export</p>
-<p>【技术要点】</p>
-<ul>
-<li>OSPF通过命令import-route引入外部路由后，为了避免路由环路的产生，通过filter-policy export命令对引入的路由在发布时进行过滤，只将满足条件的外部路由转换为Type5 LSA（AS-external-LSA）并发布出去。</li>
-<li>当网络中同时部署了IS-IS和其他路由协议时，如果已经在边界设备上引入其他路由协议的路由，缺省情况下，该设备将把引入的全部外部路由发布给IS-IS邻居。如果只希望将引入的部分外部路由发布给邻居，可以使用****filter-policy export****命令实现。</li>
-</ul>
-<h1 id="Route-Policy"><a href="#Route-Policy" class="headerlink" title="Route-Policy"></a>Route-Policy</h1><p>Route-Policy是一个策略工具，用于过滤路由信息，以及为过滤后的路由信息设置路由属性。</p>
-<p>一个Route-Policy由一个或多个节点（Node）构成，每个节点都可以是一系列条件语句（匹配条件）以及执行语句（执行动作）的集合，这些集合按照编号从小到大的顺序排列。</p>
-<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722213733.png" alt="QQ截图20240722213733" style="zoom:67%;">
-
-
-
-<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722213925.png" alt="QQ截图20240722213925" style="zoom:67%;">
-
-<p><img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ%E6%88%AA%E5%9B%BE20240722214213.png" alt="QQ截图20240722214213"></p>
-<p>示例：</p>
-<p><img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ%E6%88%AA%E5%9B%BE20240722214325.png" alt="QQ截图20240722214325"></p>
-<p><img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ%E6%88%AA%E5%9B%BE20240722214336.png" alt="QQ截图20240722214336"></p>
-<h2 id="双点双向路由重发布"><a href="#双点双向路由重发布" class="headerlink" title="双点双向路由重发布"></a>双点双向路由重发布</h2><img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722215733.png" alt="QQ截图20240722215733" style="zoom:67%;">
-
-<p>解决次优路径：</p>
-<ol>
-<li></li>
-</ol>
-<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722221125.png" alt="QQ截图20240722221125" style="zoom:67%;">
-
-<ol start="2">
-<li></li>
-</ol>
-<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722221200.png" alt="QQ截图20240722221200" style="zoom:67%;">
-
-<p>环路问题：</p>
-<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722221321.png" alt="QQ截图20240722221321" style="zoom:67%;">
-
-<p>解决环路：</p>
-<ol>
-<li></li>
-</ol>
-<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722221447.png" alt="QQ截图20240722221447" style="zoom:67%;">
-
-<ol start="2">
-<li></li>
-</ol>
-<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722221758.png" alt="QQ截图20240722221758" style="zoom:67%;">
-
-<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722221815.png" alt="QQ截图20240722221815" style="zoom:67%;">
-
-<h1 id="策略路由"><a href="#策略路由" class="headerlink" title="策略路由"></a>策略路由</h1><p>若设备部署了PBR，则被匹配的报文优先根据PBR的策略进行转发，即PBR策略的优先级高于传统路由表。</p>
-<p>策略路由PBR（Policy-Based Routing）是一种依据用户制定的策略进行路由选择的机制，分为<strong>本地策略路由</strong>、<strong>接口策略路由</strong>和<strong>智能策略路由</strong>SPR（Smart Policy Routing）。</p>
-<p>策略路由与路由策略（Routing Policy）存在以下不同：</p>
-<ul>
-<li>策略路由的操作对象是数据包，在路由表已经产生的情况下，不按照路由表进行转发，而是根据需要，依照某种策略改变数据包转发路径。</li>
-<li>路由策略的操作对象是路由信息。路由策略主要实现了路由过滤和路由属性设置等功能，它通过改变路由属性（包括可达性）来改变网络流量所经过的路径。</li>
-</ul>
-<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722222211.png" alt="QQ截图20240722222211" style="zoom:67%;">
-
-<p>语法：</p>
-<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722222345.png" alt="QQ截图20240722222345" style="zoom:67%;">
-
-
-
-<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722222609.png" alt="QQ截图20240722222609" style="zoom:67%;">
-
-
-
-<h1 id="MQC"><a href="#MQC" class="headerlink" title="MQC"></a>MQC</h1><p>MQC（Modular QoS Command-Line Interface，模块化QoS命令行）是指通过将具有某类共同特征的数据流划分为一类，并为同一类数据流提供相同的服务，也可以对不同类的数据流提供不同的服务。</p>
-<p>MQC包含三个要素：流分类（traffic classifier）、流行为（traffic behavior）和流策略（traffic policy）。MQC的流行为支持重定向报文，因此可以使用MQC实现IP单播策略路由。</p>
-<h2 id="流分类"><a href="#流分类" class="headerlink" title="流分类"></a>流分类</h2><p>流分类用来定义一组流量匹配规则，以对报文进行分类。流分类规则:</p>
-<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240723230643.png" alt="QQ截图20240723230643" style="zoom:67%;">
-
-
-
-<p>流分类中各规则之间的关系分为：and或or，<strong>缺省情况下的关系为or</strong>。</p>
-<ul>
-<li>and：当流分类中包含ACL规则时，报文必须匹配其中一条ACL规则以及所有非ACL规则才属于该类；当流分类中没有ACL规则时，报文必须匹配所有非ACL规则才属于该类。</li>
-<li>or：报文只要匹配了流分类中的一个规则，设备就认为报文属于此类。</li>
-</ul>
-<h2 id="流行为"><a href="#流行为" class="headerlink" title="流行为"></a>流行为</h2><img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240723230739.png" alt="QQ截图20240723230739" style="zoom:67%;">
-
-<h2 id="流策略"><a href="#流策略" class="headerlink" title="流策略"></a>流策略</h2><p>绑定流分类与流行为</p>
-<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240723230856.png" alt="QQ截图20240723230856" style="zoom:67%;">
-
-<h2 id="案例"><a href="#案例" class="headerlink" title="案例"></a>案例</h2><img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240723231034.png" alt="QQ截图20240723231034" style="zoom:67%;">
-
-<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240723231041.png" alt="QQ截图20240723231041" style="zoom:67%;">
-
-<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240723231048.png" alt="QQ截图20240723231048" style="zoom:67%;">
-
-<h1 id="Traffic-Filter"><a href="#Traffic-Filter" class="headerlink" title="Traffic-Filter"></a>Traffic-Filter</h1><p>使用Traffic-Filter过滤流量可以灵活地选择部署位置，在流量进入设备或者离开设备的接口上执行过滤动作，双向访问的业务禁止其中一个方向即可实现阻断业务的需求。</p>
-<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240723231340.png" alt="QQ截图20240723231340" style="zoom:67%;">
-
-<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240723231408.png" alt="QQ截图20240723231408" style="zoom:67%;">
-
-
-
-
-
-<h1 id="实验手册实验"><a href="#实验手册实验" class="headerlink" title="实验手册实验"></a>实验手册实验</h1><p><img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/luyouceltuopu126203917.png" alt="luyouceltuopu126203917"></p>
-<p>设备互联方式、互联地址如图所示，所有设备均创建Loopback0，其IP地址为10.0.x.x&#x2F;32，其中x为设备编号，R1、R2、R3在互联接口、Loopback0接口上激活OSPF。</p>
-<p>R3、R4属于IS-IS Area 49.0001，两者都是Level-1路由器，R3、R4的系统ID采用0000.0000.000x格式，其中x为设备编号。</p>
-<span id="more"></span>
-
-<p>R1上存在三个业务网段A、B、C（使用Loopback1、2、3接口路由模拟），在R1上将直连路由引入到OSPF，但是OSPF域内的路由器上不需要C业务的路由，为此在R1上引入直连路由时通过Route-Policy过滤引入的路由。</p>
-<p>R2上不需要A业务网段的路由，但是R3上需要A、B业务网段的路由，为此在R2上配置Filter-Policy对OSPF接收的路由进行过滤。</p>
-<p>IS-IS域内的路由器需要访问A业务，因此需要在R3上执行路由重分发，将OSPF路由引入到IS-IS，但是IS-IS域内的路由器不需要访问B业务，为此在R1上引入直连路由时为A、B业务网段路由打上不同的路由标记，R3上执行重分发时根据路由标记过滤B业务网段路由。</p>
-<h2 id="任务思路"><a href="#任务思路" class="headerlink" title="任务思路"></a>任务思路</h2><ol>
-<li>设备基础IP地址配置。</li>
-<li>配置R1、R2、R3之间的OSPF，在互联接口、Loopback0接口上激活OSPF。在R3、R4之间配置IS-IS。</li>
-<li>在R1上将直连路由引入到OSPF中，同时配置路由策略不引入C业务网段的路由，将A、B业务网段路由分别打上路由标记10、20。</li>
-<li>在R2上配置Filter-Policy对接收的OSPF路由进行过滤，只接收B业务网段的路由。</li>
-<li>在R3上将OSPF路由引入到IS-IS中，通过Route-Policy匹配路由标记，只引入A业务网段的OSPF外部路由。</li>
-</ol>
-<h2 id="1-配置ip"><a href="#1-配置ip" class="headerlink" title="1.配置ip"></a>1.配置ip</h2><p>#配置R1的GE0&#x2F;0&#x2F;2、Loopback0接口IP地址</p>
-<p>[R1]interface GigabitEthernet0&#x2F;0&#x2F;2</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;2] ip address 10.0.12.1 255.255.255.0</p>
-<p>[R1-GigabitEthernet0&#x2F;0&#x2F;2] quit</p>
-<p>[R1]interface LoopBack0</p>
-<p>[R1-LoopBack0] ip address 10.0.1.1 255.255.255.255</p>
-<p>[R1-LoopBack0] quit</p>
-<p>#在R1上创建多个环回口，用于模拟业务网段A、B、C</p>
-<p>[R1]interface LoopBack1</p>
-<p>[R1-LoopBack1] ip address 172.16.1.1 255.255.255.0</p>
-<p>[R1-LoopBack1] quit</p>
-<p>[R1]interface LoopBack2</p>
-<p>[R1-LoopBack2] ip address 172.16.2.1 255.255.255.0</p>
-<p>[R1-LoopBack2] quit</p>
-<p>[R1]interface LoopBack3</p>
-<p>[R1-LoopBack3] ip address 172.16.3.1 255.255.255.0</p>
-<p>[R1-LoopBack3] quit</p>
-<p>#配置R2的GE0&#x2F;0&#x2F;2、GE0&#x2F;0&#x2F;3、Loopback0接口IP地址</p>
-<p>[R2]interface LoopBack0</p>
-<p>[R2-LoopBack0] ip address 10.0.2.2 255.255.255.255</p>
-<p>[R2-LoopBack0] quit</p>
-<p>[R2]interface GigabitEthernet0&#x2F;0&#x2F;2</p>
-<p>[R2-GigabitEthernet0&#x2F;0&#x2F;2] ip address 10.0.23.2 255.255.255.0</p>
-<p>[R2-GigabitEthernet0&#x2F;0&#x2F;2] quit</p>
-<p>[R2]interface GigabitEthernet0&#x2F;0&#x2F;3</p>
-<p>[R2-GigabitEthernet0&#x2F;0&#x2F;3] ip address 10.0.12.2 255.255.255.0</p>
-<p>[R2-GigabitEthernet0&#x2F;0&#x2F;3] quit</p>
-<p>#配置R3的GE0&#x2F;0&#x2F;2、GE0&#x2F;0&#x2F;3、Loopback0接口IP地址</p>
-<p>[R3]interface LoopBack0</p>
-<p>[R3-LoopBack0] ip address 10.0.3.3 255.255.255.255</p>
-<p>[R3-LoopBack0] quit</p>
-<p>[R3]interface GigabitEthernet0&#x2F;0&#x2F;2</p>
-<p>[R3-GigabitEthernet0&#x2F;0&#x2F;2] ip address 10.0.34.3 255.255.255.0</p>
-<p>[R3-GigabitEthernet0&#x2F;0&#x2F;2] quit</p>
-<p>[R3]interface GigabitEthernet0&#x2F;0&#x2F;3</p>
-<p>[R3-GigabitEthernet0&#x2F;0&#x2F;3] ip address 10.0.23.3 255.255.255.0</p>
-<p>[R3-GigabitEthernet0&#x2F;0&#x2F;3] quit</p>
-<p>#配置R4的GE0&#x2F;0&#x2F;3、Loopback0接口IP地址</p>
-<p>[R4]interface GigabitEthernet0&#x2F;0&#x2F;3</p>
-<p>[R4-GigabitEthernet0&#x2F;0&#x2F;3] ip address 10.0.34.4 255.255.255.0</p>
-<p>[R4-GigabitEthernet0&#x2F;0&#x2F;3] quit</p>
-<p>[R4]interface LoopBack0</p>
-<p>[R4-LoopBack0] ip address 10.0.4.4 255.255.255.255</p>
-<p>[R4-LoopBack0] quit</p>
-<p>#在R2、R4上检查IP地址连通性</p>
-<h2 id="配置ospf和isis"><a href="#配置ospf和isis" class="headerlink" title="配置ospf和isis"></a>配置ospf和isis</h2><p>#配置R1</p>
-<p>[R1]ospf 1 router-id 10.0.1.1</p>
-<p>[R1-ospf-1] area 0</p>
-<p>[R1-ospf-1-area-0.0.0.0] network 10.0.1.1 0.0.0.0</p>
-<p>[R1-ospf-1-area-0.0.0.0] network 10.0.12.1 0.0.0.0</p>
-<p>[R1-ospf-1-area-0.0.0.0] quit</p>
-<p>[R1-ospf-1] quit</p>
-<p>#配置R2</p>
-<p>[R2]ospf 1 router-id 10.0.2.2</p>
-<p>[R2-ospf-1] area 0.0.0.0</p>
-<p>[R2-ospf-1-area-0.0.0.0] network 10.0.2.2 0.0.0.0</p>
-<p>[R2-ospf-1-area-0.0.0.0] network 10.0.12.2 0.0.0.0</p>
-<p>[R2-ospf-1-area-0.0.0.0] network 10.0.23.2 0.0.0.0</p>
-<p>[R2-ospf-1-area-0.0.0.0] quit</p>
-<p>[R2-ospf-1] quit</p>
-<p>#配置R3</p>
-<p>[R3]ospf 1 router-id 10.0.3.3</p>
-<p>[R3-ospf-1] area 0.0.0.0</p>
-<p>[R3-ospf-1-area-0.0.0.0] network 10.0.3.3 0.0.0.0</p>
-<p>[R3-ospf-1-area-0.0.0.0] network 10.0.23.3 0.0.0.0</p>
-<p>[R3-ospf-1-area-0.0.0.0] quit</p>
-<p>[R3-ospf-1] quit</p>
-<p>#在R2上检查OSPF邻居的概要信息</p>
-<p>R3、R4上配置IS-IS，区域为49.0001，系统ID采用0000.0000.000x格式（x为设备编号），两台设备都为Level-1路由器，在互联接口、R4的Loopback0接口上激活IS-IS。</p>
-<p>#配置R3</p>
-<p>[R3]isis 1</p>
-<p>[R3-isis-1] is-level level-1</p>
-<p>[R3-isis-1] network-entity 49.0001.0000.0000.0003.00</p>
-<p>[R3-isis-1] quit</p>
-<p>[R3]interface GigabitEthernet0&#x2F;0&#x2F;2</p>
-<p>[R3-GigabitEthernet0&#x2F;0&#x2F;2] isis enable 1</p>
-<p>[R3-GigabitEthernet0&#x2F;0&#x2F;2] quit</p>
-<p>#配置R4</p>
-<p>[R4]isis 1</p>
-<p>[R4-isis-1] is-level level-1</p>
-<p>[R4-isis-1] network-entity 49.0001.0000.0000.0004.00</p>
-<p>[R4-isis-1] quit</p>
-<p>[R4]interface GigabitEthernet0&#x2F;0&#x2F;3</p>
-<p>[R4-GigabitEthernet0&#x2F;0&#x2F;3] isis enable 1</p>
-<p>[R4-GigabitEthernet0&#x2F;0&#x2F;3] quit</p>
-<p>[R4]interface LoopBack 0</p>
-<p>[R4-LoopBack0] isis enable 1</p>
-<p>[R4-LoopBack0] quit</p>
-<p>#在R3上检查IS-IS邻居状态</p>
-<h2 id="在R1上引入直连路由"><a href="#在R1上引入直连路由" class="headerlink" title="在R1上引入直连路由"></a>在R1上引入直连路由</h2><p>在R1上将直连路由引入到OSPF中，同时配置路由策略过滤C业务网段，将A、B业务网段路由分别打上路由标记10、20。</p>
-<p>#创建IP前缀列表1，匹配Loopback1接口路由（A业务网段）</p>
-<p>[R1]ip ip-prefix 1 index 10 permit 172.16.1.0 24 greater-equal 24 less-equal 24</p>
-<p>#创建IP前缀列表2，匹配Loopback2接口路由（B业务网段）</p>
-<p>[R1]ip ip-prefix 2 index 10 permit 172.16.2.0 24 greater-equal 24 less-equal 24</p>
-<p>#创建Route-Policy hcip，并创建节点10、20，分别调用IP前缀列表1、2，打上路由标记</p>
-<p>[R1]route-policy hcip permit node 10</p>
-<p>[R1-route-policy] if-match ip-prefix 1</p>
-<p>[R1-route-policy] apply tag 10</p>
-<p>[R1-route-policy] quit</p>
-<p>[R1]route-policy hcip permit node 20</p>
-<p>[R1-route-policy] if-match ip-prefix 2</p>
-<p>[R1-route-policy] apply tag 20 </p>
-<p>[R1-route-policy] quit</p>
-<p>#在R1的OSPF中引入直连路由，调用Route-Policy hcip</p>
-<p>[R1]ospf 1</p>
-<p>[R1-ospf-1] import-route direct route-policy hcip</p>
-<p>r1上查看ospf lsdb，Loopback1、2接口路由已经被成功引入OSPF中。</p>
-<p>#在R1上查看OSPF LSDB中AS-external LSA 172.16.1.0的相关信息</p>
-<p>[R1]display ospf lsdb ase 172.16.1.0 </p>
-<p>​	 OSPF Process 1 with Router ID 10.0.1.1</p>
-<p>​		 Link State Database</p>
-<p> Type    : External</p>
-<p> Ls id   : 172.16.1.0</p>
-<p> Adv rtr  : 10.0.1.1  </p>
-<p> Ls age   : 165 </p>
-<p> Len    : 36 </p>
-<p> Options  :  E  </p>
-<p> seq#    : 80000001 </p>
-<p> chksum   : 0xa954</p>
-<p> Net mask  : 255.255.255.0 </p>
-<p> TOS 0  Metric: 1 </p>
-<p> E type   : 2</p>
-<p> Forwarding Address : 0.0.0.0 </p>
-<p> Tag    : 10 </p>
-<p> Priority  : Low</p>
-<p>外部路由172.16.1.0&#x2F;24已经被打上Tag 10。</p>
-<p>#在R1上查看OSPF LSDB中AS-external LSA 172.16.2.0的相关信息</p>
-<p>[R1]display ospf lsdb ase 172.16.2.0</p>
-<p>​	 OSPF Process 1 with Router ID 10.0.1.1</p>
-<p>​		 Link State Database</p>
-<p> Type    : External</p>
-<p> Ls id   : 172.16.2.0</p>
-<p> Adv rtr  : 10.0.1.1  </p>
-<p> Ls age   : 355 </p>
-<p> Len    : 36 </p>
-<p> Options  :  E  </p>
-<p> seq#    : 80000001 </p>
-<p> chksum   : 0x539f</p>
-<p> Net mask  : 255.255.255.0 </p>
-<p> TOS 0  Metric: 1 </p>
-<p> E type   : 2</p>
-<p> Forwarding Address : 0.0.0.0 </p>
-<p> Tag    : 20 </p>
-<p> Priority  : Low</p>
-<p>外部路由172.16.2.0&#x2F;24已经被打上Tag 20。</p>
-<h2 id="在R2上配置过滤策略"><a href="#在R2上配置过滤策略" class="headerlink" title="在R2上配置过滤策略"></a>在R2上配置过滤策略</h2><p>在R2上配置Filter-Policy对接收的OSPF路由进行过滤，只接收B业务网段的路由。</p>
-<p>#查看配置Filter-Policy前的OSPF路由表</p>
-<p><R2>display ospf routing</R2></p>
-<p>#查看配置Filter-Policy前的IP路由表中的OSPF路由</p>
-<p><R2>display ip routing-table protocol ospf	</R2></p>
-<p>在OSPF路由表以及IP路由表中<strong>都可以看到</strong>OSPF外部路由172.16.1.0&#x2F;24、172.16.2.0&#x2F;24。</p>
-<p>#配置基础ACL </p>
-<p>[R2]acl number 2000</p>
-<p>[R2-acl-basic-2000] rule 5 deny source 172.16.1.0 0.0.0.255</p>
-<p>[R2-acl-basic-2000] rule 10 permit</p>
-<p>#在OSPF中部署入方向的Filter-Policy，调用ACL 2000</p>
-<p>[R2]ospf 1</p>
-<p>[R2-ospf-1] filter-policy 2000 import</p>
-<p>#查看配置Filter-Policy后的OSPF路由表</p>
-<p>dis ospf routing</p>
-<p>发现两条外部路由都还存在</p>
-<p>#查看配置Filter-Policy后的IP路由表中的OSPF路由</p>
-<p><R2>display ip routing-table protocol ospf	</R2></p>
-<p>在IP路由表中路由172.16.2.0&#x2F;24已经不存在，但是在OSPF路由表中依旧存在。这验证了对于OSPF，Filter-Policy只是限制路由加入IP路由表，不影响本地的LSDB以及LSA的传递。</p>
-<p>#在R3上查看IP路由表中的OSPF路由</p>
-<p><R3>display ip routing-table protocol ospf </R3></p>
-<p>R3的IP路由表中OSPF外部路由172.16.1.0&#x2F;24、172.16.2.0&#x2F;24依旧存在。</p>
-<h2 id="在R3上将OSPF路由引入到IS-IS"><a href="#在R3上将OSPF路由引入到IS-IS" class="headerlink" title="在R3上将OSPF路由引入到IS-IS"></a>在R3上将OSPF路由引入到IS-IS</h2><p>在R3上将OSPF路由引入到IS-IS中，通过Route-Policy匹配路由标记，只引入A业务网段的OSPF外部路由。</p>
-<p>#创建Route-Policy hcip</p>
-<p>[R3]route-policy hcip permit node 10</p>
-<p>[R3-route-policy] if-match tag 10</p>
-<p>[R3-route-policy] quit</p>
-<p>#在IS-IS中引入OSPF路由，调用Route-Policy hcip只引入A业务网段的OSPF外部路由</p>
-<p>[R3]isis 1</p>
-<p>[R3-isis-1] import-route ospf 1 <strong>level-1</strong> route-policy hcip</p>
-<p>（注意指定level）</p>
-<p>#查看R3的IS-IS路由表</p>
-<p><R3>display isis route </R3></p>
-<p>Level-1的路由重分发表中只有172.16.1.0&#x2F;24。</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>路由策略</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>组播</title>
     <url>/2024/05/10/%E7%BB%84%E6%92%AD/</url>
     <content><![CDATA[<h1 id="组播简介"><a href="#组播简介" class="headerlink" title="组播简介"></a>组播简介</h1><p>组播（Multicast）是在一台源IP主机和多台（一组）IP主机之间进行，中间的网络设备根</p>
@@ -5379,6 +5088,386 @@
       </tags>
   </entry>
   <entry>
+    <title>路由策略</title>
+    <url>/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/</url>
+    <content><![CDATA[<h1 id="ACL"><a href="#ACL" class="headerlink" title="ACL"></a>ACL</h1><p>访问控制列表ACL（Access Control List）是由一条或多条规则组成的集合。所谓规则，是指描述报文匹配条件的判断语句，这些条件可以是报文的源地址、目的地址、端口号等。</p>
+<p>ACL本质上是一种报文过滤器，规则是过滤器的滤芯。设备基于这些规则进行报文匹配，可以过滤出特定的报文，并根据应用ACL的业务模块的处理策略来允许或阻止该报文通过。</p>
+<p>ACL可以实现对网络中报文流的精确识别和控制，达到控制网络访问行为、防止网络攻击和提高网络带宽利用率的目的，从而切实保障网络环境的安全性和网络服务质量的可靠性。</p>
+<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722195623.png" alt="QQ截图20240722195623" style="zoom:67%;">
+
+<h2 id="ACL匹配机制"><a href="#ACL匹配机制" class="headerlink" title="ACL匹配机制"></a>ACL匹配机制</h2><p>设备将报文与ACL规则进行匹配时，遵循“一旦命中即停止匹配”的机制，当找到一条符合匹配条件的规则时，结束查找。</p>
+<p>报文与ACL规则匹配后，会产生两种结果：“命中规则”和“未命中规则”。</p>
+<ul>
+<li>命中规则：指存在ACL，且在ACL中查找到了符合匹配条件的规则</li>
+<li>未命中规则：指不存在ACL，或ACL中无规则，再或者在ACL中遍历了所有规则都没有找到符合匹配条件的规则。</li>
+</ul>
+<p>报文最终是被允许通过还是拒绝通过，实际是ACL规则中的指定动作和应用ACL的各个业务模块来共同决定。不同的业务模块，对命中和未命中规则报文的处理方式也各不相同。</p>
+<p>系统按照ACL规则编号从小到大的顺序进行报文匹配，规则编号越小越容易被匹配。</p>
+<ul>
+<li>如果配置规则时指定了规则编号，则规则编号越小，规则插入位置越靠前，该规则越先被匹配。</li>
+<li>如果配置规则时未指定规则编号，则由系统自动为其分配一个编号。该编号是一个大于当前ACL内最大规则编号且是步长整数倍的最小整数，因此该规则会被最后匹配。</li>
+</ul>
+<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722195941.png" alt="QQ截图20240722195941" style="zoom:67%;">
+
+<h1 id="IP前缀列表"><a href="#IP前缀列表" class="headerlink" title="IP前缀列表"></a>IP前缀列表</h1><p>IP前缀列表（IP-Prefix List）是将路由条目的网络地址、掩码长度作为匹配条件的过滤器，可在各路由协议发布和接收路由时使用。</p>
+<p>不同于ACL，IP-Prefix List能够同时匹配IP地址前缀长度以及掩码长度，增强了匹配的精确度。</p>
+<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722200123.png" alt="QQ截图20240722200123" style="zoom:67%;">
+
+<p>匹配机制和ACL一样</p>
+<h1 id="Filter-Policy"><a href="#Filter-Policy" class="headerlink" title="Filter-Policy"></a>Filter-Policy</h1><p>Filter-Policy（过滤-策略）是一个很常用的路由信息过滤工具，能够对接收、发布、引入的路由进行过滤，可应用于IS-IS、OSPF、BGP等协议。</p>
+<p>filter-policy在距离矢量路由协议中的应用</p>
+<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722204905.png" alt="QQ截图20240722204905" style="zoom:67%;">
+
+<p>filter-policy在链路状态路由协议中的应用</p>
+<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722205009.png" alt="QQ截图20240722205009" style="zoom:67%;">
+
+<p>在链路状态路由协议中，各路由设备之间传递的是LSA信息，然后设备根据LSA汇总成的LSDB信息计算出路由表。以OSPF为例，filter-policy生效规则如下：</p>
+<ul>
+<li><p><strong>filter-policy import</strong>命令实际上是对OSPF计算出来的路由进行过滤，不是对发布和接收的LSA进行过滤。filter-policy import命令对接收的路由设置过滤策略，只有通过过滤策略的路由才被添加到路由表中，没有通过过滤策略的路由不会被添加进路由表，<strong>但不影响对外发布出去。</strong>（只影响本地全局路由表）</p>
+</li>
+<li><p><strong>filter-policy export</strong>命令用来对引入的路由在发布时进行过滤，只将满足条件的外部路由转换为Type5 LSA（AS-external-LSA）并发布出去。这样可以在引入外部路由时进行特定的过滤，防止形成路由环路。</p>
+<p>OSPF通过命令import-route引入外部路由后，为了避免路由环路的产生，通过filter-policy export命令对引入的路由在发布时进行过滤，只将满足条件的外部路由转换为Type5 LSA（AS-external-LSA）并发布出去。（影响后边的路由器的ospf路由表和全局路由表）</p>
+</li>
+</ul>
+<p>import示例：</p>
+<p>（1）通过filter-policy对OSPF接收的路由过滤（区域内）示例</p>
+<p>三台交换机同属于OSPF Area 0区域，SwitchA发布测试网段10.1.1.0&#x2F;24，要求在SwitchB上部署<strong>filter-policy import</strong>，使得SwitchB的路由表中不允许出现10.1.1.0&#x2F;24这条路由。</p>
+<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722211024.png" alt="QQ截图20240722211024" style="zoom:67%;">
+
+<p><strong>配置方法</strong></p>
+<ol>
+<li><p>在SwitchB上定义一个地址前缀列表，“抓取”符合条件的路由。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[SwitchB] ip ip-prefix huawei index 10 deny 10.1.1.0 24           //拒绝这条</span><br><span class="line">[SwitchB] ip ip-prefix huawei index 20 permit 0.0.0.0 0 less-equal 32     //允许所有</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>在SwitchB的OSPF视图中，部署filter-policy import。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[SwitchB] ospf</span><br><span class="line">[SwitchB-ospf-1] filter-policy ip-prefix huawei import</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p><strong>结果验证</strong></p>
+<p>做完上述配置以后，查看SwitchB和SwitchC的路由表如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[SwitchB] display ip routing-table</span><br><span class="line">Route Flags: R - relay, D - download to fib</span><br><span class="line">-----------------------------------------------------------------------------</span><br><span class="line">Routing Tables: Public</span><br><span class="line">         Destinations : 6        Routes : 6        </span><br><span class="line"></span><br><span class="line">Destination/Mask    Proto   Pre  Cost      Flags NextHop         Interface</span><br><span class="line"></span><br><span class="line">      127.0.0.0/8   Direct  0    0           D   127.0.0.1       InLoopBack0</span><br><span class="line">      127.0.0.1/32  Direct  0    0           D   127.0.0.1       InLoopBack0</span><br><span class="line">   192.168.12.0/24  Direct  0    0           D   192.168.12.2    Vlanif12</span><br><span class="line">   192.168.12.2/32  Direct  0    0           D   127.0.0.1       Vlanif12</span><br><span class="line">   192.168.23.0/24  Direct  0    0           D   192.168.23.1    Vlanif23</span><br><span class="line">   192.168.23.1/32  Direct  0    0           D   127.0.0.1       Vlanif23</span><br><span class="line">（B的ip路由表中被过滤，但ospf路由表在仍然存在）</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">[SwitchC] display ip routing-table</span><br><span class="line">Route Flags: R - relay, D - download to fib</span><br><span class="line">------------------------------------------------------------------------------</span><br><span class="line">Routing Tables: Public</span><br><span class="line">         Destinations : 6        Routes : 6        </span><br><span class="line"></span><br><span class="line">Destination/Mask    Proto   Pre  Cost      Flags NextHop         Interface</span><br><span class="line"></span><br><span class="line">       10.1.1.0/24  OSPF    10   3           D   192.168.23.1    Vlanif23</span><br><span class="line">      127.0.0.0/8   Direct  0    0           D   127.0.0.1       InLoopBack0</span><br><span class="line">      127.0.0.1/32  Direct  0    0           D   127.0.0.1       InLoopBack0</span><br><span class="line">   192.168.12.0/24  OSPF    10   2           D   192.168.23.1    Vlanif23</span><br><span class="line">   192.168.23.0/24  Direct  0    0           D   192.168.23.2    Vlanif23</span><br><span class="line">   192.168.23.2/32  Direct  0    0           D   127.0.0.1       Vlanif23</span><br></pre></td></tr></table></figure>
+
+<p>通过SwitchB和SwitchC的路由表可以看到，虽然在SwitchB上10.1.1.0&#x2F;24这条路由已经被过滤掉，但是LSA信息会继续传递给SwitchC，所以SwitchC的路由表中继续存在10.1.1.0&#x2F;24这条路由。这样的结果也验证了一开始在注意事项中给出的结论：在链路状态路由协议中，filter-policy只能过滤路由信息，不能过滤LSA信息。</p>
+<p>同时SwitchB和SwitchC的LSDB中仍然存在描述10.1.1.0&#x2F;24这条路由的LSA信息，此处可以通过查看SwitchB和SwitchC的LSA信息进行验证。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[SwitchB] display ospf lsdb router</span><br><span class="line"></span><br><span class="line">   OSPF Process 1 with Router ID 10.10.10.2</span><br><span class="line">              Area: 0.0.0.0</span><br><span class="line">      Link State Database </span><br><span class="line">………</span><br><span class="line"></span><br><span class="line">  Type      : Router</span><br><span class="line">  Ls id     : 10.10.10.1</span><br><span class="line">  Adv rtr   : 10.10.10.1  </span><br><span class="line">  Ls age    : 139 </span><br><span class="line">  Len       : 48 </span><br><span class="line">  Options   :  E  </span><br><span class="line">  seq#      : 80000005 </span><br><span class="line">  chksum    : 0x41c4</span><br><span class="line">  Link count: 2</span><br><span class="line">   * Link ID: 10.1.1.0     </span><br><span class="line">     Data   : 255.255.255.0 </span><br><span class="line">     Link Type: StubNet      </span><br><span class="line">     Metric : 1 </span><br><span class="line">     Priority : Low</span><br><span class="line">   * Link ID: 192.168.12.2 </span><br><span class="line">     Data   : 192.168.12.1 </span><br><span class="line">     Link Type: TransNet     </span><br><span class="line">     Metric : 1</span><br><span class="line">[SwitchC] display ospf lsdb router</span><br><span class="line"></span><br><span class="line">   OSPF Process 1 with Router ID 10.10.10.3</span><br><span class="line">             Area: 0.0.0.0</span><br><span class="line">     Link State Database </span><br><span class="line">…………</span><br><span class="line"></span><br><span class="line">  Type      : Router</span><br><span class="line">  Ls id     : 10.10.10.1</span><br><span class="line">  Adv rtr   : 10.10.10.1  </span><br><span class="line">  Ls age    : 81 </span><br><span class="line">  Len       : 48 </span><br><span class="line">  Options   :  E  </span><br><span class="line">  seq#      : 80000005 </span><br><span class="line">  chksum    : 0x41c4</span><br><span class="line">  Link count: 2</span><br><span class="line">   * Link ID: 10.1.1.0     </span><br><span class="line">     Data   : 255.255.255.0 </span><br><span class="line">     Link Type: StubNet      </span><br><span class="line">     Metric : 1 </span><br><span class="line">     Priority : Low</span><br><span class="line">   * Link ID: 192.168.12.2 </span><br><span class="line">     Data   : 192.168.12.1 </span><br><span class="line">     Link Type: TransNet     </span><br><span class="line">     Metric : 1</span><br></pre></td></tr></table></figure>
+
+<p>可以看到SwitchB和SwitchC的LSDB中仍然存在描述10.1.1.0&#x2F;24这条路由的LSA信息。</p>
+<p>（2）通过filter-policy对OSPF接收的路由过滤（区域间）</p>
+<p>相对于上一个场景，这个场景的区别之处是划分了两个不同的区域，SwitchB和SwitchC之间传递的是Type3 LSA，这个Type3 LSA是SwitchB上根据区域间路由生成的。配置方法跟上一个场景一样，此处不再赘述。</p>
+<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722211339.png" alt="QQ截图20240722211339" style="zoom:67%;">
+
+<p>在部署路由过滤策略之前，SwitchB和SwitchC的路由表中都有10.1.1.0&#x2F;24这条路由。</p>
+<p>在SwitchB上部署filter-policy import以后，查看SwitchB和SwitchC的路由表，结果如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[SwitchB] display  ip routing-table</span><br><span class="line">Route Flags: R - relay, D - download to fib</span><br><span class="line">-----------------------------------------------------------------------------</span><br><span class="line">Routing Tables: Public</span><br><span class="line">         Destinations : 6        Routes : 6        </span><br><span class="line"></span><br><span class="line">Destination/Mask    Proto   Pre  Cost      Flags NextHop         Interface</span><br><span class="line"></span><br><span class="line">      127.0.0.0/8   Direct  0    0           D   127.0.0.1       InLoopBack0</span><br><span class="line">      127.0.0.1/32  Direct  0    0           D   127.0.0.1       InLoopBack0</span><br><span class="line">   192.168.12.0/24  Direct  0    0           D   192.168.12.2    Vlanif12</span><br><span class="line">   192.168.12.2/32  Direct  0    0           D   127.0.0.1       Vlanif12</span><br><span class="line">   192.168.23.0/24  Direct  0    0           D   192.168.23.1    Vlanif23</span><br><span class="line">   192.168.23.1/32  Direct  0    0           D   127.0.0.1       Vlanif23</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">[SwitchC] display ip routing-table</span><br><span class="line">Route Flags: R - relay, D - download to fib</span><br><span class="line">------------------------------------------------------------------------------</span><br><span class="line">Routing Tables: Public</span><br><span class="line">         Destinations : 5        Routes : 5        </span><br><span class="line"></span><br><span class="line">Destination/Mask    Proto   Pre  Cost      Flags NextHop         Interface</span><br><span class="line"></span><br><span class="line">      127.0.0.0/8   Direct  0    0           D   127.0.0.1       InLoopBack0</span><br><span class="line">      127.0.0.1/32  Direct  0    0           D   127.0.0.1       InLoopBack0</span><br><span class="line">   192.168.12.0/24  OSPF    10   2           D   192.168.23.1    Vlanif23</span><br><span class="line">   192.168.23.0/24  Direct  0    0           D   192.168.23.2    Vlanif23</span><br><span class="line">   192.168.23.2/32  Direct  0    0           D   127.0.0.1       Vlanif23</span><br></pre></td></tr></table></figure>
+
+<p>由于现在划分不同的区域，SwitchC上的10.1.1.0&#x2F;24这条路由是由SwitchB根据自身学习的路由产生的Type3-LSA描述的，而SwitchB上的这条路由被过滤掉了，因此不能够再产生描述区域间路由的这个Type3-LSA，因此SwitchC上不会再学习到10.1.1.0&#x2F;24这条路由。</p>
+<p>export示例：</p>
+<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722213321.png" alt="QQ截图20240722213321" style="zoom:67%;">
+
+<p>在R1上创建四个环回口，IP地址分别为192.168.1.0&#x2F;24，192.168.2.0&#x2F;24、192.168.3.0&#x2F;24、192.168.4.0&#x2F;24，并且全部宣告进OSPF。</p>
+<p>引入直连，但是要保证R2和R3上只能收到192.168.1.0这条路由</p>
+<p>通过Filter-policy让R2和R3只能收到192.168.1.0这条路由</p>
+<p>[R1]ip ip-prefix ly permit 192.168.1.0 24  </p>
+<p>[R1]ospf</p>
+<p>[R1-ospf-1]filter-policy ip-prefix ly export</p>
+<p>【技术要点】</p>
+<ul>
+<li>OSPF通过命令import-route引入外部路由后，为了避免路由环路的产生，通过filter-policy export命令对引入的路由在发布时进行过滤，只将满足条件的外部路由转换为Type5 LSA（AS-external-LSA）并发布出去。</li>
+<li>当网络中同时部署了IS-IS和其他路由协议时，如果已经在边界设备上引入其他路由协议的路由，缺省情况下，该设备将把引入的全部外部路由发布给IS-IS邻居。如果只希望将引入的部分外部路由发布给邻居，可以使用****filter-policy export****命令实现。</li>
+</ul>
+<h1 id="Route-Policy"><a href="#Route-Policy" class="headerlink" title="Route-Policy"></a>Route-Policy</h1><p>Route-Policy是一个策略工具，用于过滤路由信息，以及为过滤后的路由信息设置路由属性。</p>
+<p>一个Route-Policy由一个或多个节点（Node）构成，每个节点都可以是一系列条件语句（匹配条件）以及执行语句（执行动作）的集合，这些集合按照编号从小到大的顺序排列。</p>
+<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722213733.png" alt="QQ截图20240722213733" style="zoom:67%;">
+
+
+
+<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722213925.png" alt="QQ截图20240722213925" style="zoom:67%;">
+
+<p><img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ%E6%88%AA%E5%9B%BE20240722214213.png" alt="QQ截图20240722214213"></p>
+<p>示例：</p>
+<p><img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ%E6%88%AA%E5%9B%BE20240722214325.png" alt="QQ截图20240722214325"></p>
+<p><img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ%E6%88%AA%E5%9B%BE20240722214336.png" alt="QQ截图20240722214336"></p>
+<h2 id="双点双向路由重发布"><a href="#双点双向路由重发布" class="headerlink" title="双点双向路由重发布"></a>双点双向路由重发布</h2><img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722215733.png" alt="QQ截图20240722215733" style="zoom:67%;">
+
+<p>解决次优路径：</p>
+<ol>
+<li></li>
+</ol>
+<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722221125.png" alt="QQ截图20240722221125" style="zoom:67%;">
+
+<ol start="2">
+<li></li>
+</ol>
+<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722221200.png" alt="QQ截图20240722221200" style="zoom:67%;">
+
+<p>环路问题：</p>
+<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722221321.png" alt="QQ截图20240722221321" style="zoom:67%;">
+
+<p>解决环路：</p>
+<ol>
+<li></li>
+</ol>
+<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722221447.png" alt="QQ截图20240722221447" style="zoom:67%;">
+
+<ol start="2">
+<li></li>
+</ol>
+<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722221758.png" alt="QQ截图20240722221758" style="zoom:67%;">
+
+<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722221815.png" alt="QQ截图20240722221815" style="zoom:67%;">
+
+<h1 id="策略路由"><a href="#策略路由" class="headerlink" title="策略路由"></a>策略路由</h1><p>若设备部署了PBR，则被匹配的报文优先根据PBR的策略进行转发，即PBR策略的优先级高于传统路由表。</p>
+<p>策略路由PBR（Policy-Based Routing）是一种依据用户制定的策略进行路由选择的机制，分为<strong>本地策略路由</strong>、<strong>接口策略路由</strong>和<strong>智能策略路由</strong>SPR（Smart Policy Routing）。</p>
+<p>策略路由与路由策略（Routing Policy）存在以下不同：</p>
+<ul>
+<li>策略路由的操作对象是数据包，在路由表已经产生的情况下，不按照路由表进行转发，而是根据需要，依照某种策略改变数据包转发路径。</li>
+<li>路由策略的操作对象是路由信息。路由策略主要实现了路由过滤和路由属性设置等功能，它通过改变路由属性（包括可达性）来改变网络流量所经过的路径。</li>
+</ul>
+<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722222211.png" alt="QQ截图20240722222211" style="zoom:67%;">
+
+<p>语法：</p>
+<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722222345.png" alt="QQ截图20240722222345" style="zoom:67%;">
+
+
+
+<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240722222609.png" alt="QQ截图20240722222609" style="zoom:67%;">
+
+
+
+<h1 id="MQC"><a href="#MQC" class="headerlink" title="MQC"></a>MQC</h1><p>MQC（Modular QoS Command-Line Interface，模块化QoS命令行）是指通过将具有某类共同特征的数据流划分为一类，并为同一类数据流提供相同的服务，也可以对不同类的数据流提供不同的服务。</p>
+<p>MQC包含三个要素：流分类（traffic classifier）、流行为（traffic behavior）和流策略（traffic policy）。MQC的流行为支持重定向报文，因此可以使用MQC实现IP单播策略路由。</p>
+<h2 id="流分类"><a href="#流分类" class="headerlink" title="流分类"></a>流分类</h2><p>流分类用来定义一组流量匹配规则，以对报文进行分类。流分类规则:</p>
+<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240723230643.png" alt="QQ截图20240723230643" style="zoom:67%;">
+
+
+
+<p>流分类中各规则之间的关系分为：and或or，<strong>缺省情况下的关系为or</strong>。</p>
+<ul>
+<li>and：当流分类中包含ACL规则时，报文必须匹配其中一条ACL规则以及所有非ACL规则才属于该类；当流分类中没有ACL规则时，报文必须匹配所有非ACL规则才属于该类。</li>
+<li>or：报文只要匹配了流分类中的一个规则，设备就认为报文属于此类。</li>
+</ul>
+<h2 id="流行为"><a href="#流行为" class="headerlink" title="流行为"></a>流行为</h2><img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240723230739.png" alt="QQ截图20240723230739" style="zoom:67%;">
+
+<h2 id="流策略"><a href="#流策略" class="headerlink" title="流策略"></a>流策略</h2><p>绑定流分类与流行为</p>
+<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240723230856.png" alt="QQ截图20240723230856" style="zoom:67%;">
+
+<h2 id="案例"><a href="#案例" class="headerlink" title="案例"></a>案例</h2><img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240723231034.png" alt="QQ截图20240723231034" style="zoom:67%;">
+
+<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240723231041.png" alt="QQ截图20240723231041" style="zoom:67%;">
+
+<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240723231048.png" alt="QQ截图20240723231048" style="zoom:67%;">
+
+<h1 id="Traffic-Filter"><a href="#Traffic-Filter" class="headerlink" title="Traffic-Filter"></a>Traffic-Filter</h1><p>使用Traffic-Filter过滤流量可以灵活地选择部署位置，在流量进入设备或者离开设备的接口上执行过滤动作，双向访问的业务禁止其中一个方向即可实现阻断业务的需求。</p>
+<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240723231340.png" alt="QQ截图20240723231340" style="zoom:67%;">
+
+<img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/QQ截图20240723231408.png" alt="QQ截图20240723231408" style="zoom:67%;">
+
+
+
+
+
+<h1 id="实验手册实验"><a href="#实验手册实验" class="headerlink" title="实验手册实验"></a>实验手册实验</h1><p><img src="/2023/11/26/%E8%B7%AF%E7%94%B1%E7%AD%96%E7%95%A5/luyouceltuopu126203917.png" alt="luyouceltuopu126203917"></p>
+<p>设备互联方式、互联地址如图所示，所有设备均创建Loopback0，其IP地址为10.0.x.x&#x2F;32，其中x为设备编号，R1、R2、R3在互联接口、Loopback0接口上激活OSPF。</p>
+<p>R3、R4属于IS-IS Area 49.0001，两者都是Level-1路由器，R3、R4的系统ID采用0000.0000.000x格式，其中x为设备编号。</p>
+<span id="more"></span>
+
+<p>R1上存在三个业务网段A、B、C（使用Loopback1、2、3接口路由模拟），在R1上将直连路由引入到OSPF，但是OSPF域内的路由器上不需要C业务的路由，为此在R1上引入直连路由时通过Route-Policy过滤引入的路由。</p>
+<p>R2上不需要A业务网段的路由，但是R3上需要A、B业务网段的路由，为此在R2上配置Filter-Policy对OSPF接收的路由进行过滤。</p>
+<p>IS-IS域内的路由器需要访问A业务，因此需要在R3上执行路由重分发，将OSPF路由引入到IS-IS，但是IS-IS域内的路由器不需要访问B业务，为此在R1上引入直连路由时为A、B业务网段路由打上不同的路由标记，R3上执行重分发时根据路由标记过滤B业务网段路由。</p>
+<h2 id="任务思路"><a href="#任务思路" class="headerlink" title="任务思路"></a>任务思路</h2><ol>
+<li>设备基础IP地址配置。</li>
+<li>配置R1、R2、R3之间的OSPF，在互联接口、Loopback0接口上激活OSPF。在R3、R4之间配置IS-IS。</li>
+<li>在R1上将直连路由引入到OSPF中，同时配置路由策略不引入C业务网段的路由，将A、B业务网段路由分别打上路由标记10、20。</li>
+<li>在R2上配置Filter-Policy对接收的OSPF路由进行过滤，只接收B业务网段的路由。</li>
+<li>在R3上将OSPF路由引入到IS-IS中，通过Route-Policy匹配路由标记，只引入A业务网段的OSPF外部路由。</li>
+</ol>
+<h2 id="1-配置ip"><a href="#1-配置ip" class="headerlink" title="1.配置ip"></a>1.配置ip</h2><p>#配置R1的GE0&#x2F;0&#x2F;2、Loopback0接口IP地址</p>
+<p>[R1]interface GigabitEthernet0&#x2F;0&#x2F;2</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;2] ip address 10.0.12.1 255.255.255.0</p>
+<p>[R1-GigabitEthernet0&#x2F;0&#x2F;2] quit</p>
+<p>[R1]interface LoopBack0</p>
+<p>[R1-LoopBack0] ip address 10.0.1.1 255.255.255.255</p>
+<p>[R1-LoopBack0] quit</p>
+<p>#在R1上创建多个环回口，用于模拟业务网段A、B、C</p>
+<p>[R1]interface LoopBack1</p>
+<p>[R1-LoopBack1] ip address 172.16.1.1 255.255.255.0</p>
+<p>[R1-LoopBack1] quit</p>
+<p>[R1]interface LoopBack2</p>
+<p>[R1-LoopBack2] ip address 172.16.2.1 255.255.255.0</p>
+<p>[R1-LoopBack2] quit</p>
+<p>[R1]interface LoopBack3</p>
+<p>[R1-LoopBack3] ip address 172.16.3.1 255.255.255.0</p>
+<p>[R1-LoopBack3] quit</p>
+<p>#配置R2的GE0&#x2F;0&#x2F;2、GE0&#x2F;0&#x2F;3、Loopback0接口IP地址</p>
+<p>[R2]interface LoopBack0</p>
+<p>[R2-LoopBack0] ip address 10.0.2.2 255.255.255.255</p>
+<p>[R2-LoopBack0] quit</p>
+<p>[R2]interface GigabitEthernet0&#x2F;0&#x2F;2</p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;2] ip address 10.0.23.2 255.255.255.0</p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;2] quit</p>
+<p>[R2]interface GigabitEthernet0&#x2F;0&#x2F;3</p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;3] ip address 10.0.12.2 255.255.255.0</p>
+<p>[R2-GigabitEthernet0&#x2F;0&#x2F;3] quit</p>
+<p>#配置R3的GE0&#x2F;0&#x2F;2、GE0&#x2F;0&#x2F;3、Loopback0接口IP地址</p>
+<p>[R3]interface LoopBack0</p>
+<p>[R3-LoopBack0] ip address 10.0.3.3 255.255.255.255</p>
+<p>[R3-LoopBack0] quit</p>
+<p>[R3]interface GigabitEthernet0&#x2F;0&#x2F;2</p>
+<p>[R3-GigabitEthernet0&#x2F;0&#x2F;2] ip address 10.0.34.3 255.255.255.0</p>
+<p>[R3-GigabitEthernet0&#x2F;0&#x2F;2] quit</p>
+<p>[R3]interface GigabitEthernet0&#x2F;0&#x2F;3</p>
+<p>[R3-GigabitEthernet0&#x2F;0&#x2F;3] ip address 10.0.23.3 255.255.255.0</p>
+<p>[R3-GigabitEthernet0&#x2F;0&#x2F;3] quit</p>
+<p>#配置R4的GE0&#x2F;0&#x2F;3、Loopback0接口IP地址</p>
+<p>[R4]interface GigabitEthernet0&#x2F;0&#x2F;3</p>
+<p>[R4-GigabitEthernet0&#x2F;0&#x2F;3] ip address 10.0.34.4 255.255.255.0</p>
+<p>[R4-GigabitEthernet0&#x2F;0&#x2F;3] quit</p>
+<p>[R4]interface LoopBack0</p>
+<p>[R4-LoopBack0] ip address 10.0.4.4 255.255.255.255</p>
+<p>[R4-LoopBack0] quit</p>
+<p>#在R2、R4上检查IP地址连通性</p>
+<h2 id="配置ospf和isis"><a href="#配置ospf和isis" class="headerlink" title="配置ospf和isis"></a>配置ospf和isis</h2><p>#配置R1</p>
+<p>[R1]ospf 1 router-id 10.0.1.1</p>
+<p>[R1-ospf-1] area 0</p>
+<p>[R1-ospf-1-area-0.0.0.0] network 10.0.1.1 0.0.0.0</p>
+<p>[R1-ospf-1-area-0.0.0.0] network 10.0.12.1 0.0.0.0</p>
+<p>[R1-ospf-1-area-0.0.0.0] quit</p>
+<p>[R1-ospf-1] quit</p>
+<p>#配置R2</p>
+<p>[R2]ospf 1 router-id 10.0.2.2</p>
+<p>[R2-ospf-1] area 0.0.0.0</p>
+<p>[R2-ospf-1-area-0.0.0.0] network 10.0.2.2 0.0.0.0</p>
+<p>[R2-ospf-1-area-0.0.0.0] network 10.0.12.2 0.0.0.0</p>
+<p>[R2-ospf-1-area-0.0.0.0] network 10.0.23.2 0.0.0.0</p>
+<p>[R2-ospf-1-area-0.0.0.0] quit</p>
+<p>[R2-ospf-1] quit</p>
+<p>#配置R3</p>
+<p>[R3]ospf 1 router-id 10.0.3.3</p>
+<p>[R3-ospf-1] area 0.0.0.0</p>
+<p>[R3-ospf-1-area-0.0.0.0] network 10.0.3.3 0.0.0.0</p>
+<p>[R3-ospf-1-area-0.0.0.0] network 10.0.23.3 0.0.0.0</p>
+<p>[R3-ospf-1-area-0.0.0.0] quit</p>
+<p>[R3-ospf-1] quit</p>
+<p>#在R2上检查OSPF邻居的概要信息</p>
+<p>R3、R4上配置IS-IS，区域为49.0001，系统ID采用0000.0000.000x格式（x为设备编号），两台设备都为Level-1路由器，在互联接口、R4的Loopback0接口上激活IS-IS。</p>
+<p>#配置R3</p>
+<p>[R3]isis 1</p>
+<p>[R3-isis-1] is-level level-1</p>
+<p>[R3-isis-1] network-entity 49.0001.0000.0000.0003.00</p>
+<p>[R3-isis-1] quit</p>
+<p>[R3]interface GigabitEthernet0&#x2F;0&#x2F;2</p>
+<p>[R3-GigabitEthernet0&#x2F;0&#x2F;2] isis enable 1</p>
+<p>[R3-GigabitEthernet0&#x2F;0&#x2F;2] quit</p>
+<p>#配置R4</p>
+<p>[R4]isis 1</p>
+<p>[R4-isis-1] is-level level-1</p>
+<p>[R4-isis-1] network-entity 49.0001.0000.0000.0004.00</p>
+<p>[R4-isis-1] quit</p>
+<p>[R4]interface GigabitEthernet0&#x2F;0&#x2F;3</p>
+<p>[R4-GigabitEthernet0&#x2F;0&#x2F;3] isis enable 1</p>
+<p>[R4-GigabitEthernet0&#x2F;0&#x2F;3] quit</p>
+<p>[R4]interface LoopBack 0</p>
+<p>[R4-LoopBack0] isis enable 1</p>
+<p>[R4-LoopBack0] quit</p>
+<p>#在R3上检查IS-IS邻居状态</p>
+<h2 id="在R1上引入直连路由"><a href="#在R1上引入直连路由" class="headerlink" title="在R1上引入直连路由"></a>在R1上引入直连路由</h2><p>在R1上将直连路由引入到OSPF中，同时配置路由策略过滤C业务网段，将A、B业务网段路由分别打上路由标记10、20。</p>
+<p>#创建IP前缀列表1，匹配Loopback1接口路由（A业务网段）</p>
+<p>[R1]ip ip-prefix 1 index 10 permit 172.16.1.0 24 greater-equal 24 less-equal 24</p>
+<p>#创建IP前缀列表2，匹配Loopback2接口路由（B业务网段）</p>
+<p>[R1]ip ip-prefix 2 index 10 permit 172.16.2.0 24 greater-equal 24 less-equal 24</p>
+<p>#创建Route-Policy hcip，并创建节点10、20，分别调用IP前缀列表1、2，打上路由标记</p>
+<p>[R1]route-policy hcip permit node 10</p>
+<p>[R1-route-policy] if-match ip-prefix 1</p>
+<p>[R1-route-policy] apply tag 10</p>
+<p>[R1-route-policy] quit</p>
+<p>[R1]route-policy hcip permit node 20</p>
+<p>[R1-route-policy] if-match ip-prefix 2</p>
+<p>[R1-route-policy] apply tag 20 </p>
+<p>[R1-route-policy] quit</p>
+<p>#在R1的OSPF中引入直连路由，调用Route-Policy hcip</p>
+<p>[R1]ospf 1</p>
+<p>[R1-ospf-1] import-route direct route-policy hcip</p>
+<p>r1上查看ospf lsdb，Loopback1、2接口路由已经被成功引入OSPF中。</p>
+<p>#在R1上查看OSPF LSDB中AS-external LSA 172.16.1.0的相关信息</p>
+<p>[R1]display ospf lsdb ase 172.16.1.0 </p>
+<p>​	 OSPF Process 1 with Router ID 10.0.1.1</p>
+<p>​		 Link State Database</p>
+<p> Type    : External</p>
+<p> Ls id   : 172.16.1.0</p>
+<p> Adv rtr  : 10.0.1.1  </p>
+<p> Ls age   : 165 </p>
+<p> Len    : 36 </p>
+<p> Options  :  E  </p>
+<p> seq#    : 80000001 </p>
+<p> chksum   : 0xa954</p>
+<p> Net mask  : 255.255.255.0 </p>
+<p> TOS 0  Metric: 1 </p>
+<p> E type   : 2</p>
+<p> Forwarding Address : 0.0.0.0 </p>
+<p> Tag    : 10 </p>
+<p> Priority  : Low</p>
+<p>外部路由172.16.1.0&#x2F;24已经被打上Tag 10。</p>
+<p>#在R1上查看OSPF LSDB中AS-external LSA 172.16.2.0的相关信息</p>
+<p>[R1]display ospf lsdb ase 172.16.2.0</p>
+<p>​	 OSPF Process 1 with Router ID 10.0.1.1</p>
+<p>​		 Link State Database</p>
+<p> Type    : External</p>
+<p> Ls id   : 172.16.2.0</p>
+<p> Adv rtr  : 10.0.1.1  </p>
+<p> Ls age   : 355 </p>
+<p> Len    : 36 </p>
+<p> Options  :  E  </p>
+<p> seq#    : 80000001 </p>
+<p> chksum   : 0x539f</p>
+<p> Net mask  : 255.255.255.0 </p>
+<p> TOS 0  Metric: 1 </p>
+<p> E type   : 2</p>
+<p> Forwarding Address : 0.0.0.0 </p>
+<p> Tag    : 20 </p>
+<p> Priority  : Low</p>
+<p>外部路由172.16.2.0&#x2F;24已经被打上Tag 20。</p>
+<h2 id="在R2上配置过滤策略"><a href="#在R2上配置过滤策略" class="headerlink" title="在R2上配置过滤策略"></a>在R2上配置过滤策略</h2><p>在R2上配置Filter-Policy对接收的OSPF路由进行过滤，只接收B业务网段的路由。</p>
+<p>#查看配置Filter-Policy前的OSPF路由表</p>
+<p><R2>display ospf routing</R2></p>
+<p>#查看配置Filter-Policy前的IP路由表中的OSPF路由</p>
+<p><R2>display ip routing-table protocol ospf	</R2></p>
+<p>在OSPF路由表以及IP路由表中<strong>都可以看到</strong>OSPF外部路由172.16.1.0&#x2F;24、172.16.2.0&#x2F;24。</p>
+<p>#配置基础ACL </p>
+<p>[R2]acl number 2000</p>
+<p>[R2-acl-basic-2000] rule 5 deny source 172.16.1.0 0.0.0.255</p>
+<p>[R2-acl-basic-2000] rule 10 permit</p>
+<p>#在OSPF中部署入方向的Filter-Policy，调用ACL 2000</p>
+<p>[R2]ospf 1</p>
+<p>[R2-ospf-1] filter-policy 2000 import</p>
+<p>#查看配置Filter-Policy后的OSPF路由表</p>
+<p>dis ospf routing</p>
+<p>发现两条外部路由都还存在</p>
+<p>#查看配置Filter-Policy后的IP路由表中的OSPF路由</p>
+<p><R2>display ip routing-table protocol ospf	</R2></p>
+<p>在IP路由表中路由172.16.2.0&#x2F;24已经不存在，但是在OSPF路由表中依旧存在。这验证了对于OSPF，Filter-Policy只是限制路由加入IP路由表，不影响本地的LSDB以及LSA的传递。</p>
+<p>#在R3上查看IP路由表中的OSPF路由</p>
+<p><R3>display ip routing-table protocol ospf </R3></p>
+<p>R3的IP路由表中OSPF外部路由172.16.1.0&#x2F;24、172.16.2.0&#x2F;24依旧存在。</p>
+<h2 id="在R3上将OSPF路由引入到IS-IS"><a href="#在R3上将OSPF路由引入到IS-IS" class="headerlink" title="在R3上将OSPF路由引入到IS-IS"></a>在R3上将OSPF路由引入到IS-IS</h2><p>在R3上将OSPF路由引入到IS-IS中，通过Route-Policy匹配路由标记，只引入A业务网段的OSPF外部路由。</p>
+<p>#创建Route-Policy hcip</p>
+<p>[R3]route-policy hcip permit node 10</p>
+<p>[R3-route-policy] if-match tag 10</p>
+<p>[R3-route-policy] quit</p>
+<p>#在IS-IS中引入OSPF路由，调用Route-Policy hcip只引入A业务网段的OSPF外部路由</p>
+<p>[R3]isis 1</p>
+<p>[R3-isis-1] import-route ospf 1 <strong>level-1</strong> route-policy hcip</p>
+<p>（注意指定level）</p>
+<p>#查看R3的IS-IS路由表</p>
+<p><R3>display isis route </R3></p>
+<p>Level-1的路由重分发表中只有172.16.1.0&#x2F;24。</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>路由策略</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>链路聚合</title>
     <url>/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/</url>
     <content><![CDATA[<h1 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h1><h2 id="什么是链路聚合"><a href="#什么是链路聚合" class="headerlink" title="什么是链路聚合"></a>什么是链路聚合</h2><p>在现网中，设备间如果通过一条链路连接，<strong>如果这条链路故障了，那么设备两端的终端就不能够通信了</strong>。有什么办法可以解决该问题呢？答案是——<strong>链路聚合</strong>。</p>
@@ -5784,124 +5873,25 @@
       </tags>
   </entry>
   <entry>
-    <title>堆叠</title>
-    <url>/2024/07/29/%E5%A0%86%E5%8F%A0/</url>
-    <content><![CDATA[<h1>基本概念</h1>
-<p>堆叠（iStack），将多台支持堆叠特性的交换机通过堆叠线缆连接在一起，从逻辑上虚拟成一台交换设备，作为一个整体参与数据转发。</p>
-<p>集群（Cluster Switch System，CSS），将两台支持集群特性的交换机设备组合在一起，从逻辑上虚拟成一台交换设备。</p>
-<p>集群只支持两台设备，一般高端框式交换机支持CSS、盒式设备支持iStack。通过使用堆叠、集群技术结合链路聚合技术可以简单构建高可靠、无环的园区网络。</p>
-<img src="/2024/07/29/%E5%A0%86%E5%8F%A0/QQ截图20240729221559.png" alt="QQ截图20240729221559" style="zoom:67%;">
-<p>一般接入、汇聚层盒式交换机采用堆叠技术，汇聚、核心层交换机采用集群技术。</p>
-<p>在逻辑交换机之间使用链路聚合技术，无需部署STP、VRRP实现高可靠性。</p>
-<p>实现高可靠性的同时设备之间的链路可以同时传输流量，链路利用率得以提升。</p>
-<h2 id="角色">角色</h2>
-<ul>
-<li>
-<p>主交换机（Master）</p>
-<p>主交换机负责管理整个堆叠。堆叠系统中只有一台主交换机。</p>
-</li>
-<li>
-<p>备交换机（Standby）</p>
-<p>备交换机是主交换机的备份交换机。堆叠系统中只有一台备交换机。当主交换机故障时，备交换机会接替原主交换机的所有业务。</p>
-</li>
-<li>
-<p>从交换机（Slave）</p>
-<p>从交换机用于业务转发，堆叠系统中可以有多台从交换机。从交换机数量越多，堆叠系统的转发带宽越大。</p>
-<p>除主交换机和备交换机外，堆叠中其他所有的成员交换机都是从交换机。当备交换机不可用时，从交换机承担备交换机的角色。</p>
-</li>
-</ul>
-<h2 id="堆叠ID">堆叠ID</h2>
-<p>堆叠ID用来标识堆叠成员交换机，是成员交换机的槽位号，取值范围是<strong>0～8</strong>，默认是0。每个堆叠成员交换机在堆叠系统中具有唯一的堆叠ID。</p>
-<p>当堆叠系统有新成员加入时，如果新成员与已有成员堆叠ID冲突，则堆叠主交换机从0～最大的堆叠ID进行遍历，找到第一个空闲的ID分配给该新成员。</p>
-<p>在建立堆叠时，建议提前规划好设备的堆叠ID。</p>
-<img src="/2024/07/29/%E5%A0%86%E5%8F%A0/QQ截图20240729222232.png" alt="QQ截图20240729222232" style="zoom:67%;">
-<p>当堆叠成员从堆叠系统中移除时，会继续使用堆叠系统使用的堆叠ID，可以执行命令<strong>stack slot</strong> <em>slot-id</em> <strong>renumber</strong> <strong>0</strong>手动恢复堆叠ID为缺省值0。如果不手动恢复堆叠ID，该交换机再次加入其它堆叠系统，和新堆叠系统的堆叠ID冲突时，才会被重新分配新的堆叠ID。</p>
-<h2 id="堆叠建立">堆叠建立</h2>
-<p><strong>堆叠优先级</strong>：</p>
-<p>主要用于角色选举过程中确定成员交换机的角色，<strong>优先级值越大表示优先级越高</strong>，优先级越高当选为主交换机的可能性越大。</p>
-<p>堆叠主交换机的选举过程是：先比较交换机启动时间，再比较堆叠优先级。当两台交换机启动时间相差20秒以内时，则认为交换机启动时间相同，此时堆叠优先级大的交换机将被选举为主交换机。所以建议将优先级最大值分配给希望成为主交换机的设备。</p>
-<p><strong>堆叠优先级取值范围为1～255，缺省优先级值为100</strong>，可以通过<strong>display stack</strong>查看，通过命令<strong>stack slot</strong> <em>slot-id</em> <strong>priority</strong> <em>priority</em>修改。修改后的堆叠优先级不影响当前主交换机。只有堆叠系统复位重新选举时，修改后的堆叠优先级才生效。</p>
-<p>堆叠优先级相同时，<strong>MAC地址小的交</strong>换机优先竞争为主交换机</p>
-<ol>
-<li>物理连接：根据网络需求，选择适当的连接方式和连接拓扑，组建堆叠网络。</li>
-<li>主交换机选举：成员交换机之间相互发送堆叠竞争报文，并根据选举原则，选出堆叠系统主交换机。</li>
-<li>堆叠ID分配和备交换机选举：主交换机收集所有成员交换机的拓扑信息，向所有成员交换机分配堆叠ID，之后选出堆叠系统备交换机。</li>
-<li>软件版本和配置文件同步：主交换机将整个堆叠系统的拓扑信息同步给所有成员交换机，成员交换机同步主交换机的系统软件和配置文件，之后进入稳定运行状态。</li>
-</ol>
-<p>堆叠主交换机选举超时时间为20s，堆叠成员交换机上电或重启时，由于不同成员交换机所需的启动时间可能差异比较大，因此不是所有成员交换机都有机会参与主交换机的第一次选举。20s后启动的交换机加入堆叠系统时，会重新进行主交换机的竞争。原主交换机竞争失败时会重启然后再以非主交换机加入堆叠，</p>
-<p><img src="/2024/07/29/%E5%A0%86%E5%8F%A0/QQ%E6%88%AA%E5%9B%BE20240729224300.png" alt="QQ截图20240729224300"></p>
-<h2 id="堆叠加入">堆叠加入</h2>
-<p>（不带电）</p>
-<p>新加入的交换机会选举为从交换机，堆叠系统中原有主备从角色不变。新加入的是从</p>
-<h2 id="堆叠合并">堆叠合并</h2>
-<p>堆叠合并是指稳定运行的两个堆叠系统合并成一个新的堆叠系统。</p>
-<p>两个堆叠系统的主交换机通过竞争，选举出一个更优的作为新堆叠系统的主交换机。</p>
-<p>竞争成功的主交换机所在的堆叠系统将<strong>保持原有主备从角色</strong>和配置不变，业务也不会受到影响；而另外一个堆叠系统的所有成员交换机将重新启动，<strong>以从交换机的角色加入到新堆叠系统</strong>，其堆叠ID将由新主交换机重新分配，并将同步新主交换机的配置文件和系统软件，该堆叠系统的原有业务也将中断。</p>
-<p>堆叠系统合并流程与堆叠成员加入流程类似，堆叠合并时主交换机的选举规则为：比较运行时间，运行时间较早的堆叠系统竞争为主；如果两个堆叠系统的运行时间一样，其主交换机的选举规则与堆叠建立时一样。</p>
-<h2 id="堆叠分裂与多主检测">堆叠分裂与多主检测</h2>
-<p>堆叠分裂后，原主备交换机被分裂到同一个堆叠系统中：原主交换机会重新计算堆叠拓扑，将移出的成员交换机的拓扑信息删除，并将新的拓扑信息同步给其他成员交换机；而移出的成员交换机检测到堆叠协议报文超时，将自行复位，重新进行选举。</p>
-<p>堆叠分裂后，原主备交换机被分裂到不同的堆叠系统中：原主交换机所在堆叠系统重新指定备交换机，重新计算拓扑信息并同步给其他成员交换机；原备交换机所在堆叠系统将发生备升主，原备交换机升级为主交换机，重新计算堆叠拓扑并同步到其他成员交换机，并指定新的备交换机。</p>
-<p><strong>多主检测MAD</strong>（Multi-Active Detection），是一种检测和处理堆叠分裂的协议。链路故障导致堆叠系统分裂后，MAD可以实现堆叠分裂的检测、冲突处理和故障恢复，降低堆叠分裂对业务的影响。</p>
-<p><strong>直连检测方式</strong></p>
-<p>直连检测方式是指堆叠成员交换机间通过普通线缆直连的专用链路进行多主检测。在直连检测方式中，堆叠系统正常运行时，不发送MAD报文；堆叠系统分裂后，分裂后的两台交换机以<strong>1s为</strong>周期通过检测链路发送MAD报文进行多主冲突处理。</p>
-<ul>
-<li>通过中间设备直连：堆叠系统的所有成员交换机之间至少有一条检测链路与中间设备相连。</li>
-<li>Full-mesh方式直连：堆叠系统的各成员交换机之间通过检测链路建立Full-mesh全连接，即每两台成员交换机之间至少有一条检测链路。</li>
-</ul>
-<img src="/2024/07/29/%E5%A0%86%E5%8F%A0/QQ截图20240729225105.png" alt="QQ截图20240729225105" style="zoom:67%;">
-<img src="/2024/07/29/%E5%A0%86%E5%8F%A0/QQ截图20240729225113.png" alt="QQ截图20240729225113" style="zoom:67%;">
-<p><strong>代理检测方式</strong></p>
-<p>代理检测方式是在堆叠系统Eth-Trunk上启用代理检测，在代理设备上启用MAD检测功能。此种检测方式要求堆叠系统中的所有成员交换机都与代理设备连接，并将这些链路加入同一个Eth-Trunk内。与直连检测方式相比，代理检测方式无需占用额外的接口，Eth-Trunk接口可同时运行MAD代理检测和其他业务。</p>
-<p>在代理检测方式中，堆叠系统正常运行时，堆叠成员交换机以30s为周期通过检测链路发送MAD报文。堆叠成员交换机对在正常工作状态下收到的MAD报文不做任何处理；堆叠分裂后，分裂后的两台交换机以1s为周期通过检测链路发送MAD报文进行多主冲突处理。</p>
-<img src="/2024/07/29/%E5%A0%86%E5%8F%A0/QQ截图20240729225336.png" alt="QQ截图20240729225336" style="zoom:67%;">
-<img src="/2024/07/29/%E5%A0%86%E5%8F%A0/QQ截图20240729225342.png" alt="QQ截图20240729225342" style="zoom:67%;">
-<p>堆叠分裂后，MAD冲突处理机制会使分裂后的堆叠系统处于Detect状态或Recovery状态。Detect状态表示堆叠正常工作状态，Recovery状态表示堆叠禁用状态。</p>
-<p>MAD冲突处理机制如下：MAD分裂检测机制会检测到网络中存在多个处于Detect状态的堆叠系统，这些堆叠系统之间相互竞争，竞争成功的堆叠系统保持Detect状态，竞争失败的堆叠系统会转入Recovery状态；并且在Recovery状态堆叠系统的所有成员交换机上，关闭除保留端口以外的其它所有物理端口包括管理口，以保证该堆叠系统不再转发业务报文。</p>
-<ol>
-<li>先比较启动时间，启动完成时间早的堆叠系统成为Detect状态。启动完成时间差在20秒内则认为堆叠的启动完成时间相同。</li>
-<li>启动完成时间相同时，比较堆叠中主交换机的优先级，优先级高的堆叠系统成为Detect状态。</li>
-<li>优先级相同时，比较堆叠系统的MAC，MAC小的堆叠系统成为Detect状态。</li>
-</ol>
-<h2 id="主备倒换">主备倒换</h2>
-<ol>
-<li>原来的备交换机升为主交换机。</li>
-<li>新主交换机重新指定备交换机。</li>
-<li>原来的主交换机重启后重新加入堆叠系统，并被选举为从交换机。</li>
-</ol>
-<h2 id="配置">配置</h2>
-<p><img src="/2024/07/29/%E5%A0%86%E5%8F%A0/QQ%E6%88%AA%E5%9B%BE20240729225604.png" alt="QQ截图20240729225604"></p>
-]]></content>
-      <categories>
-        <category>基础知识</category>
-      </categories>
-      <tags>
-        <tag>堆叠</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>防火墙</title>
     <url>/2024/08/05/%E9%98%B2%E7%81%AB%E5%A2%99/</url>
-    <content><![CDATA[<h1>包过滤防火墙</h1>
-<p>包过滤是指基于五元组对每个数据包进行检测，根据配置的安全策略转发或丢弃数据包。</p>
+    <content><![CDATA[<h1 id="包过滤防火墙"><a href="#包过滤防火墙" class="headerlink" title="包过滤防火墙"></a>包过滤防火墙</h1><p>包过滤是指基于五元组对每个数据包进行检测，根据配置的安全策略转发或丢弃数据包。</p>
 <p>包过滤防火墙的基本原理是：通过配置访问控制列表（Access Control List，ACL）实施数据包的过滤。</p>
-<p>包过滤防火墙的缺点主要表现以下几点：<br>
-随着ACL复杂度和长度的增加，其过滤性能呈指数下降；<br>
-静态的ACL规则难以适应动态的安全要求；<br>
-包过滤不检查会话状态也不分析数据，这很容易让黑客蒙混过关。例如，攻击者可以使用假冒地址进行欺骗，通过把自己主机IP地址设成一个合法主机IP地址，就能很轻易地通过报文过滤器。</p>
-<h1>状态检测防火墙</h1>
-<img src="/2024/08/05/%E9%98%B2%E7%81%AB%E5%A2%99/QQ截图20240805195156.png" alt="QQ截图20240805195156" style="zoom:67%;">
-<h1>安全区域</h1>
-<p><img src="/2024/08/05/%E9%98%B2%E7%81%AB%E5%A2%99/QQ%E6%88%AA%E5%9B%BE20240805195322.png" alt="QQ截图20240805195322"></p>
+<p>包过滤防火墙的缺点主要表现以下几点：<br>随着ACL复杂度和长度的增加，其过滤性能呈指数下降；<br>静态的ACL规则难以适应动态的安全要求；<br>包过滤不检查会话状态也不分析数据，这很容易让黑客蒙混过关。例如，攻击者可以使用假冒地址进行欺骗，通过把自己主机IP地址设成一个合法主机IP地址，就能很轻易地通过报文过滤器。</p>
+<h1 id="状态检测防火墙"><a href="#状态检测防火墙" class="headerlink" title="状态检测防火墙"></a>状态检测防火墙</h1><img src="/2024/08/05/%E9%98%B2%E7%81%AB%E5%A2%99/QQ截图20240805195156.png" alt="QQ截图20240805195156" style="zoom:67%;">
+
+<h1 id="安全区域"><a href="#安全区域" class="headerlink" title="安全区域"></a>安全区域</h1><p><img src="/2024/08/05/%E9%98%B2%E7%81%AB%E5%A2%99/QQ%E6%88%AA%E5%9B%BE20240805195322.png" alt="QQ截图20240805195322"></p>
 <p>防火墙本身的接口默认时local区域，用户可以自己创建区域（优先级不能和默认四个区域优先级一样）</p>
 <p><img src="/2024/08/05/%E9%98%B2%E7%81%AB%E5%A2%99/QQ%E6%88%AA%E5%9B%BE20240805195530.png" alt="QQ截图20240805195530"></p>
-<h1>安全策略</h1>
-<p>当防火墙收到流量后，对流量的属性（五元组、用户、时间段等）进行识别，然后与安全策略的条件进行匹配。</p>
+<h1 id="安全策略"><a href="#安全策略" class="headerlink" title="安全策略"></a>安全策略</h1><p>当防火墙收到流量后，对流量的属性（五元组、用户、时间段等）进行识别，然后与安全策略的条件进行匹配。</p>
 <p>如果条件匹配，则此流量被执行对应的动作。</p>
 <p>当配置多条安全策略规则时，安全策略的匹配按照策略列表的顺序执行，即从策略列表顶端开始逐条向下匹配。</p>
 <p><strong>如果流量匹配了某个安全策略，将不再进行下一个策略的匹配</strong>。安全策略的配置顺序很重要，需要先配置条件精确的策略，再配置宽泛的策略。</p>
 <p><img src="/2024/08/05/%E9%98%B2%E7%81%AB%E5%A2%99/QQ%E6%88%AA%E5%9B%BE20240805195758.png" alt="QQ截图20240805195758"></p>
-<h1>会话表</h1>
-<img src="/2024/08/05/%E9%98%B2%E7%81%AB%E5%A2%99/QQ截图20240805200035.png" alt="QQ截图20240805200035" style="zoom:67%;">
+<h1 id="会话表"><a href="#会话表" class="headerlink" title="会话表"></a>会话表</h1><img src="/2024/08/05/%E9%98%B2%E7%81%AB%E5%A2%99/QQ截图20240805200035.png" alt="QQ截图20240805200035" style="zoom:67%;">
+
+
+
 <p><img src="/2024/08/05/%E9%98%B2%E7%81%AB%E5%A2%99/QQ%E6%88%AA%E5%9B%BE20240805195940.png" alt="QQ截图20240805195940"></p>
 <p>通过会话中的五元组（源ip，目的ip，源端口，目的端口，协议）信息可以唯一确定通信双方的一条连接。</p>
 <p>防火墙将要删除会话的时间称为会话的老化时间。</p>
@@ -5909,30 +5899,18 @@
 <p>会话建立和包处理流程：</p>
 <p><img src="/2024/08/05/%E9%98%B2%E7%81%AB%E5%A2%99/QQ%E6%88%AA%E5%9B%BE20240805200215.png" alt="QQ截图20240805200215"></p>
 <p>防火墙为各种协议设定了会话老化机制。当一条会话在老化时间内没有被任何报文匹配，则会被从会话表中删除。这种机制可以避免防火墙的设备资源被大量无用、陈旧的会话表项消耗。</p>
-<h1>ASPF和Server-map</h1>
-<p><img src="/2024/08/05/%E9%98%B2%E7%81%AB%E5%A2%99/QQ%E6%88%AA%E5%9B%BE20240805200438.png" alt="QQ截图20240805200438"></p>
+<h1 id="ASPF和Server-map"><a href="#ASPF和Server-map" class="headerlink" title="ASPF和Server-map"></a>ASPF和Server-map</h1><p><img src="/2024/08/05/%E9%98%B2%E7%81%AB%E5%A2%99/QQ%E6%88%AA%E5%9B%BE20240805200438.png" alt="QQ截图20240805200438"></p>
 <p><img src="/2024/08/05/%E9%98%B2%E7%81%AB%E5%A2%99/QQ%E6%88%AA%E5%9B%BE20240805200610.png" alt="QQ截图20240805200610"></p>
 <p>由于某些特殊应用会在通信过程中临时协商端口号等信息，所以需要设备通过检测报文的应用层数据，自动获取相关信息并创建相应的会话表项，以保证这些应用的正常通信。这个功能称为ASPF（Application Specific Packet Filter），所创建的会话表项叫做Server-map表。</p>
 <p>对于多通道协议，例如FTP，ASPF功能可以检查控制通道和数据通道的连接建立过程，通过生成server-map表项，确保FTP协议能够穿越设备，同时不影响设备的安全检查功能。</p>
 <p>Server-map表相当于在防火墙上开通了“隐形通道”，使得像FTP这样的特殊应用的报文可以正常转发。当然这个通道不是随意开的，是防火墙分析了报文的应用层信息之后，提前预测到后面报文的行为方式，所以才打开了这样的一个通道。</p>
-<p>Server-map通常只是用检查首个报文，通道建立后的报文还是根据会话表来转发。<br>
-Server-map表在防火墙转发中非常重要，不只是ASPF会生成，NAT Server等特性也会生成Server-map表。</p>
-<p>如图所示：<br>
-Server-map表中记录了FTP服务器向FTP客户端的2071端口号发起的数据连接，服务器向客户端发起数据连接时将匹配这个Server-map表转发，而无需再配置反向安全策略。<br>
-数据连接的第一个报文匹配Server-map表转发后，防火墙将生成这条数据连接的会话，<strong>该数据连接的后续报文匹配会话表转发，不再需要重新匹配Server-map表项。</strong><br>
-Server-map表项由于一直没有报文匹配，经过一定老化时间后就会被删除。这种机制保证了Server-map表项这种较为宽松的通道能够及时被删除，保证了网络的安全性。当后续发起新的数据连接时会重新触发建立Server-map表项。</p>
+<p>Server-map通常只是用检查首个报文，通道建立后的报文还是根据会话表来转发。<br>Server-map表在防火墙转发中非常重要，不只是ASPF会生成，NAT Server等特性也会生成Server-map表。</p>
+<p>如图所示：<br>Server-map表中记录了FTP服务器向FTP客户端的2071端口号发起的数据连接，服务器向客户端发起数据连接时将匹配这个Server-map表转发，而无需再配置反向安全策略。<br>数据连接的第一个报文匹配Server-map表转发后，防火墙将生成这条数据连接的会话，<strong>该数据连接的后续报文匹配会话表转发，不再需要重新匹配Server-map表项。</strong><br>Server-map表项由于一直没有报文匹配，经过一定老化时间后就会被删除。这种机制保证了Server-map表项这种较为宽松的通道能够及时被删除，保证了网络的安全性。当后续发起新的数据连接时会重新触发建立Server-map表项。</p>
 <p><strong>示例：</strong></p>
 <img src="/2024/08/05/%E9%98%B2%E7%81%AB%E5%A2%99/QQ截图20240805200939.png" alt="QQ截图20240805200939" style="zoom:67%;">
-<p>Server-map表与会话表的关系如下：<br>
-Server-map表记录了应用层数据中的关键信息，报文命中该表后，不再受安全策略的控制；<br>
-会话表是通信双方连接状态的具体体现；<br>
-Server-map表不是当前的连接信息，而是防火墙对当前连接分析后得到的即将到来报文的预测；<br>
-防火墙收到报文先检查是否命中会话表；<br>
-如果没有命中则检查是否命中Server-map表；<br>
-命中Server-map表的报文不受安全策略控制；<br>
-防火墙最后为命中Server-map表的数据创建会话表。</p>
-<h1>防火墙nat</h1>
-<p><img src="/2024/08/05/%E9%98%B2%E7%81%AB%E5%A2%99/QQ%E6%88%AA%E5%9B%BE20240805202117.png" alt="QQ截图20240805202117"></p>
+
+<p>Server-map表与会话表的关系如下：<br>Server-map表记录了应用层数据中的关键信息，报文命中该表后，不再受安全策略的控制；<br>会话表是通信双方连接状态的具体体现；<br>Server-map表不是当前的连接信息，而是防火墙对当前连接分析后得到的即将到来报文的预测；<br>防火墙收到报文先检查是否命中会话表；<br>如果没有命中则检查是否命中Server-map表；<br>命中Server-map表的报文不受安全策略控制；<br>防火墙最后为命中Server-map表的数据创建会话表。</p>
+<h1 id="防火墙nat"><a href="#防火墙nat" class="headerlink" title="防火墙nat"></a>防火墙nat</h1><p><img src="/2024/08/05/%E9%98%B2%E7%81%AB%E5%A2%99/QQ%E6%88%AA%E5%9B%BE20240805202117.png" alt="QQ截图20240805202117"></p>
 <p><img src="/2024/08/05/%E9%98%B2%E7%81%AB%E5%A2%99/QQ%E6%88%AA%E5%9B%BE20240805202123.png" alt="QQ截图20240805202123"></p>
 <p>当公网用户主动访问Nat地址池中的地址，FW收到此报文后，无法匹配到会话表，根据缺省路由转发给路由器。路由器收到报文后，查找路由表又发送给FW。报文就在路由器和FW之间循环转发，造成路由环路。</p>
 <p>黑洞路由的目的是：将目的地址使Nat地址池中地址的报文丢弃</p>
