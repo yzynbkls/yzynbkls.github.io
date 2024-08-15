@@ -1,0 +1,660 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"><title>MPLS | 沃德发</title><meta name="keywords" content="mpls,ldp"><meta name="author" content="Yang"><meta name="copyright" content="Yang"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#f7f9fe"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-touch-fullscreen" content="yes"><meta name="apple-mobile-web-app-title" content="MPLS"><meta name="application-name" content="MPLS"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="#f7f9fe"><meta property="og:type" content="article"><meta property="og:title" content="MPLS"><meta property="og:url" content="http://example.com/2023/12/05/MPLS/index.html"><meta property="og:site_name" content="沃德发"><meta property="og:description" content="概念 MPLS（Multiprotocol Label Switching）多协议标签转发复习总结 首先我们要先知道MPLS是为何出现的？ MPLS是基于传统IP网络（RIP，OSPF等）的缺陷由IETF确定的 顺便先复习一下路由器查路由表 转发的过程： 传统的IP转发中，物理层从交换机的一个端口收"><meta property="og:locale" content="zh-CN"><meta property="og:image" content="http://example.com/img/toux.jpg"><meta property="article:author" content="Yang"><meta property="article:tag"><meta name="twitter:card" content="summary"><meta name="twitter:image" content="http://example.com/img/toux.jpg"><meta name="description" content="概念 MPLS（Multiprotocol Label Switching）多协议标签转发复习总结 首先我们要先知道MPLS是为何出现的？ MPLS是基于传统IP网络（RIP，OSPF等）的缺陷由IETF确定的 顺便先复习一下路由器查路由表 转发的过程： 传统的IP转发中，物理层从交换机的一个端口收"><link rel="shortcut icon" href="/favicon.ico"><link rel="canonical" href="http://example.com/2023/12/05/MPLS/"><link rel="preconnect" href="//cdn.cbd.int"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta name="google-site-verification" content="xxx"/><meta name="baidu-site-verification" content="code-xxx"/><meta name="msvalidate.01" content="xxx"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.cbd.int/node-snackbar@0.1.16/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.cbd.int/@fancyapps/ui@5.0.20/dist/fancybox/fancybox.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  linkPageTop: undefined,
+  peoplecanvas: {"enable":true,"img":"https://upload-bbs.miyoushe.com/upload/2023/09/03/125766904/ee23df8517f3c3e3efc4145658269c06_5714860933110284659.png"},
+  postHeadAiDescription: {"enable":true,"gptName":"AnZhiYu","mode":"local","switchBtn":false,"btnLink":"https://afdian.net/item/886a79d4db6711eda42a52540025c377","randomNum":3,"basicWordCount":1000,"key":"xxxx","Referer":"https://xx.xx/"},
+  diytitle: {"enable":true,"leaveTitle":"w(ﾟДﾟ)w 不要走！再看看嘛！","backTitle":"♪(^∇^*)欢迎肥来！"},
+  LA51: undefined,
+  greetingBox: {"enable":true,"default":"晚上好👋","list":[{"greeting":"晚安😴","startTime":0,"endTime":5},{"greeting":"早上好鸭👋, 祝你一天好心情！","startTime":6,"endTime":9},{"greeting":"上午好👋, 状态很好，鼓励一下～","startTime":10,"endTime":10},{"greeting":"11点多啦, 在坚持一下就吃饭啦～","startTime":11,"endTime":11},{"greeting":"午安👋, 宝贝","startTime":12,"endTime":14},{"greeting":"🌈充实的一天辛苦啦！","startTime":14,"endTime":18},{"greeting":"19点喽, 奖励一顿丰盛的大餐吧🍔。","startTime":19,"endTime":19},{"greeting":"晚上好👋, 在属于自己的时间好好放松😌~","startTime":20,"endTime":24}]},
+  twikooEnvId: '',
+  commentBarrageConfig:undefined,
+  root: '/',
+  preloader: {"source":3},
+  friends_vue_info: undefined,
+  navMusic: true,
+  mainTone: undefined,
+  authorStatus: undefined,
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":true,"languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: {"defaultEncoding":2,"translateDelay":0,"msgToTraditionalChinese":"繁","msgToSimplifiedChinese":"简","rightMenuMsgToTraditionalChinese":"转为繁体","rightMenuMsgToSimplifiedChinese":"转为简体"},
+  noticeOutdate: {"limitDay":365,"position":"top","messagePrev":"It has been","messageNext":"days since the last update, the content of the article may be outdated."},
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":330},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    simplehomepage: true,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: {"copy":true,"copyrightEbable":false,"limitCount":50,"languages":{"author":"作者: Yang","link":"链接: ","source":"来源: 沃德发","info":"著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。","copySuccess":"复制成功，复制和转载请标注本文地址"}},
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"你已切换为繁体","cht_to_chs":"你已切换为简体","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#425AEF","bgDark":"#1f1f1f","position":"top-center"},
+  source: {
+    justifiedGallery: {
+      js: 'https://cdn.cbd.int/flickr-justified-gallery@2.1.2/dist/fjGallery.min.js',
+      css: 'https://cdn.cbd.int/flickr-justified-gallery@2.1.2/dist/fjGallery.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: true,
+  isAnchor: false,
+  shortcutKey: undefined,
+  autoDarkmode: true
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  configTitle: '沃德发',
+  title: 'MPLS',
+  postAI: '',
+  pageFillDescription: '概念, 标签报文格式, MPLS转发过程, MPLS标签转发表与LDP, 基础实验概念多协议标签转发复习总结首先我们要先知道是为何出现的是基于传统网络等的缺陷由确定的顺便先复习一下路由器查路由表转发的过程传统的转发中物理层从交换机的一个端口收到一个报文上送到数据链路层数据链路层去掉链路层封装根据报文的协议域上送给相应的网络层网络层首先看报文是否是送给本机的若是去掉网络层封装上送给它的上层协议若不是则根据报文的目的地址查找路由表若找到路由将报文送给相应端口的数据链路层数据链路层封装后发送报文若找不到路由将报文丢弃传统的转发采用的是逐跳转发数据报文经过每一台交换机都要执行上述过程如图中收到目的地址为的数据包会依次查找路由表根据匹配的路由表项的进行转发都会进行类似的处理所以速度缓慢并且所有的交换机需要知道全网的路由或者默认路由另外由于传统转发是面向无连接的所以无法提供好的保证传统网络基于计算最优路径这是远远不够的往往在现实网络中还需考虑带宽链路属性等其他因素基于的流量工程是基于面向目的地址的转发是逐跳的转发无法实现根据来源来控制流量转发另外基于的流量工程是面向无连接的不能实现显式路径的出现从到走到有三种方法广播如以太网直接把数据发给每一个地方逐跳寻径走到一个地方问一下路接下来该怎么走也就是上面说的根据路由协议查路由表源路由提前规划好路线到哪里怎么走不常用而是第四种走法跟在向导后面走向导在走过的路上做好标记你只要沿着标记的指示走就可以了这也就是标签交换结合了三层路由技术与二层交换技术所以可以把它看成层的其中的多协议指的是支持多种网络协议如等是一种标签转发技术它采用无连接的控制平面和面向连接的数据平面具体的架构下面还有介绍无连接的控制平面实现路由信息的传递和标签的分发面向连接的数据平面实现报文在建立的标签转发路径上传送域内交换机不需要查看每个报文的目的地址只需要根据封装在头外面的标签进行转发即可这样可以大大提高效率转发与逐跳转发的关系是的承载层转发与转发不冲突它们的关系是如果能够使用转发那么包会先封装成数据帧来转发如果不能转发就还是原来的逐跳转发也就是尽量优先因为它会更快看上面的图我们需要理解整个域可以进行转发的区域是嵌在域上的也就是域外部是域它本身也运行域中一些基本概念名词标签是一个定长的比较短的只具有本地意义的标识转发等价类一组或一类数据这组数据分配的标签相同这些数据流在转发过程中被网络节点以相同方式处理在网络中可以通过多种方式划分例如基于目的地址及网络掩码等特征来划分数据属于哪一个由数据进入域时的决定标签交换通道一个的数据流在不同的节点被赋予确定的标签数据转发按照这些标签进行数据流所走的路径就是是一个从起点到终点的单向路径若需要双向数据互通则需要在双方之间建立双向的是的网络的核心交换机它提供标签交换和标签分发功能在的网络边缘进入到网络的流量由分为不同的并为这些请求相应的标签它提供流量分类和标签的映射标签的移除功能从域进入域的时候标记边缘路由器要做一个压入出域的时候做一个弹出而标记交换路由器负责转发所以实际工作量比大很多标记交换路径就是从进入到离开走的路径这条路径是在转发报文之前就已经通过各种协议确定并建立的报文会在特定的上传递也可以把看成一个隧道标签报文格式长度为包括长度为的标签该标签用于报文转发长度为的通常用来承载报文中的优先级长度为的栈底标志用来表明是否是最后一个标签标签可以多层嵌套长度为的作用类似头部的用来防止报文环路等标签空间转发过程依据三张表为了给使用隧道的上层应用如路由管理提供统一的接口系统自动为隧道分配了一个也称为该的长度为比特只是本地有效在转发过程中和表项是通过关联的在通过查询表得到信息和表指导报文的转发当报文进入域时首先查看表检查目的地址对应的值是否为如果值为则进入正常的转发流程如果值不为则进入转发流程在通过查询表和表指导报文的转发在通过查询表指导报文的转发例首先从数据包从域进入域入口做操作分析转发等价类为数据包打上标签绑定通道图中的标签转发表内容大概如下两个根据标签转发表用下一跳分配的标签替换报文的标签并转发转发到出口时进行弹出操作去掉标签转发的过程到这里结束倒数第二跳弹出和开发的可没关系上面的过程我们可以发现在发给时其实带标签的数据已经没有意义因为下一跳就要弹出标签了所以完全可以在就把标签弹出然后以报文形式转发给这样可以大大降低最后的出口的工作量是现在普遍采用的方法默认情况下设备支持特性支持的节点即出口分配给倒数第二跳节点的标签值为标签转发表与我们知道交换机中的地址表是通过逆向学习法产生的路由器中的路由表是通过路由协议学习或自己配置静态路由产生的那么中标签转发表是怎么产生的呢答案是也会有一个类似的路由器学习的协议这个协议叫做标签分发协议这个也是技术的核心协议之一来完成标签的分配控制和保持从整个架构看这个协议的位置包括两个平面控制平面和数据平面控制平面负责产生和维护路由信息以及标签信息数据平面负责普通报文的转发以及带标签报文的转发控制平面中路由协议模块用来传递路由信息生成路由信息表标签分发协议模块用来完成标签信息的交换建立标签转发路径数据平面包括转发表和标签转发表当收到普通报文时如果是普通转发则查找路由表转发如果需要标签转发则按照标签转发表转发当收到带有标签的报文时时如果需要按照标签转发根据标签转发表转发如果需要转发到网络则去掉标签后根据转发表转发消息消息承载在或之上端口号均为其中发现消息基于传递会话消息通告消息通知消息都基于传递标签分配从本地标签空间中取出一个标签与绑定标签分发将标签与的绑定关系通知给上游方式的最大优点在于路由发生变化时能够快速建立新的进行数据转发因为方式保留了所有的标签缺点是需要分发和维护不必要的标签映射方式的优点在于只需保留和维护用于转发数据的标签以达到节约标签的目的的标签管理与保留方式主要内容有下面三部分标签分配模式下游按需标记分发下游自主标记分发标签控制模式有序方式独立方式标签保持模式保守模式自由模式最常用的组合是下游自主有序自由下面来具体介绍什么意思这里先要理解上游下游的概念入口出为最上游出口处为最下游标签的产生可以理解为是下游为上游产生的下游产生的标签作为上游的标签比如图中左边要接收的标签为那么向右的标签就要是因为只要为的标签然后具体介绍上面的三个部分标签的控制模式即标签是怎么产生的有序常用只有最下游路由器才能产生标签最下游的上游收到最下游的标签映射消息后然后才能再往自己的上游发送标签映射关系独立中间的路由器也可以直接产生标签标签的分发模式下游按需需要的时候上游再向下游询问标签信息下游自主不管有没有问下游路由器都自主的向上游发送标签映射信息主动向上汇报标签的保留模式如果有两条路径也就会有两个标签那么路由器保留哪个保守只保留路由表中的最佳路径跳数比较少的自由保留所有的标签虽然占用了更多的标签空间但是收敛会快基础实验配置步骤完成和配置的配置如下的配置如下的配置如下的配置如下激活并激活全局和接口下都需要激活的配置如下配置全局激活全局激活在接口上激活在接口上激活的配置如下的配置如下的配置如下验证以上输出的是的邻居表从表中可以看出已经发现了一个邻居那就是以上输出的是会话的详细信息邻居的状态必须为才是最终的稳态另外从连接可以验证一点的会话建立是由传输地址大的一方发起的以上输出的是的标签转发信息库可以看到已经建立好的实际上当我们再上运行后全网的路由已经被打通也就是每台路由器都拥有全网的路由其中包括互联网段的路由以及各设备的路由随后我们激活各设备的和每台设备会基于自己的路由表中的路由前缀进行标签捆绑并且将为路由前缀所捆绑的标签分发给自己的邻居默认情况下在我司的设备上仅为的主机路由分发标签并且默认水平分割规则并未打开现在来测试一下从去从的结果我们可以看到数据包行走的路径以及被压入的标签',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-08-15 19:25:59',
+  postMainColor: '',
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#18171d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#f7f9fe')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
+          const isLightMode = window.matchMedia('(prefers-color-scheme: light)').matches
+          const isNotSpecified = window.matchMedia('(prefers-color-scheme: no-preference)').matches
+          const hasNoSupport = !isDarkMode && !isLightMode && !isNotSpecified
+
+          if (t === undefined) {
+            if (isLightMode) activateLightMode()
+            else if (isDarkMode) activateDarkMode()
+            else if (isNotSpecified || hasNoSupport) {
+              const now = new Date()
+              const hour = now.getHours()
+              const isNight = hour <= 6 || hour >= 18
+              isNight ? activateDarkMode() : activateLightMode()
+            }
+            window.matchMedia('(prefers-color-scheme: dark)').addListener(e => {
+              if (saveToLocal.get('theme') === undefined) {
+                e.matches ? activateDarkMode() : activateLightMode()
+              }
+            })
+          } else if (t === 'light') activateLightMode()
+          else activateDarkMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><meta name="generator" content="Hexo 7.0.0"></head><body data-type="anzhiyu"><div id="web_bg"></div><div id="an_music_bg"></div><div id="loading-box" onclick="document.getElementById(&quot;loading-box&quot;).classList.add(&quot;loaded&quot;)"><div class="loading-bg"><img class="loading-img nolazyload" alt="加载头像" src="/img/toux.jpg"/><div class="loading-image-dot"></div></div></div><script>const preloader = {
+  endLoading: () => {
+    document.getElementById('loading-box').classList.add("loaded");
+  },
+  initLoading: () => {
+    document.getElementById('loading-box').classList.remove("loaded")
+  }
+}
+window.addEventListener('load',()=> { preloader.endLoading() })
+setTimeout(function(){preloader.endLoading();},10000)
+
+if (true) {
+  document.addEventListener('pjax:send', () => { preloader.initLoading() })
+  document.addEventListener('pjax:complete', () => { preloader.endLoading() })
+}</script><link rel="stylesheet" href="https://cdn.cbd.int/anzhiyu-theme-static@1.1.10/progress_bar/progress_bar.css"/><script async="async" src="https://cdn.cbd.int/pace-js@1.2.4/pace.min.js" data-pace-options="{ &quot;restartOnRequestAfter&quot;:false,&quot;eventLag&quot;:false}"></script><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><div id="nav-group"><span id="blog_name"><a id="site-name" href="/" accesskey="h"><div class="title">沃德发</div><i class="anzhiyufont anzhiyu-icon-house-chimney"></i></a></span><div class="mask-name-container"><div id="name-container"><a id="page-name" href="javascript:anzhiyu.scrollToDest(0, 500)">PAGE_NAME</a></div></div><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 文章</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/categories/"><i class="anzhiyufont anzhiyu-icon-shapes faa-tada" style="font-size: 0.9em;"></i><span> 分类</span></a></li><li><a class="site-page child faa-parent animated-hover" href="/tags/"><i class="anzhiyufont anzhiyu-icon-tags faa-tada" style="font-size: 0.9em;"></i><span> 标签</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 友链</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/link/"><i class="anzhiyufont anzhiyu-icon-link faa-tada" style="font-size: 0.9em;"></i><span> 友人帐</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 关于</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="javascript:toRandomPost()"><i class="anzhiyufont anzhiyu-icon-shoe-prints1 faa-tada" style="font-size: 0.9em;"></i><span> 随便逛逛</span></a></li></ul></div></div></div><div id="nav-right"><div class="nav-button" id="randomPost_button"><a class="site-page" onclick="toRandomPost()" title="随机前往一个文章" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-dice"></i></a></div><div class="nav-button" id="search-button"><a class="site-page social-icon search" href="javascript:void(0);" title="搜索🔍" accesskey="s"><i class="anzhiyufont anzhiyu-icon-magnifying-glass"></i><span> 搜索</span></a></div><input id="center-console" type="checkbox"/><label class="widget" for="center-console" title="中控台" onclick="anzhiyu.switchConsole();"><i class="left"></i><i class="widget center"></i><i class="widget right"></i></label><div id="console"><div class="console-card-group-reward"><ul class="reward-all console-card"><li class="reward-item"><a href="/img/weixinfukuan.png" target="_blank"><img class="post-qr-code-img" alt="微信" src="/img/weixinfukuan.png"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/zhifubaofukuan.jpg" target="_blank"><img class="post-qr-code-img" alt="支付宝" src="/img/zhifubaofukuan.jpg"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div><div class="console-card-group"><div class="console-card-group-left"><div class="console-card" id="card-newest-comments"><div class="card-content"><div class="author-content-item-tips">互动</div><span class="author-content-item-title"> 最新评论</span></div><div class="aside-list"><span>正在加载中...</span></div></div></div><div class="console-card-group-right"><div class="console-card tags"><div class="card-content"><div class="author-content-item-tips">兴趣点</div><span class="author-content-item-title">寻找你感兴趣的领域</span><div class="card-tags"><div class="item-headline"></div><div class="card-tag-cloud"><a href="/tags/BFD/" style="font-size: 1.05rem;">BFD<sup>1</sup></a><a href="/tags/BGP/" style="font-size: 1.05rem;">BGP<sup>2</sup></a><a href="/tags/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/" style="font-size: 1.05rem;">BGP路由优选<sup>1</sup></a><a href="/tags/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/" style="font-size: 1.05rem;">BGP路由反射器<sup>1</sup></a><a href="/tags/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/" style="font-size: 1.05rem;">BGP高级特性<sup>1</sup></a><a href="/tags/DHCP/" style="font-size: 1.05rem;">DHCP<sup>1</sup></a><a href="/tags/DHCP-Relay/" style="font-size: 1.05rem;">DHCP Relay<sup>1</sup></a><a href="/tags/DHCPv6/" style="font-size: 1.05rem;">DHCPv6<sup>1</sup></a><a href="/tags/FTP/" style="font-size: 1.05rem;">FTP<sup>1</sup></a><a href="/tags/ICMPv6/" style="font-size: 1.05rem;">ICMPv6<sup>1</sup></a><a href="/tags/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/" style="font-size: 1.05rem;">IGP高级特性<sup>1</sup></a><a href="/tags/IPv6/" style="font-size: 1.05rem;">IPv6<sup>1</sup></a><a href="/tags/IS-IS/" style="font-size: 1.05rem;">IS-IS<sup>1</sup></a><a href="/tags/MSTP/" style="font-size: 1.05rem;">MSTP<sup>1</sup></a><a href="/tags/ORF/" style="font-size: 1.05rem;">ORF<sup>1</sup></a><a href="/tags/PPP/" style="font-size: 1.05rem;">PPP<sup>1</sup></a><a href="/tags/PPPoE/" style="font-size: 1.05rem;">PPPoE<sup>1</sup></a><a href="/tags/RSTP/" style="font-size: 1.05rem;">RSTP<sup>1</sup></a><a href="/tags/SSH/" style="font-size: 1.05rem;">SSH<sup>1</sup></a><a href="/tags/STP/" style="font-size: 1.05rem;">STP<sup>1</sup></a><a href="/tags/USG5500/" style="font-size: 1.05rem;">USG5500<sup>1</sup></a><a href="/tags/VRF/" style="font-size: 1.05rem;">VRF<sup>1</sup></a><a href="/tags/VRRP/" style="font-size: 1.05rem;">VRRP<sup>2</sup></a><a href="/tags/ap%E4%B8%8A%E7%BA%BF/" style="font-size: 1.05rem;">ap上线<sup>1</sup></a><a href="/tags/as-path-filter/" style="font-size: 1.05rem;">as-path-filter<sup>1</sup></a><a href="/tags/comunity-filter/" style="font-size: 1.05rem;">comunity-filter<sup>1</sup></a><a href="/tags/hybrid/" style="font-size: 1.05rem;">hybrid<sup>1</sup></a><a href="/tags/ldp/" style="font-size: 1.05rem;">ldp<sup>1</sup></a><a href="/tags/mpls/" style="font-size: 1.05rem;">mpls<sup>1</sup></a><a href="/tags/mstp/" style="font-size: 1.05rem;">mstp<sup>1</sup></a><a href="/tags/nat/" style="font-size: 1.05rem;">nat<sup>1</sup></a><a href="/tags/ospf/" style="font-size: 1.05rem;">ospf<sup>1</sup></a><a href="/tags/rstp/" style="font-size: 1.05rem;">rstp<sup>1</sup></a><a href="/tags/stp%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4/" style="font-size: 1.05rem;">stp拓扑变更<sup>1</sup></a><a href="/tags/tag/" style="font-size: 1.05rem;">tag<sup>1</sup></a><a href="/tags/wlan/" style="font-size: 1.05rem;">wlan<sup>1</sup></a><a href="/tags/%E5%88%86%E7%BA%A7RR/" style="font-size: 1.05rem;">分级RR<sup>1</sup></a><a href="/tags/%E5%A4%87%E4%BB%BDRR/" style="font-size: 1.05rem;">备份RR<sup>1</sup></a><a href="/tags/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/" style="font-size: 1.05rem;">正则表达式<sup>1</sup></a><a href="/tags/%E9%98%B2%E7%81%AB%E5%A2%99nat/" style="font-size: 1.05rem;">防火墙nat<sup>1</sup></a></div></div><hr/></div></div><div class="console-card history"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-box-archiv"></i><span>文章</span></div><div class="card-archives"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-archive"></i><span>归档</span></div><ul class="card-archive-list"><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2024/08/"><span class="card-archive-list-date">八月 2024</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">6</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2024/07/"><span class="card-archive-list-date">七月 2024</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">3</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2024/06/"><span class="card-archive-list-date">六月 2024</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">3</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2024/05/"><span class="card-archive-list-date">五月 2024</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">8</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2024/04/"><span class="card-archive-list-date">四月 2024</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">2</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2024/03/"><span class="card-archive-list-date">三月 2024</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">2</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2023/12/"><span class="card-archive-list-date">十二月 2023</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">7</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2023/11/"><span class="card-archive-list-date">十一月 2023</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">9</span><span>篇</span></div></a></li></ul></div><hr/></div></div></div><div class="button-group"><div class="console-btn-item"><a class="darkmode_switchbutton" title="显示模式切换" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-moon"></i></a></div><div class="console-btn-item" id="consoleHideAside" onclick="anzhiyu.hideAsideBtn()" title="边栏显示控制"><a class="asideSwitch"><i class="anzhiyufont anzhiyu-icon-arrows-left-right"></i></a></div><div class="console-btn-item" id="consoleMusic" onclick="anzhiyu.musicToggle()" title="音乐开关"><a class="music-switch"><i class="anzhiyufont anzhiyu-icon-music"></i></a></div></div><div class="console-mask" onclick="anzhiyu.hideConsole()" href="javascript:void(0);"></div></div><div class="nav-button" id="nav-totop"><a class="totopbtn" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-arrow-up"></i><span id="percent" onclick="anzhiyu.scrollToDest(0,500)">0</span></a></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);" title="切换"><i class="anzhiyufont anzhiyu-icon-bars"></i></a></div></div></div></nav><div id="post-info"><div id="post-firstinfo"><div class="meta-firstline"><a class="post-meta-original">原创</a><span class="post-meta-categories"><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-inbox post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" itemprop="url">基础知识</a></span><span class="article-meta tags"><a class="article-meta__tags" href="/tags/mpls/" tabindex="-1" itemprop="url"> <span> <i class="anzhiyufont anzhiyu-icon-hashtag"></i>mpls</span></a><a class="article-meta__tags" href="/tags/ldp/" tabindex="-1" itemprop="url"> <span> <i class="anzhiyufont anzhiyu-icon-hashtag"></i>ldp</span></a></span></div></div><h1 class="post-title" itemprop="name headline">MPLS</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="anzhiyufont anzhiyu-icon-calendar-days post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" itemprop="dateCreated datePublished" datetime="2023-12-05T09:53:41.000Z" title="发表于 2023-12-05 17:53:41">2023-12-05</time><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-history post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" itemprop="dateCreated datePublished" datetime="2024-08-15T11:25:59.818Z" title="更新于 2024-08-15 19:25:59">2024-08-15</time></span></div><div class="meta-secondline"><span class="post-meta-separator"></span><span class="post-meta-wordcount"><i class="anzhiyufont anzhiyu-icon-file-word post-meta-icon" title="文章字数"></i><span class="post-meta-label" title="文章字数">字数总计:</span><span class="word-count" title="文章字数">4.4k</span><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-clock post-meta-icon" title="阅读时长"></i><span class="post-meta-label" title="阅读时长">阅读时长:</span><span>16分钟</span></span><span class="post-meta-separator"></span><span class="post-meta-pv-cv" id="" data-flag-title="MPLS"><i class="anzhiyufont anzhiyu-icon-fw-eye post-meta-icon"></i><span class="post-meta-label" title="阅读量">阅读量:</span><span id="busuanzi_value_page_pv"><i class="anzhiyufont anzhiyu-icon-spinner anzhiyu-spin"></i></span></span><span class="post-meta-separator">       </span><span class="post-meta-position" title="作者IP属地为安阳"><i class="anzhiyufont anzhiyu-icon-location-dot"></i>安阳</span></div></div></div><section class="main-hero-waves-area waves-area"><svg class="waves-svg" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto"><defs><path id="gentle-wave" d="M -160 44 c 30 0 58 -18 88 -18 s 58 18 88 18 s 58 -18 88 -18 s 58 18 88 18 v 44 h -352 Z"></path></defs><g class="parallax"><use href="#gentle-wave" x="48" y="0"></use><use href="#gentle-wave" x="48" y="3"></use><use href="#gentle-wave" x="48" y="5"></use><use href="#gentle-wave" x="48" y="7"></use></g></svg></section><div id="post-top-cover"><img class="nolazyload" id="post-top-bg" src=""></div></header><main id="blog-container"><div class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container" itemscope itemtype="http://example.com/2023/12/05/MPLS/"><header><a class="post-meta-categories" href="/categories/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" itemprop="url">基础知识</a><a href="/tags/mpls/" tabindex="-1" itemprop="url">mpls</a><a href="/tags/ldp/" tabindex="-1" itemprop="url">ldp</a><h1 id="CrawlerTitle" itemprop="name headline">MPLS</h1><span itemprop="author" itemscope itemtype="http://schema.org/Person">Yang</span><time itemprop="dateCreated datePublished" datetime="2023-12-05T09:53:41.000Z" title="发表于 2023-12-05 17:53:41">2023-12-05</time><time itemprop="dateCreated datePublished" datetime="2024-08-15T11:25:59.818Z" title="更新于 2024-08-15 19:25:59">2024-08-15</time></header><h1>概念</h1>
+<p>MPLS（Multiprotocol Label Switching）多协议标签转发复习总结<br>
+首先我们要先知道MPLS是为何出现的？<br>
+MPLS是基于传统IP网络（RIP，OSPF等）的缺陷由IETF确定的</p>
+<p><strong>顺便先复习一下路由器查路由表 转发的过程：</strong></p>
+<p>传统的IP转发中，物理层从交换机的一个端口收到一个报文，上送到数据链路层。数据链路层去掉链路层封装，根据报文的协议域上送给相应的网络层。网络层首先看报文是否是送给本机的，若是，去掉网络层封装，上送给它的上层协议。若不是，则根据报文的目的地址查找路由表，若找到路由，将报文送给相应端口的数据链路层，数据链路层封装后，发送报文。若找不到路由，将报文丢弃。传统的IP转发采用的是逐跳转发，数据报文经过每一台交换机，都要执行上述过程（如图中SWA收到目的地址为10.2.0.1的数据包，SWA会依次查找路由表，根据匹配的路由表项的进行转发，SWB、SWC、SWD都会进行类似的处理），所以速度缓慢。并且所有的交换机需要知道全网的路由或者默认路由。另外，由于传统IP转发是面向无连接的，所以无法提供好的Qos保证。</p>
+<p>传统IP网络基于IGP Metric计算最优路径，这是远远不够的，往往在现实网络中还需考虑带宽、链路属性等其他因素；基于IP的流量工程是基于IGP面向目的地址的转发，是hop-by-hop（逐跳）的转发，无法实现根据来源来控制流量转发；另外基于IP的流量工程是面向无连接的，不能实现显式路径（Explicit Routing）。</p>
+<p>MPLS的出现<br>
+从A到走到B有三种方法：<br>
+<strong>1.广播</strong>（如以太网）：直接把数据发给每一个地方<br>
+<strong>2.逐跳寻径</strong>：走到一个地方，问一下路接下来该怎么走（也就是上面说的根据路由协议，查路由表）<br>
+<strong>3.源路由</strong>：提前规划好路线，到哪里怎么走，不常用。</p>
+<p>而<strong>MPLS</strong>是第四种走法：<br>
+跟在“向导”后面走，向导在走过的路上做好标记，你只要沿着标记的指示走就可以了。这也就是“标签交换”</p>
+<p>MPLS结合了三层路由技术与二层交换技术，所以可以把它看成“<strong>2.5层</strong>”的<br>
+其中的MP多协议指的是支持多种网络协议，如ipv4，ipv6，CLNP，IPX等</p>
+<p>MPLS是一种标签转发技术，它采用无连接的控制平面和面向连接的数据平面（具体的MPLS架构下面还有介绍），无连接的控制平面实现路由信息的传递和标签的分发，面向连接的数据平面实现报文在建立的标签转发路径上传送。MPLS域内，交换机不需要查看每个报文的目的IP地址，只需要根据封装在IP头外面的标签进行转发即可，这样可以大大提高效率</p>
+<p>MPLS转发与IP逐跳转发的关系<br>
+MPLS是IP的承载层：MPLS转发与IP转发不冲突，它们的关系是如果能够使用MPLS转发，那么IP包会先封装成MPLS数据帧来转发。如果不能MPLS转发，就还是原来的ip逐跳转发。<br>
+<strong>（也就是尽量优先MPLS，因为它会更快）</strong></p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/mnvc7761.png" alt="mnvc7761"></p>
+<p>看上面的图，我们需要理解：整个MPLS域（可以进行MPLS转发的区域）是嵌在IP域上的，也就是MPLS域外部是IP域，它本身也运行IP域。</p>
+<p><strong>MPLS中一些基本概念，名词</strong><br>
+标签（Label）：是一个定长的，比较短的，只具有本地意义的标识。<br>
+<strong>FEC（转发等价类）</strong>：一组或一类数据，这组数据分配的标签相同，这些数据流在转发过程中被网络节点以<strong>相同方式处理</strong>。在MPLS网络中，FEC可以通过多种方式划分，例如基于目的IP地址及网络掩码、DSCP等特征来划分。数据属于哪一个LSP，由数据进入MPLS域时的Ingress LSR决定。<br>
+<strong>LSP（标签交换通道）</strong>：一个FEC的数据流，在不同的节点被赋予确定的标签,数据转发按照<br>
+这些标签进行。数据流所走的路径就是LSP。LSP是一个从“起点”到“终点”的<strong>单向</strong>路径，若需要双向数据互通，则需要在双方之间建立双向的LSP。<br>
+<strong>LSR（Label Switching Router</strong>）： LSR是MPLS的网络的核心交换机，它提供标签交<br>
+换和标签分发功能。<br>
+<strong>LER（Label Switching Edge Router）</strong>：在MPLS的网络边缘，进入到MPLS网络的流量由LER分为不同的FEC，并为这些FEC请求相应的标签。它提供流量分类和标签的映射、标签的移除功能。</p>
+<p>从IP域进入MPLS域的时候，LER（标记边缘路由器）要做一个压入（push），出MPLS域的时候做一个弹出（pop），而LSR（标记交换路由器）负责转发。所以LER实际工作量比LSR大很多。LSP（标记交换路径）就是从进入到离开 走的路径。这条路径是在转发报文之前就已经通过各种协议确定并建立的，报文会在特定的LSP上传递。（也可以把LSP看成一个隧道）</p>
+<h1>标签报文格式</h1>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/QQ%E6%88%AA%E5%9B%BE20240815174315.png" alt="QQ截图20240815174315"></p>
+<p>MPLS Header长度为<strong>32bits</strong>，包括长度为<strong>20bits的标签（Label）</strong>，该标签用于报文转发；长度为3bits的EXP通常用来承载IP报文中的优先级；长度为<strong>1bit的栈底标志S</strong>用来表明是否是最后一个标签（MPLS标签可以多层嵌套）；长度为<strong>8bits的TTL</strong>，作用类似IP头部的TTL，用来防止报文环路等。</p>
+<p><strong>标签空间：</strong></p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/QQ%E6%88%AA%E5%9B%BE20240815174644.png" alt="QQ截图20240815174644"></p>
+<h1>MPLS转发过程</h1>
+<p>依据三张表：</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/QQ截图20240815175251.png" alt="QQ截图20240815175251" style="zoom:67%;">
+<p>**Tunnel ID：**为了给使用隧道的上层应用（如VPN、路由管理）提供统一的接口，系统自动为隧道分配了一个ID，也称为Tunnel ID。该Tunnel ID的长度为32比特，只是本地有效。在MPLS转发过程中，FIB、ILM和NHLFE表项是通过Tunnel ID关联的。</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/QQ截图20240815175654.png" alt="QQ截图20240815175654" style="zoom:67%;">
+<p>在Ingress LSR，通过查询FIB表（得到FTN信息）和NHLFE表指导报文的转发。</p>
+<p>当IP报文进入MPLS域时，首先查看FIB表，<strong>检查目的IP地址对应的Tunnel ID值是否为0x0。如果Tunnel ID值为0x0，则进入正常的IP转发流程。如果Tunnel ID值不为0x0，则进入MPLS转发流程</strong>。</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/QQ截图20240815175659.png" alt="QQ截图20240815175659" style="zoom:67%;">
+<p>在Transit LSR，通过查询ILM表和NHLFE表指导MPLS报文的转发。</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/QQ截图20240815175703.png" alt="QQ截图20240815175703" style="zoom:67%;">
+<p>在Egress LSR，通过查询ILM表指导MPLS报文的转发。</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/QQ截图20240815175711.png" alt="QQ截图20240815175711" style="zoom:67%;">
+<p>例：</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/mplszfgc813341.png" alt="mplszfgc813341" style="zoom:67%;">
+<p>1.Push：首先从IP数据包从ip域进入MPLS域，入口LER做 push 操作，分析转发等价类，为数据包“打上标签”，绑定LSP通道；图中A的标签转发表内容大概如下：</p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/a008298.png" alt="a008298"></p>
+<p>2.Swap：B，C两个LSR根据标签转发表，用下一跳分配的标签，替换MPLS报文的标签并转发</p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/bc66327448.png" alt="bc66327448"></p>
+<p>3.Pop：转发到出口LER D时，进行pop弹出操作，去掉标签</p>
+<p>MPLS转发的过程到这里结束。</p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/d4kg2110.png" alt="d4kg2110"></p>
+<p><strong>PHP</strong>（倒数第二跳弹出。Penultimate Hop Popping ，和web开发的php可没关系）：上面的过程我们可以发现，C在发给D时，其实带标签的数据已经没有意义，因为下一跳就要弹出标签了，所以完全可以在C就把标签弹出，然后以ip报文形式转发给D。<br>
+这样可以大大降低最后的出口LER的工作量，是现在MPLS普遍采用的方法。<br>
+默认情况下，设备支持PHP特性，支持PHP的Egress节点即出口LER 分配给倒数第二跳节点的标签值为3。</p>
+<h1>MPLS标签转发表与LDP</h1>
+<p>我们知道，<br>
+交换机中的MAC地址表是通过逆向学习法产生的；<br>
+路由器中的路由表是通过路由协议学习或自己配置静态路由产生的。<br>
+那么MPLS中标签转发表是怎么产生的呢？</p>
+<p>答案是也会有一个类似的路由器学习的协议，这个协议叫做LDP（Label Distribution Protocol 标签分发协议），这个也是MPLS技术的核心协议之一。LDP来完成标签的分配控制和保持</p>
+<p>从整个MPLS架构看这个协议的位置：</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/QQ截图20240815175011.png" alt="QQ截图20240815175011" style="zoom:67%;">
+<p>MPLS包括两个平面：控制平面和数据平面。<br>
+控制平面负责产生和维护路由信息以及标签信息。数据平面负责普通IP报文的转发以及带MPLS标签报文的转发。<br>
+控制平面中路由协议模块（Routing Protocol）用来传递路由信息，生成路由信息表；标签分发协议模块（Label Distribution Protocol）用来完成标签信息的交换，建立标签转发路径。<br>
+数据平面包括IP转发表和标签转发表，当收到普通IP报文时（Incoming IP Packets），如果是普通IP转发，则查找IP路由表转发，如果需要标签转发，则按照标签转发表转发；当收到带有标签的报文时（Incoming Labeled Packets）时，如果需要按照标签转发，根据标签转发表转发，如果需要转发到IP网络，则去掉标签后根据IP转发表转发。</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/QQ截图20240815185202.png" alt="QQ截图20240815185202" style="zoom:80%;">
+<p>LDP消息：</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/QQ截图20240815185809.png" alt="QQ截图20240815185809" style="zoom: 80%;">
+<p>LDP消息承载在UDP或TCP之上，端口号均为646 。其中发现消息基于UDP传递；会话消息、通告消息、通知消息都基于TCP传递。</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/QQ截图20240815190515.png" alt="QQ截图20240815190515" style="zoom: 80%;">
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/QQ截图20240815190658.png" alt="QQ截图20240815190658" style="zoom:80%;">
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/QQ截图20240815190854.png" alt="QQ截图20240815190854" style="zoom:80%;">
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/QQ截图20240815191105.png" alt="QQ截图20240815191105" style="zoom:80%;">
+<p>标签分配：LSR从本地标签空间中取出一个标签与FEC绑定。标签分发：LSR将标签与FEC的绑定关系通知给上游LSR。</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/QQ截图20240815191132.png" alt="QQ截图20240815191132" style="zoom: 80%;">
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/QQ截图20240815191811.png" alt="QQ截图20240815191811" style="zoom:80%;">
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/QQ截图20240815191817.png" alt="QQ截图20240815191817" style="zoom: 80%;">
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/QQ截图20240815191822.png" alt="QQ截图20240815191822" style="zoom:80%;">
+<p>Liberal方式的最大优点在于路由发生变化时能够快速建立新的LSP进行数据转发，因为Liberal方式保留了所有的标签。缺点是需要分发和维护不必要的标签映射。</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/QQ截图20240815191828.png" alt="QQ截图20240815191828" style="zoom:80%;">
+<p>Conservative方式的优点在于只需保留和维护用于转发数据的标签，以达到节约标签的目的。</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/QQ截图20240815192347.png" alt="QQ截图20240815192347" style="zoom:80%;">
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/QQ截图20240815192352.png" alt="QQ截图20240815192352" style="zoom:80%;">
+<p>LDP的标签管理与保留方式主要内容有下面三部分</p>
+<ol>
+<li><strong>标签分配模式</strong></li>
+</ol>
+<p>DoD：下游按需标记分发<br>
+DU：下游自主标记分发<br>
+2. <strong>标签控制模式</strong></p>
+<p>有序方式<br>
+独立方式</p>
+<ol start="3">
+<li><strong>标签保持模式</strong></li>
+</ol>
+<p>保守模式<br>
+自由模式<br>
+最常用的组合是 <strong>下游自主（DU） + 有序 + 自由</strong></p>
+<p>下面来具体介绍什么意思</p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/shangxiayou6291.png" alt="shangxiayou6291"></p>
+<p>这里先要理解上游，下游的概念，MPLS入口出为最上游；出口处为最下游。标签的产生可以理解为是下游为上游产生的，下游产生的IN标签作为上游的OUT标签（比如图中R3左边要接收的IN标签为100，那么R2向右的OUT标签就要是100，因为R3只要为100的标签）</p>
+<p>然后具体介绍上面的三个部分：<br>
+<strong>Ⅰ.标签的控制模式</strong>（即标签是怎么产生的）：<br>
+有序（常用）：只有最下游路由器才能产生标签，最下游的上游收到最下游的标签映射消息后，然后才能再往自己的上游发送标签映射关系。<br>
+独立：中间的路由器也可以直接产生标签</p>
+<p><strong>Ⅱ.标签的分发模式：</strong><br>
+下游按需 ：需要的时候上游再向下游询问标签信息；<br>
+下游自主：不管有没有问，下游路由器都自主的向上游发送标签映射信息（主动向上汇报）<br>
+<strong>Ⅲ.标签的保留模式</strong>：如果有两条路径，也就会有两个标签，那么路由器保留哪个。<br>
+保守：只保留路由表中的”最佳路径“，跳数比较少的；<br>
+自由：保留所有的标签，虽然占用了更多的标签空间，但是收敛会快</p>
+<h1>基础实验</h1>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/2023/12/05/MPLS/tuoputump181224.png" alt="tuoputump181224"></p>
+<p><strong>配置步骤：</strong></p>
+<p>完成ip和ospf配置：</p>
+<p>R1的配置如下：</p>
+<p>[R1] interface GigabitEthernet0/0/0</p>
+<p>[R1-GigabitEthernet0/0/0] ip address 12.1.1.1 24</p>
+<p>[R1] interface loopback0</p>
+<p>[R1-Loopback0] ip address 1.1.1.1 32</p>
+<p>[R1] ospf 1 router-id 1.1.1.1</p>
+<p>[R1-ospf-1] area 0</p>
+<p>[R1-ospf-1-0.0.0.0] network 12.1.1.0 0.0.0.255</p>
+<p>[R1-ospf-1-0.0.0.0] network 1.1.1.1 0.0.0.0</p>
+<p>R2的配置如下：</p>
+<p>[R2] interface GigabitEthernet0/0/0</p>
+<p>[R2-GigabitEthernet0/0/0] ip address 12.1.1.2 24</p>
+<p>[R2] interface GigabitEthernet0/0/1</p>
+<p>[R2-GigabitEthernet0/0/1] ip address 23.1.1.2 24</p>
+<p>[R2] interface loopback0</p>
+<p>[R2-Loopback0] ip address 2.2.2.2 32</p>
+<p>[R2] ospf 1 router-id 2.2.2.2</p>
+<p>[R2-ospf-1] area 0</p>
+<p>[R2-ospf-1-0.0.0.0] network 12.1.1.0 0.0.0.255</p>
+<p>[R2-ospf-1-0.0.0.0] network 23.1.1.0 0.0.0.255</p>
+<p>[R2-ospf-1-0.0.0.0] network 2.2.2.2 0.0.0.0</p>
+<p>R3的配置如下：</p>
+<p>[R3] interface GigabitEthernet0/0/0</p>
+<p>[R3-GigabitEthernet0/0/0] ip address 23.1.1.3 24</p>
+<p>[R3] interface GigabitEthernet0/0/1</p>
+<p>[R3-GigabitEthernet0/0/1] ip address 34.1.1.3 24</p>
+<p>[R3] interface loopback0</p>
+<p>[R3-Loopback0] ip address 3.3.3.3 32</p>
+<p>[R3] ospf 1 router-id 3.3.3.3</p>
+<p>[R3-ospf-1] area 0</p>
+<p>[R3-ospf-1-0.0.0.0] network 23.1.1.0 0.0.0.255</p>
+<p>[R3-ospf-1-0.0.0.0] network 34.1.1.0 0.0.0.255</p>
+<p>[R3-ospf-1-0.0.0.0] network 1.1.1.1 0.0.0.0</p>
+<p>R4的配置如下：</p>
+<p>[R4] interface GigabitEthernet0/0/0</p>
+<p>[R4-GigabitEthernet0/0/0] ip address 34.1.1.4 24</p>
+<p>[R4] interface loopback0</p>
+<p>[R4-Loopback0] ip address 4.4.4.4 32</p>
+<p>[R4] ospf 1 router-id 4.4.4.4</p>
+<p>[R4-ospf-1] area 0</p>
+<p>[R4-ospf-1-0.0.0.0] network 34.1.1.0 0.0.0.255</p>
+<p>[R4-ospf-1-0.0.0.0] network 4.4.4.4 0.0.0.0</p>
+<p><strong>激活mpls并激活ldp</strong></p>
+<p>（全局和接口下都需要激活）</p>
+<p>R1的配置如下：</p>
+<p>[R1] mpls lsr-id 1.1.1.1</p>
+<p>#配置MPLS LSR ID</p>
+<p>[R1] mpls</p>
+<p>#全局激活MPLS</p>
+<p>[R1-mpls] quit</p>
+<p>[R1] mpls ldp</p>
+<p>#全局激活LDP</p>
+<p>[R1-mpls-ldp] quit</p>
+<p>[R1] Interface GigabitEthernet 0/0/0</p>
+<p>[R1-GigabitEthernet0/0/0] mpls</p>
+<p>#在接口上激活MPLS</p>
+<p>[R1-GigabitEthernet0/0/0] mpls ldp</p>
+<p>#在接口上激活LDP</p>
+<p>R2的配置如下：</p>
+<p>[R2] mpls lsr-id 2.2.2.2</p>
+<p>[R2] mpls</p>
+<p>[R2-mpls] quit</p>
+<p>[R2] mpls ldp</p>
+<p>[R2-mpls-ldp] quit</p>
+<p>[R2] Interface GigabitEthernet 0/0/0</p>
+<p>[R2-GigabitEthernet0/0/0] mpls</p>
+<p>[R2-GigabitEthernet0/0/0] mpls ldp</p>
+<p>[R2] Interface GigabitEthernet 0/0/1</p>
+<p>[R2-GigabitEthernet0/0/1] mpls</p>
+<p>[R2-GigabitEthernet0/0/1] mpls ldp</p>
+<p>R3的配置如下：</p>
+<p>[R3] mpls lsr-id 3.3.3.3</p>
+<p>[R3] mpls</p>
+<p>[R3-mpls] quit</p>
+<p>[R3] mpls ldp</p>
+<p>[R3-mpls-ldp] quit</p>
+<p>[R3] Interface GigabitEthernet 0/0/0</p>
+<p>[R3-GigabitEthernet0/0/0] mpls</p>
+<p>[R3-GigabitEthernet0/0/0] mpls ldp</p>
+<p>[R3] Interface GigabitEthernet 0/0/1</p>
+<p>[R3-GigabitEthernet0/0/1] mpls</p>
+<p>[R3-GigabitEthernet0/0/1] mpls ldp</p>
+<p>R4的配置如下：</p>
+<p>[R4] mpls lsr-id 4.4.4.4</p>
+<p>[R4] mpls</p>
+<p>[R4-mpls] quit</p>
+<p>[R4] mpls ldp</p>
+<p>[R4-mpls-ldp] quit</p>
+<p>[R4] Interface GigabitEthernet 0/0/0</p>
+<p>[R4-GigabitEthernet0/0/0] mpls</p>
+<p>[R4-GigabitEthernet0/0/0] mpls ldp</p>
+<p><strong>验证</strong>：</p>
+<p><R1>display mpls ldp peer</R1></p>
+<p>LDP Peer Information in Public network</p>
+<p>A ‘*’ before a peer means the peer is being deleted.</p>
+<p>------------------------------------------------------------------------------</p>
+<p>PeerID         TransportAddress  DiscoverySource</p>
+<p>------------------------------------------------------------------------------</p>
+<p>2.2.2.2:0        2.2.2.2       GigabitEthernet0/0/0</p>
+<p>------------------------------------------------------------------------------</p>
+<p>TOTAL: 1 Peer(s) Found.</p>
+<p>以上输出的是R1的LDP邻居表，从表中可以看出R1已经发现了一个LDP邻居，那就是R2。</p>
+<p><R1>disp mpls ldp session  verbose</R1></p>
+<p>LDP Session(s) in Public Network</p>
+<p>------------------------------------------------------------------------------</p>
+<p>Peer LDP ID   : 2.2.2.2:0      Local LDP ID  : 1.1.1.1:0</p>
+<p>TCP Connection  : 1.1.1.1 &lt;- 2.2.2.2</p>
+<p>Session State  : Operational    Session Role  : Passive</p>
+<p>Session FT Flag : Off         MD5 Flag    : Off</p>
+<p>Reconnect Timer : —         Recovery Timer : —</p>
+<p>Keychain Name  : —</p>
+<p>Negotiated Keepalive Hold Timer  : 45 Sec</p>
+<p>Configured Keepalive Send Timer  : —</p>
+<p>Keepalive Message Sent/Rcvd    : 153/153 (Message Count)</p>
+<p>Label Advertisement Mode      : Downstream Unsolicited</p>
+<p>Label Resource Status(Peer/Local) : Available/Available</p>
+<p>Session Age            : 0000:00:38 (DDDD:HH:MM)</p>
+<p>Session Deletion Status      : No</p>
+<p>Capability:</p>
+<p>Capability-Announcement     : Off</p>
+<p>P2MP Capability         : Off</p>
+<p>Outbound&amp;Inbound Policies applied : NULL</p>
+<p>Addresses received from peer: (Count: 3)</p>
+<p>2.2.2.2       12.1.1.2       23.1.1.2</p>
+<p>------------------------------------------------------------------------------</p>
+<p>以上输出的是LDP会话的详细信息，邻居的状态必须为<strong>Operational</strong>才是最终的稳态，另外从TCP连接1.1.1.1 &lt; 2.2.2.2可以验证一点，LDP的会话建立是由传输地址大的一方发起的。</p>
+<p><R1>display mpls ldp lsp</R1></p>
+<p>LDP LSP Information</p>
+<p>-------------------------------------------------------------------------------</p>
+<p>DestAddress/Mask  In/OutLabel   UpstreamPeer   NextHop     OutInterface</p>
+<p>-------------------------------------------------------------------------------</p>
+<p>1.1.1.1/32     3/NULL     2.2.2.2     127.0.0.1    InLoop0</p>
+<p>*1.1.1.1/32     Liberal/1026          DS/2.2.2.2</p>
+<p>2.2.2.2/32     NULL/3     -        12.1.1.2     GE0/0/0</p>
+<p>2.2.2.2/32     1026/3     2.2.2.2     12.1.1.2     GE0/0/0</p>
+<p>3.3.3.3/32     NULL/1024    -        12.1.1.2     GE0/0/0</p>
+<p>3.3.3.3/32     1024/1024    2.2.2.2     12.1.1.2     GE0/0/0</p>
+<p>4.4.4.4/32     NULL/1025    -        12.1.1.2     GE0/0/0</p>
+<p>4.4.4.4/32     1025/1025    2.2.2.2     12.1.1.2     GE0/0/0</p>
+<p>-------------------------------------------------------------------------------</p>
+<p>TOTAL: 7 Normal LSP(s) Found.</p>
+<p>TOTAL: 1 Liberal LSP(s) Found.</p>
+<p>TOTAL: 0 Frr LSP(s) Found.</p>
+<p>A ‘*’ before an LSP means the LSP is not established</p>
+<p>A ‘*’ before a Label means the USCB or DSCB is stale</p>
+<p>A ‘*’ before a UpstreamPeer means the session is stale</p>
+<p>A ‘*’ before a DS means the session is stale</p>
+<p>A ‘*’ before a NextHop means the LSP is FRR LSP</p>
+<p>以上输出的是R1的LFIB（标签转发信息库），可以看到已经建立好的LSP。</p>
+<p>实际上，当我们再R1、R2、R3、R4上运行OSPF后，全网的路由已经被打通，也就是每台路由器都拥有全网的路由，其中包括互联网段的路由，以及各设备的Loopback路由。随后我们激活各设备的MPLS和LDP，每台设备会基于自己的路由表中的路由前缀进行标签捆绑，并且将为路由前缀（FEC）所捆绑的标签分发给自己的LDP邻居。默认情况下在我司的设备上，仅为/32的主机路由分发标签，并且默认水平分割规则并未打开。</p>
+<p>现在，来测试一下，从R1去tracert 4.4.4.4：</p>
+<p><R1>tracert lsp ip 4.4.4.4 32</R1></p>
+<p>LSP Trace Route FEC: IPV4 PREFIX 4.4.4.4/32 , press CTRL_C to break.</p>
+<p>TTL  Replier       Time   Type    Downstream</p>
+<p>0                 Ingress  12.1.1.2/[1025 ]</p>
+<p>1   12.1.1.2      20 ms  Transit  23.1.1.3/[1024 ]</p>
+<p>2   23.1.1.3      20 ms  Transit  34.1.1.4/[3 ]</p>
+<p>3   4.4.4.4       20 ms  Egress</p>
+<p>从tracert的结果我们可以看到数据包行走的路径，以及被压入的标签。</p>
+</article><div class="post-copyright"><div class="copyright-cc-box"><i class="anzhiyufont anzhiyu-icon-copyright"></i></div><div class="post-copyright__author_box"><a class="post-copyright__author_img" href="/" title="头像"><img class="post-copyright__author_img_back" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/toux.jpg" title="头像" alt="头像"><img class="post-copyright__author_img_front" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/toux.jpg" title="头像" alt="头像"></a><div class="post-copyright__author_name">Yang</div><div class="post-copyright__author_desc">相互吹捧，共同进步😍😍😍</div></div><div class="post-copyright__post__info"><a class="post-copyright__original" title="该文章为原创文章，注意版权协议" href="http://example.com/2023/12/05/MPLS/">原创</a><a class="post-copyright-title"><span onclick="rm.copyPageUrl('http://example.com/2023/12/05/MPLS/')">MPLS</span></a></div><div class="post-tools" id="post-tools"><div class="post-tools-left"><div class="rewardLeftButton"><div class="post-reward" onclick="anzhiyu.addRewardMask()"><div class="reward-button button--animated" title="赞赏作者"><i class="anzhiyufont anzhiyu-icon-hand-heart-fill"></i>打赏作者</div><div class="reward-main"><div class="reward-all"><span class="reward-title">感谢你赐予我前进的力量</span><ul class="reward-group"><li class="reward-item"><a href="/img/weixinfukuan.png" target="_blank"><img class="post-qr-code-img" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/weixinfukuan.png" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/zhifubaofukuan.jpg" target="_blank"><img class="post-qr-code-img" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/zhifubaofukuan.jpg" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul><a class="reward-main-btn" href="/about/#about-reward" target="_blank"><div class="reward-text">赞赏者名单</div><div class="reward-dec">因为你们的支持让我意识到写文章的价值🙏</div></a></div></div></div><div id="quit-box" onclick="anzhiyu.removeRewardMask()" style="display: none"></div></div><div class="shareRight"><div class="share-link mobile"><div class="share-qrcode"><div class="share-button" title="使用手机访问这篇文章"><i class="anzhiyufont anzhiyu-icon-qrcode"></i></div><div class="share-main"><div class="share-main-all"><div id="qrcode" title="http://example.com/2023/12/05/MPLS/"></div><div class="reward-dec">使用手机访问这篇文章</div></div></div></div></div><div class="share-link weibo"><a class="share-button" target="_blank" href="https://service.weibo.com/share/share.php?title=MPLS&amp;url=http://example.com/2023/12/05/MPLS/&amp;pic=" rel="external nofollow noreferrer noopener"><i class="anzhiyufont anzhiyu-icon-weibo"></i></a></div><script>function copyCurrentPageUrl() {
+  var currentPageUrl = window.location.href;
+  var input = document.createElement("input");
+  input.setAttribute("value", currentPageUrl);
+  document.body.appendChild(input);
+  input.select();
+  input.setSelectionRange(0, 99999);
+  document.execCommand("copy");
+  document.body.removeChild(input);
+}</script><div class="share-link copyurl"><div class="share-button" id="post-share-url" title="复制链接" onclick="copyCurrentPageUrl()"><i class="anzhiyufont anzhiyu-icon-link"></i></div></div></div></div></div><div class="post-copyright__notice"><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://example.com" target="_blank">沃德发</a>！</span></div></div><div class="post-tools-right"><div class="tag_share"><div class="post-meta__box"><div class="post-meta__box__tag-list"><a class="post-meta__box__tags" href="/tags/mpls/"><span class="tags-punctuation"> <i class="anzhiyufont anzhiyu-icon-tag"></i></span>mpls<span class="tagsPageCount">1</span></a><a class="post-meta__box__tags" href="/tags/ldp/"><span class="tags-punctuation"> <i class="anzhiyufont anzhiyu-icon-tag"></i></span>ldp<span class="tagsPageCount">1</span></a></div></div></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2023/12/05/Hybrid%E6%8E%A5%E5%8F%A3/"><img class="prev-cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">Hybrid接口</div></div></a></div><div class="next-post pull-right"><a href="/2023/12/07/%E9%93%BE%E8%B7%AF%E8%81%9A%E5%90%88/"><img class="next-cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">链路聚合</div></div></a></div></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="card-content"><div class="author-info-avatar"><img class="avatar-img" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/toux.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__description"></div><div class="author-info__bottom-group"><a class="author-info__bottom-group-left" href="/"><h1 class="author-info__name">Yang</h1><div class="author-info__desc">相互吹捧，共同进步😍😍😍</div></a><div class="card-info-social-icons is-center"><a class="social-icon faa-parent animated-hover" href="https://github.com/anzhiyu-c" target="_blank" title="Github"><i class="anzhiyufont anzhiyu-icon-github"></i></a></div></div></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-bullhorn anzhiyu-shake"></i><span>公告</span></div><div class="announcement_content">今天也在努力划水。</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-bars"></i><span>文章目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">概念</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">标签报文格式</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">MPLS转发过程</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">MPLS标签转发表与LDP</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">基础实验</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-history"></i><span>最近发布</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/" title="网络安全技术">网络安全技术</a><time datetime="2024-08-13T11:14:23.000Z" title="发表于 2024-08-13 19:14:23">2024-08-13</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/" title="BGP高级特性">BGP高级特性</a><time datetime="2024-08-12T11:24:30.000Z" title="发表于 2024-08-12 19:24:30">2024-08-12</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/" title="IGP高级特性">IGP高级特性</a><time datetime="2024-08-09T08:10:23.000Z" title="发表于 2024-08-09 16:10:23">2024-08-09</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/08/07/BFD/" title="BFD">BFD</a><time datetime="2024-08-07T11:43:29.000Z" title="发表于 2024-08-07 19:43:29">2024-08-07</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/08/06/IPv6/" title="IPv6">IPv6</a><time datetime="2024-08-06T10:32:29.000Z" title="发表于 2024-08-06 18:32:29">2024-08-06</time></div></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"></div><div id="footer-bar"><div class="footer-bar-links"><div class="footer-bar-left"><div id="footer-bar-tips"><div class="copyright">&copy;2020 - 2024 By <a class="footer-bar-link" href="/" title="Yang" target="_blank">Yang</a></div></div><div id="footer-type-tips"></div><div class="js-pjax"><script>function subtitleType () {
+  fetch('https://v1.hitokoto.cn')
+    .then(response => response.json())
+    .then(data => {
+      if (true) {
+        const from = '出自 ' + data.from
+        const sub = []
+        sub.unshift(data.hitokoto, from)
+        window.typed = new Typed('#footer-type-tips', {
+          strings: sub,
+          startDelay: 300,
+          typeSpeed: 150,
+          loop: true,
+          backSpeed: 50,
+        })
+      } else {
+        document.getElementById('footer-type-tips').innerHTML = data.hitokoto
+      }
+    })
+}
+
+if (true) {
+  if (typeof Typed === 'function') {
+    subtitleType()
+  } else {
+    getScript('https://cdn.cbd.int/typed.js@2.0.15/dist/typed.umd.js').then(subtitleType)
+  }
+} else {
+  subtitleType()
+}
+</script></div></div><div class="footer-bar-right"><a class="footer-bar-link" target="_blank" rel="noopener" href="https://github.com/anzhiyu-c/hexo-theme-anzhiyu" title="主题">主题</a></div></div></div></footer></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="sidebar-site-data site-data is-center"><a href="/archives/" title="archive"><div class="headline">文章</div><div class="length-num">40</div></a><a href="/tags/" title="tag"><div class="headline">标签</div><div class="length-num">66</div></a><a href="/categories/" title="category"><div class="headline">分类</div><div class="length-num">5</div></a></div><span class="sidebar-menu-item-title">功能</span><div class="sidebar-menu-item"><a class="darkmode_switchbutton menu-child" href="javascript:void(0);" title="显示模式"><i class="anzhiyufont anzhiyu-icon-circle-half-stroke"></i><span>显示模式</span></a></div><div class="back-menu-list-groups"><div class="back-menu-list-group"><div class="back-menu-list-title">网页</div><div class="back-menu-list"><a class="back-menu-item" target="_blank" rel="noopener" href="https://blog.anheyu.com/" title="博客"><img class="back-menu-item-icon" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/favicon.ico" alt="博客"/><span class="back-menu-item-text">博客</span></a></div></div><div class="back-menu-list-group"><div class="back-menu-list-title">项目</div><div class="back-menu-list"><a class="back-menu-item" target="_blank" rel="noopener" href="https://image.anheyu.com/" title="安知鱼图床"><img class="back-menu-item-icon" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="https://image.anheyu.com/favicon.ico" alt="安知鱼图床"/><span class="back-menu-item-text">安知鱼图床</span></a></div></div></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 文章</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/categories/"><i class="anzhiyufont anzhiyu-icon-shapes faa-tada" style="font-size: 0.9em;"></i><span> 分类</span></a></li><li><a class="site-page child faa-parent animated-hover" href="/tags/"><i class="anzhiyufont anzhiyu-icon-tags faa-tada" style="font-size: 0.9em;"></i><span> 标签</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 友链</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/link/"><i class="anzhiyufont anzhiyu-icon-link faa-tada" style="font-size: 0.9em;"></i><span> 友人帐</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 关于</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="javascript:toRandomPost()"><i class="anzhiyufont anzhiyu-icon-shoe-prints1 faa-tada" style="font-size: 0.9em;"></i><span> 随便逛逛</span></a></li></ul></div></div><span class="sidebar-menu-item-title">标签</span><div class="card-tags"><div class="item-headline"></div><div class="card-tag-cloud"><a href="/tags/BFD/" style="font-size: 0.88rem;">BFD<sup>1</sup></a><a href="/tags/BGP/" style="font-size: 0.88rem;">BGP<sup>2</sup></a><a href="/tags/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/" style="font-size: 0.88rem;">BGP路由优选<sup>1</sup></a><a href="/tags/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/" style="font-size: 0.88rem;">BGP路由反射器<sup>1</sup></a><a href="/tags/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/" style="font-size: 0.88rem;">BGP高级特性<sup>1</sup></a><a href="/tags/DHCP/" style="font-size: 0.88rem;">DHCP<sup>1</sup></a><a href="/tags/DHCP-Relay/" style="font-size: 0.88rem;">DHCP Relay<sup>1</sup></a><a href="/tags/DHCPv6/" style="font-size: 0.88rem;">DHCPv6<sup>1</sup></a><a href="/tags/FTP/" style="font-size: 0.88rem;">FTP<sup>1</sup></a><a href="/tags/ICMPv6/" style="font-size: 0.88rem;">ICMPv6<sup>1</sup></a><a href="/tags/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/" style="font-size: 0.88rem;">IGP高级特性<sup>1</sup></a><a href="/tags/IPv6/" style="font-size: 0.88rem;">IPv6<sup>1</sup></a><a href="/tags/IS-IS/" style="font-size: 0.88rem;">IS-IS<sup>1</sup></a><a href="/tags/MSTP/" style="font-size: 0.88rem;">MSTP<sup>1</sup></a><a href="/tags/ORF/" style="font-size: 0.88rem;">ORF<sup>1</sup></a><a href="/tags/PPP/" style="font-size: 0.88rem;">PPP<sup>1</sup></a><a href="/tags/PPPoE/" style="font-size: 0.88rem;">PPPoE<sup>1</sup></a><a href="/tags/RSTP/" style="font-size: 0.88rem;">RSTP<sup>1</sup></a><a href="/tags/SSH/" style="font-size: 0.88rem;">SSH<sup>1</sup></a><a href="/tags/STP/" style="font-size: 0.88rem;">STP<sup>1</sup></a><a href="/tags/USG5500/" style="font-size: 0.88rem;">USG5500<sup>1</sup></a><a href="/tags/VRF/" style="font-size: 0.88rem;">VRF<sup>1</sup></a><a href="/tags/VRRP/" style="font-size: 0.88rem;">VRRP<sup>2</sup></a><a href="/tags/ap%E4%B8%8A%E7%BA%BF/" style="font-size: 0.88rem;">ap上线<sup>1</sup></a><a href="/tags/as-path-filter/" style="font-size: 0.88rem;">as-path-filter<sup>1</sup></a><a href="/tags/comunity-filter/" style="font-size: 0.88rem;">comunity-filter<sup>1</sup></a><a href="/tags/hybrid/" style="font-size: 0.88rem;">hybrid<sup>1</sup></a><a href="/tags/ldp/" style="font-size: 0.88rem;">ldp<sup>1</sup></a><a href="/tags/mpls/" style="font-size: 0.88rem;">mpls<sup>1</sup></a><a href="/tags/mstp/" style="font-size: 0.88rem;">mstp<sup>1</sup></a><a href="/tags/nat/" style="font-size: 0.88rem;">nat<sup>1</sup></a><a href="/tags/ospf/" style="font-size: 0.88rem;">ospf<sup>1</sup></a><a href="/tags/rstp/" style="font-size: 0.88rem;">rstp<sup>1</sup></a><a href="/tags/stp%E6%8B%93%E6%89%91%E5%8F%98%E6%9B%B4/" style="font-size: 0.88rem;">stp拓扑变更<sup>1</sup></a><a href="/tags/tag/" style="font-size: 0.88rem;">tag<sup>1</sup></a><a href="/tags/wlan/" style="font-size: 0.88rem;">wlan<sup>1</sup></a><a href="/tags/%E5%88%86%E7%BA%A7RR/" style="font-size: 0.88rem;">分级RR<sup>1</sup></a><a href="/tags/%E5%A4%87%E4%BB%BDRR/" style="font-size: 0.88rem;">备份RR<sup>1</sup></a><a href="/tags/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/" style="font-size: 0.88rem;">正则表达式<sup>1</sup></a><a href="/tags/%E9%98%B2%E7%81%AB%E5%A2%99nat/" style="font-size: 0.88rem;">防火墙nat<sup>1</sup></a></div></div><hr/></div></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="anzhiyufont anzhiyu-icon-book-open"></i></button><button id="translateLink" type="button" title="简繁转换">繁</button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="anzhiyufont anzhiyu-icon-circle-half-stroke"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="anzhiyufont anzhiyu-icon-arrows-left-right"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="anzhiyufont anzhiyu-icon-gear"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="anzhiyufont anzhiyu-icon-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><i class="anzhiyufont anzhiyu-icon-arrow-up"></i></button></div></div><div id="nav-music"><a id="nav-music-hoverTips" onclick="anzhiyu.musicToggle()" accesskey="m">播放音乐</a><div id="console-music-bg"></div><meting-js id="8152976493" server="netease" type="playlist" mutex="true" preload="none" theme="var(--anzhiyu-main)" data-lrctype="0" order="random"></meting-js></div><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="anzhiyufont anzhiyu-icon-xmark"></i></button></nav><div class="is-center" id="loading-database"><i class="anzhiyufont anzhiyu-icon-spinner anzhiyu-pulse-icon"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div></div></div><div id="search-mask"></div></div><div id="rightMenu"><div class="rightMenu-group rightMenu-small"><div class="rightMenu-item" id="menu-backward"><i class="anzhiyufont anzhiyu-icon-arrow-left"></i></div><div class="rightMenu-item" id="menu-forward"><i class="anzhiyufont anzhiyu-icon-arrow-right"></i></div><div class="rightMenu-item" id="menu-refresh"><i class="anzhiyufont anzhiyu-icon-arrow-rotate-right" style="font-size: 1rem;"></i></div><div class="rightMenu-item" id="menu-top"><i class="anzhiyufont anzhiyu-icon-arrow-up"></i></div></div><div class="rightMenu-group rightMenu-line rightMenuPlugin"><div class="rightMenu-item" id="menu-copytext"><i class="anzhiyufont anzhiyu-icon-copy"></i><span>复制选中文本</span></div><div class="rightMenu-item" id="menu-pastetext"><i class="anzhiyufont anzhiyu-icon-paste"></i><span>粘贴文本</span></div><a class="rightMenu-item" id="menu-commenttext"><i class="anzhiyufont anzhiyu-icon-comment-medical"></i><span>引用到评论</span></a><div class="rightMenu-item" id="menu-newwindow"><i class="anzhiyufont anzhiyu-icon-window-restore"></i><span>新窗口打开</span></div><div class="rightMenu-item" id="menu-copylink"><i class="anzhiyufont anzhiyu-icon-link"></i><span>复制链接地址</span></div><div class="rightMenu-item" id="menu-copyimg"><i class="anzhiyufont anzhiyu-icon-images"></i><span>复制此图片</span></div><div class="rightMenu-item" id="menu-downloadimg"><i class="anzhiyufont anzhiyu-icon-download"></i><span>下载此图片</span></div><div class="rightMenu-item" id="menu-newwindowimg"><i class="anzhiyufont anzhiyu-icon-window-restore"></i><span>新窗口打开图片</span></div><div class="rightMenu-item" id="menu-search"><i class="anzhiyufont anzhiyu-icon-magnifying-glass"></i><span>站内搜索</span></div><div class="rightMenu-item" id="menu-searchBaidu"><i class="anzhiyufont anzhiyu-icon-magnifying-glass"></i><span>百度搜索</span></div><div class="rightMenu-item" id="menu-music-toggle"><i class="anzhiyufont anzhiyu-icon-play"></i><span>播放音乐</span></div><div class="rightMenu-item" id="menu-music-back"><i class="anzhiyufont anzhiyu-icon-backward"></i><span>切换到上一首</span></div><div class="rightMenu-item" id="menu-music-forward"><i class="anzhiyufont anzhiyu-icon-forward"></i><span>切换到下一首</span></div><div class="rightMenu-item" id="menu-music-playlist" onclick="window.open(&quot;https://y.qq.com/n/ryqq/playlist/8802438608&quot;, &quot;_blank&quot;);" style="display: none;"><i class="anzhiyufont anzhiyu-icon-radio"></i><span>查看所有歌曲</span></div><div class="rightMenu-item" id="menu-music-copyMusicName"><i class="anzhiyufont anzhiyu-icon-copy"></i><span>复制歌名</span></div></div><div class="rightMenu-group rightMenu-line rightMenuOther"><a class="rightMenu-item menu-link" id="menu-randomPost"><i class="anzhiyufont anzhiyu-icon-shuffle"></i><span>随便逛逛</span></a><a class="rightMenu-item menu-link" href="/categories/"><i class="anzhiyufont anzhiyu-icon-cube"></i><span>博客分类</span></a><a class="rightMenu-item menu-link" href="/tags/"><i class="anzhiyufont anzhiyu-icon-tags"></i><span>文章标签</span></a></div><div class="rightMenu-group rightMenu-line rightMenuOther"><a class="rightMenu-item" id="menu-copy" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-copy"></i><span>复制地址</span></a><a class="rightMenu-item" id="menu-commentBarrage" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-message"></i><span class="menu-commentBarrage-text">关闭热评</span></a><a class="rightMenu-item" id="menu-darkmode" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-circle-half-stroke"></i><span class="menu-darkmode-text">深色模式</span></a><a class="rightMenu-item" id="menu-translate" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-language"></i><span>轉為繁體</span></a></div></div><div id="rightmenu-mask"></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="/js/tw_cn.js"></script><script src="https://cdn.cbd.int/@fancyapps/ui@5.0.20/dist/fancybox/fancybox.umd.js"></script><script src="https://cdn.cbd.int/instant.page@5.2.0/instantpage.js" type="module"></script><script src="https://cdn.cbd.int/vanilla-lazyload@17.8.4/dist/lazyload.iife.min.js"></script><script src="https://cdn.cbd.int/node-snackbar@0.1.16/dist/snackbar.min.js"></script><canvas id="universe"></canvas><script async src="https://npm.elemecdn.com/anzhiyu-theme-static@1.0.0/dark/dark.js"></script><script>// 消除控制台打印
+var HoldLog = console.log;
+console.log = function () {};
+let now1 = new Date();
+queueMicrotask(() => {
+  const Log = function () {
+    HoldLog.apply(console, arguments);
+  }; //在恢复前输出日志
+  const grt = new Date("04/01/2021 00:00:00"); //此处修改你的建站时间或者网站上线时间
+  now1.setTime(now1.getTime() + 250);
+  const days = (now1 - grt) / 1000 / 60 / 60 / 24;
+  const dnum = Math.floor(days);
+  const ascll = [
+    `欢迎使用安知鱼!`,
+    `生活明朗, 万物可爱`,
+    `
+        
+       █████╗ ███╗   ██╗███████╗██╗  ██╗██╗██╗   ██╗██╗   ██╗
+      ██╔══██╗████╗  ██║╚══███╔╝██║  ██║██║╚██╗ ██╔╝██║   ██║
+      ███████║██╔██╗ ██║  ███╔╝ ███████║██║ ╚████╔╝ ██║   ██║
+      ██╔══██║██║╚██╗██║ ███╔╝  ██╔══██║██║  ╚██╔╝  ██║   ██║
+      ██║  ██║██║ ╚████║███████╗██║  ██║██║   ██║   ╚██████╔╝
+      ╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝╚═╝   ╚═╝    ╚═════╝
+        
+        `,
+    "已上线",
+    dnum,
+    "天",
+    "©2020 By 安知鱼 V1.6.10",
+  ];
+  const ascll2 = [`NCC2-036`, `调用前置摄像头拍照成功，识别为【小笨蛋】.`, `Photo captured: `, `🤪`];
+
+  setTimeout(
+    Log.bind(
+      console,
+      `\n%c${ascll[0]} %c ${ascll[1]} %c ${ascll[2]} %c${ascll[3]}%c ${ascll[4]}%c ${ascll[5]}\n\n%c ${ascll[6]}\n`,
+      "color:#425AEF",
+      "",
+      "color:#425AEF",
+      "color:#425AEF",
+      "",
+      "color:#425AEF",
+      ""
+    )
+  );
+  setTimeout(
+    Log.bind(
+      console,
+      `%c ${ascll2[0]} %c ${ascll2[1]} %c \n${ascll2[2]} %c\n${ascll2[3]}\n`,
+      "color:white; background-color:#4fd953",
+      "",
+      "",
+      'background:url("https://npm.elemecdn.com/anzhiyu-blog@1.1.6/img/post/common/tinggge.gif") no-repeat;font-size:450%'
+    )
+  );
+
+  setTimeout(Log.bind(console, "%c WELCOME %c 你好，小笨蛋.", "color:white; background-color:#4f90d9", ""));
+
+  setTimeout(
+    console.warn.bind(
+      console,
+      "%c ⚡ Powered by 安知鱼 %c 你正在访问 Yang 的博客.",
+      "color:white; background-color:#f0ad4e",
+      ""
+    )
+  );
+
+  setTimeout(Log.bind(console, "%c W23-12 %c 你已打开控制台.", "color:white; background-color:#4f90d9", ""));
+
+  setTimeout(
+    console.warn.bind(console, "%c S013-782 %c 你现在正处于监控中.", "color:white; background-color:#d9534f", "")
+  );
+});</script><script async src="/anzhiyu/random.js"></script><script src="/js/search/local-search.js"></script><div class="js-pjax"><input type="hidden" name="page-type" id="page-type" value="post"></div><script>var visitorMail = "visitor@anheyu.com";
+</script><script async data-pjax src="https://cdn.cbd.int/anzhiyu-theme-static@1.0.0/waterfall/waterfall.js"></script><script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/qrcodejs/1.0.0/qrcode.min.js"></script><link rel="stylesheet" href="https://cdn.cbd.int/anzhiyu-theme-static@1.1.9/icon/ali_iconfont_css.css"><link rel="stylesheet" href="https://cdn.cbd.int/anzhiyu-theme-static@1.0.0/aplayer/APlayer.min.css" media="print" onload="this.media='all'"><script src="https://cdn.cbd.int/anzhiyu-blog-static@1.0.1/js/APlayer.min.js"></script><script src="https://cdn.cbd.int/hexo-anzhiyu-music@1.0.1/assets/js/Meting2.min.js"></script><script src="https://cdn.cbd.int/pjax@0.2.8/pjax.min.js"></script><script>let pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+var pjax = new Pjax({
+  elements: 'a:not([target="_blank"])',
+  selectors: pjaxSelectors,
+  cacheBust: false,
+  analytics: false,
+  scrollRestoration: false
+})
+
+document.addEventListener('pjax:send', function () {
+  // removeEventListener scroll 
+  anzhiyu.removeGlobalFnEvent('pjax')
+  anzhiyu.removeGlobalFnEvent('themeChange')
+
+  document.getElementById('rightside').classList.remove('rightside-show')
+  
+  if (window.aplayers) {
+    for (let i = 0; i < window.aplayers.length; i++) {
+      if (!window.aplayers[i].options.fixed) {
+        window.aplayers[i].destroy()
+      }
+    }
+  }
+
+  typeof typed === 'object' && typed.destroy()
+
+  //reset readmode
+  const $bodyClassList = document.body.classList
+  $bodyClassList.contains('read-mode') && $bodyClassList.remove('read-mode')
+})
+
+document.addEventListener('pjax:complete', function () {
+  window.refreshFn()
+
+  document.querySelectorAll('script[data-pjax]').forEach(item => {
+    const newScript = document.createElement('script')
+    const content = item.text || item.textContent || item.innerHTML || ""
+    Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+    newScript.appendChild(document.createTextNode(content))
+    item.parentNode.replaceChild(newScript, item)
+  })
+
+  GLOBAL_CONFIG.islazyload && window.lazyLoadInstance.update()
+
+  typeof panguInit === 'function' && panguInit()
+
+  // google analytics
+  typeof gtag === 'function' && gtag('config', '', {'page_path': window.location.pathname});
+
+  // baidu analytics
+  typeof _hmt === 'object' && _hmt.push(['_trackPageview',window.location.pathname]);
+
+  typeof loadMeting === 'function' && document.getElementsByClassName('aplayer').length && loadMeting()
+
+  // prismjs
+  typeof Prism === 'object' && Prism.highlightAll()
+})
+
+document.addEventListener('pjax:error', e => {
+  if (e.request.status === 404) {
+    pjax.loadUrl('/404.html')
+  }
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><script charset="UTF-8" src="https://cdn.cbd.int/anzhiyu-theme-static@1.1.5/accesskey/accesskey.js"></script></div><div id="popup-window"><div class="popup-window-title">通知</div><div class="popup-window-divider"></div><div class="popup-window-content"><div class="popup-tip">你好呀</div><div class="popup-link"><i class="anzhiyufont anzhiyu-icon-arrow-circle-right"></i></div></div></div></body></html>
