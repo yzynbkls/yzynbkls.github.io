@@ -3,8 +3,7 @@
   <entry>
     <title>BFD</title>
     <url>/2024/08/07/BFD/</url>
-    <content><![CDATA[<h1>定义</h1>
-<p>双向转发检测BFD（Bidirectional Forwarding Detection）是一种高速故障检测机制，在两个系统之间建立BFD会话并周期性地发送BFD报文，如果一方在协商的检测时间内没有接收到BFD报文，则认为这条双向通道上发生了故障。上层协议通过BFD感知到链路故障后可以及时采取措施，进行故障恢复。</p>
+    <content><![CDATA[<h1 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h1><p>双向转发检测BFD（Bidirectional Forwarding Detection）是一种高速故障检测机制，在两个系统之间建立BFD会话并周期性地发送BFD报文，如果一方在协商的检测时间内没有接收到BFD报文，则认为这条双向通道上发生了故障。上层协议通过BFD感知到链路故障后可以及时采取措施，进行故障恢复。</p>
 <p>BFD提供如下功能：</p>
 <ul>
 <li>对相邻设备之间的通道提供轻负荷、快速故障检测。这些故障包括接口故障，数据链路故障，甚至有可能是设备本身故障。</li>
@@ -14,8 +13,7 @@
 <p>BFD的检测机制是两个系统建立BFD会话，并沿它们之间的路径周期性发送BFD控制报文，如果一方在既定的时间内没有收到BFD控制报文，则认为路径上发生了故障。</p>
 <p>BFD控制报文封装在<strong>UDP</strong>报文中传送。会话开始阶段，双方系统通过控制报文中携带的参数（会话标识符、期望的收发报文最小时间间隔、本端BFD会话状态等）进行协商。协商成功后，以协商的报文收发时间在彼此之间的路径上定时发送BFD控制报文。</p>
 <p>BFD的主要操作模式称为异步模式。在这种模式下，系统之间相互周期性地发送BFD控制报文，如果某个系统连续几个报文都没有接收到，就认为此BFD会话的状态是Down。</p>
-<h1>报文</h1>
-<p><img src="/2024/08/07/BFD/QQ%E6%88%AA%E5%9B%BE20240807201113.png" alt="QQ截图20240807201113"></p>
+<h1 id="报文"><a href="#报文" class="headerlink" title="报文"></a>报文</h1><p><img src="/2024/08/07/BFD/QQ%E6%88%AA%E5%9B%BE20240807201113.png" alt="QQ截图20240807201113"></p>
 <p>重要字段解释：</p>
 <p>vers：版本，1</p>
 <table>
@@ -26,8 +24,7 @@
 <th>BFD会话连接本地标识符。发送系统产生的一个唯一的、非0鉴别值，用来区分一个系统的多个BFD会话。</th>
 </tr>
 </thead>
-<tbody>
-<tr>
+<tbody><tr>
 <td>Your Discriminator</td>
 <td>32 bits</td>
 <td>BFD会话连接远端标识符。0：未知。Non-0：从远端系统接收到的鉴别值，这个域直接返回接收到的“My Discriminator”。</td>
@@ -47,18 +44,15 @@
 <td>32 bits</td>
 <td>本地支持的最小Echo报文接收间隔，单位为毫秒（如果本地不支持Echo功能，则设置0）。</td>
 </tr>
-</tbody>
-</table>
-<h1>BFD会话建立</h1>
-<table>
+</tbody></table>
+<h1 id="BFD会话建立"><a href="#BFD会话建立" class="headerlink" title="BFD会话建立"></a>BFD会话建立</h1><table>
 <thead>
 <tr>
 <th>BFD会话建立方式</th>
 <th>描述</th>
 </tr>
 </thead>
-<tbody>
-<tr>
+<tbody><tr>
 <td>静态BFD会话</td>
 <td>手工指定标识符的静态BFD会话静态BFD会话是指通过命令行手工配置BFD会话参数，包括了配置<strong>本地标识符和远端标识符等，手工下发BFD会话建立请求</strong>。当BFD会话的一端收到BFD控制报文时，将收到报文中的My Discriminator和Your Discriminator的值，与本地BFD会话进行比较，判断是否匹配。标识符自协商的静态BFD会话标识符自协商的静态BFD会话是指手工创建BFD会话，但不需要配置本地标识符和远端标识符，本地标识符和远端标识符通过会话协商获得。在静态路由与BFD联动应用中，如果对端设备不支持静态BFD会话，而采用动态BFD会话，此时本端设备既要与之互通，又要能够实现静态路由与BFD联动时，必须使用静态标识符自协商BFD会话。</td>
 </tr>
@@ -66,8 +60,7 @@
 <td>动态BFD会话</td>
 <td>动态BFD会话是指由路由协议动态触发BFD会话建立。动态BFD中，本地标识符是动态分配的，远端标识符从对端的BFD报文中获取。路由协议在建立了新的邻居关系时，将对应的参数及检测参数（包括目的地址、源地址等）通告给BFD，BFD根据收到的参数建立起会话。当发生链路故障时，联动了BFD的路由协议可以快速感知到BFD会话状态变为Down，从而实现将流量快速切换到备份路径，避免了数据大量丢失。动态BFD具有较高的灵活性，适用于全网都对可靠性要求较高的网络。动态建立BFD会话时，系统对本地标识符和远端标识符的处理方式如下：动态分配本地标识符：当应用程序触发动态创建BFD会话时，系统分配属于动态会话标识符区域的值作为BFD会话的本地标识符。然后向对端发送Your Discriminator的值为0的BFD控制报文，进行会话协商。自学习远端标识符：当BFD会话的一端收到Your Discriminator的值为0的BFD控制报文时，根据四元组（源地址、目的地址、出接口、VPN索引）判断该报文是否与本地BFD会话匹配，如果匹配，则学习接收到的BFD报文中My Discriminator的值，获取远端标识符。</td>
 </tr>
-</tbody>
-</table>
+</tbody></table>
 <p>会话状态：</p>
 <ul>
 <li>Down：会话处于Down状态或刚刚创建。</li>
@@ -76,22 +69,26 @@
 </ul>
 <p>会话状态变化通过BFD报文的State字段传递，系统根据自己本地的会话状态和接收到的对端BFD报文驱动状态改变。BFD状态机的建立和拆除都采用三次握手机制，以确保两端系统都能知道状态的变化。以BFD会话建立为例，简单介绍状态机的迁移过程。</p>
 <img src="/2024/08/07/BFD/QQ截图20240807213249.png" alt="QQ截图20240807213249" style="zoom:67%;">
+
 <p>BFD缺省参数</p>
 <img src="/2024/08/07/BFD/QQ截图20240807213403.png" alt="QQ截图20240807213403" style="zoom:67%;">
-<h1>BFD检测机制</h1>
-<img src="/2024/08/07/BFD/QQ截图20240807213527.png" alt="QQ截图20240807213527" style="zoom:67%;">
-<h1>BFD检测时间</h1>
-<img src="/2024/08/07/BFD/QQ截图20240807213553.png" alt="QQ截图20240807213553" style="zoom: 80%;">
-<h1>单臂回声</h1>
-<img src="/2024/08/07/BFD/QQ截图20240807213607.png" alt="QQ截图20240807213607" style="zoom:80%;">
-<h1>配置</h1>
-<img src="/2024/08/07/BFD/QQ截图20240807214404.png" alt="QQ截图20240807214404" style="zoom:80%;">
+
+<h1 id="BFD检测机制"><a href="#BFD检测机制" class="headerlink" title="BFD检测机制"></a>BFD检测机制</h1><img src="/2024/08/07/BFD/QQ截图20240807213527.png" alt="QQ截图20240807213527" style="zoom:67%;">
+
+<h1 id="BFD检测时间"><a href="#BFD检测时间" class="headerlink" title="BFD检测时间"></a>BFD检测时间</h1><img src="/2024/08/07/BFD/QQ截图20240807213553.png" alt="QQ截图20240807213553" style="zoom: 80%;">
+
+<h1 id="单臂回声"><a href="#单臂回声" class="headerlink" title="单臂回声"></a>单臂回声</h1><img src="/2024/08/07/BFD/QQ截图20240807213607.png" alt="QQ截图20240807213607" style="zoom:80%;">
+
+<h1 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h1><img src="/2024/08/07/BFD/QQ截图20240807214404.png" alt="QQ截图20240807214404" style="zoom:80%;">
+
 <img src="/2024/08/07/BFD/QQ截图20240807214409.png" alt="QQ截图20240807214409" style="zoom:80%;">
+
 <img src="/2024/08/07/BFD/QQ截图20240807214417.png" alt="QQ截图20240807214417" style="zoom:80%;">
+
 <img src="/2024/08/07/BFD/QQ截图20240807214428.png" alt="QQ截图20240807214428" style="zoom:80%;">
 ]]></content>
       <categories>
-        <category>BFD</category>
+        <category>基础知识</category>
       </categories>
   </entry>
   <entry>
