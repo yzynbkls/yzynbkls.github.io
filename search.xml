@@ -501,95 +501,6 @@
       </tags>
   </entry>
   <entry>
-    <title>BGP路由反射器</title>
-    <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/</url>
-    <content><![CDATA[<h1 id="BGP路由反射器"><a href="#BGP路由反射器" class="headerlink" title="BGP路由反射器"></a>BGP路由反射器</h1><p>由于水平分割的原因，为了保证AS内所有的BGP路由器都能学习到完整的BGP路由，就必须在AS内实现IBGP全互联。</p>
-<p>然而实现IBGP全互联存在诸多短板：</p>
-<p> 路由器需维护大量的TCP及BGP连接，尤其在路由器数量较多时。</p>
-<p> AS内BGP网络的可扩展性较差，因为通过纯手工配置命令。</p>
-<p>为了解决该问题，可应用到RR路由反射器技术。</p>
-<p>1、Client：RR客户端，在RR设备上通过手动指定。</p>
-<blockquote>
-<p>指定命令：peer 邻居 reflect-client</p>
-</blockquote>
-<p>2、除了指定的设备为客户端，其它设备均为非客户端。</p>
-<p>实验：</p>
-<p>R1、R2、R3、R4都属于AS64511，其连接方式、互联接口地址如图所示。每台设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号。R1、R2上的Loopback1地址分别为10.1.1.1&#x2F;24、10.2.2.2&#x2F;24，用于模拟用户网段。</p>
-<span id="more"></span>
-
-<p>所有设备都使用Loopback0地址作为BGP Router ID，R1与R2、R2与R3、R3与R4、R4与R2之间基于直连接口建立IBGP对等体关系，其中R1为R2的路由反射器客户端，R2为R3的路由反射器客户端，R3为R4的路由反射器客户端。</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/bgpluy8165208.png" alt="bgpluy8165208"></p>
-<p>配置ip地址：略</p>
-<p>建立ibgp对等体：略</p>
-<h1 id="配置路由反射器"><a href="#配置路由反射器" class="headerlink" title="配置路由反射器"></a>配置路由反射器</h1><p>#R2上将R1配置为路由反射器客户端</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] peer 10.0.1.1 reflect-client</p>
-<p>#R3上将R2配置为路由反射器客户端</p>
-<p>[R3]bgp 64511</p>
-<p>[R3-bgp] peer 10.0.2.2 reflect-client</p>
-<p>#R4上将R3配置为路由反射器客户端</p>
-<p>[R4]bgp 64511</p>
-<p>[R4-bgp] peer 10.0.3.3 reflect-client</p>
-<h1 id="验证Orginator-ID实现路由防环"><a href="#验证Orginator-ID实现路由防环" class="headerlink" title="验证Orginator_ID实现路由防环"></a>验证Orginator_ID实现路由防环</h1><p>在本步骤中，我们将在R2上发布BGP路由10.2.2.0&#x2F;24，并观察该路由依次经路由反射器R3、R4反射后，被通告回R2从而引发潜在路由环路风险的情况。</p>
-<p>缺省情况下，R2发布BGP路由后，该路由将被R2直接通告给R4，另一方面也会通过R3反射给R4，此时R4将优选R2直接通告过来的路由，从而不会再将R3反射过来的路由再反射回给R2。为此，我们需要在R2上部署路由策略，使R2不直接向R4通告10.2.2.0&#x2F;24路由。</p>
-<p>#配置路由策略</p>
-<p>[R2]acl number 2000</p>
-<p>[R2-acl-basic-2000] rule 5 permit</p>
-<p>[R2-acl-basic-2000] quit</p>
-<p>[R2]route-policy bgp deny node 10</p>
-<p>[R2-route-policy] if-match acl 2000</p>
-<p>#在BGP中调用路由策略</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] peer 10.0.24.4 route-policy bgp export</p>
-<p>#在R2上发布路由</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] network 10.2.2.0 24</p>
-<p>#R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/chakan102224728.png" alt="chakan102224728"></p>
-<p>R2将该条路由通告给了R3、R1，但是并未通告给R4。</p>
-<p>#R3上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r174808.png" alt="r174808"></p>
-<p>R3将来自反射器客户端的BGP路由10.2.2.0&#x2F;24反射给了10.0.34.4（R4）。同时该BGP路由的nexthop为10.0.23.2。</p>
-<p># R4上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r4chakan80119.png" alt="r4chakan80119"></p>
-<p>该条路由来自反射器客户端R3，原始路由经由R3反射，路由的nexthop地址并未改变，同时R3为其添加了Orginator_ID属性，值为10.0.2.2。同时R4将该条路由反射给了R2。</p>
-<p>#再次在R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zacifa80349.png" alt="zacifa80349"></p>
-<p>依旧只存在本地通告的BGP路由，没有R4通告的BGP路由。</p>
-<p>#在R2上查看BGP对等体10.0.4.4的详细信息</p>
-<p>display bgp peer 10.0.4.4 verbose</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/safhaofbsh1128180629.png" alt="safhaofbsh1128180629"></p>
-<p>从输出信息可以看到R2从R4收到了1个Update报文，未向R4发送Update报文（路由策略限制），但是本地BGP路由表中不存在由R4通告的BGP路由10.2.2.0&#x2F;24。</p>
-<p>R4通告的BGP路由Orginator_ID属性值与本地的Router ID一致，R2忽略了该路由通告。</p>
-<h1 id="验证Cluster-List实现路由防环"><a href="#验证Cluster-List实现路由防环" class="headerlink" title="验证Cluster_List实现路由防环"></a>验证Cluster_List实现路由防环</h1><p>为了方便观察现象，取消R2上的BGP路由发布，在R1上将Loopback1接口路由发布到BGP，观察Cluster_List如何防止环路。</p>
-<p>#取消R2上的BGP路由发布</p>
-<p>[R2]bgp 64511</p>
-<p>[R2-bgp] undo network 10.2.2.0 255.255.255.0</p>
-<p>#在R1上将Loopback1接口路由发布到BGP</p>
-<p>[R1]bgp 64511</p>
-<p>[R1-bgp] network 10.1.1.0 24</p>
-<p>#依次在R1、R2、R3、R4上查看BGP路由10.1.1.0 &#x2F;24的明细信息</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/xinfuaiell181000.png" alt="xinfuaiell181000"></p>
-<p>R1为BGP路由10.1.1.0&#x2F;24的始发者，R1将路由通告给了R2</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/2xinfahol128181116.png" alt="2xinfahol128181116"></p>
-<p>来自路由反射器客户端R1的BGP路由10.1.1.0&#x2F;24，R2将其反射给了R3</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/3xinmbxmcx1128181206.png" alt="3xinmbxmcx1128181206"></p>
-<p>来自路由反射器客户端R2的BGP路由10.1.1.0&#x2F;24，R2反射时添加了Cluster_List属性，值为10.0.2.2，R3将该条路由反射给了R4</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/44xinm1334.png" alt="44xinm1334"></p>
-<p>来自路由反射器客户端R3的BGP路由10.1.1.0&#x2F;24，R3反射时添加了Cluster_List属性的值，当前值为10.0.3.3，10.0.2.2，R4将该条路由反射给了R2</p>
-<p>#再次查看R2的BGP路由表</p>
-<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zaizaici661435.png" alt="zaizaici661435"></p>
-<p>R2的BGP路由表中依旧只有一条来自r1的BGP路由10.1.1.0&#x2F;24。</p>
-<p>4通告的BGP路由其Cluster_List属性值中包含了R2的Cluster-ID，R2忽略了该路由通告。</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>BGP路由反射器</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>BGP路由优选</title>
     <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E4%BC%98%E9%80%89/</url>
     <content><![CDATA[<h1 id="BGP路由优选"><a href="#BGP路由优选" class="headerlink" title="BGP路由优选"></a>BGP路由优选</h1><h2 id="实验背景"><a href="#实验背景" class="headerlink" title="实验背景"></a>实验背景</h2><p>你是公司的网络管理员。公司的网络采用了BGP协议接入了两个服务运营商。公司自己采用了私有的AS号64512，ISP1的AS号为100，ISP2的AS号为200。通过AS100、AS200都可以到达相同的网络，你通过改变BGP的各种属性达到了调整路由走向的目的。</p>
@@ -700,270 +611,6 @@
       </categories>
       <tags>
         <tag>BGP路由优选</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>BGP高级特性</title>
-    <url>/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/</url>
-    <content><![CDATA[<h1 id="正则表达式"><a href="#正则表达式" class="headerlink" title="正则表达式"></a>正则表达式</h1><p>正则表达式是按照一定的模板来匹配字符串的公式，由普通字符（如字符a到z）和特殊字符组成。</p>
-<p>普通字符：匹配的对象是普通字符本身。包括所有的大写和小写字母、数字、标点符号以及一些特殊符号。例如：a匹配abc中的a，10匹配10.113.25.155中的10，@匹配<a href="mailto:&#120;&#120;&#120;&#64;&#x78;&#120;&#120;&#46;&#99;&#111;&#109;">&#120;&#120;&#120;&#64;&#x78;&#120;&#120;&#46;&#99;&#111;&#109;</a>中的@。</p>
-<p>特殊字符：配合普通字符匹配复杂或特殊的字符串组合。位于普通字符之前或之后用来限制或扩充普通字符的独立控制字符或占位符。用来描述它前面的字符的重复使用方式。限定一个完整的范围。</p>
-<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240812193036.png" alt="QQ截图20240812193036"></p>
-<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240812193052.png" alt="QQ截图20240812193052"></p>
-<h1 id="AS-Path-Filter"><a href="#AS-Path-Filter" class="headerlink" title="AS_Path Filter"></a>AS_Path Filter</h1><p>AS_Path Filter是将BGP中的AS_Path属性作为匹配条件的过滤器，利用BGP路由携带的AS_Path列表对路由进行过滤。</p>
-<p>在不希望接收某些AS的路由时，可以利用AS_Path Filter对携带这些AS号的路由进行过滤，从而实现拒绝某些路由。</p>
-<img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240812193910.png" alt="QQ截图20240812193910" style="zoom:80%;">
-
-
-
-<p>配置</p>
-<img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240812194026.png" alt="QQ截图20240812194026" style="zoom:80%;">
-
-<p>（两种方式，①直接peer as-path-filter 1 export②用router-policy过滤）</p>
-<p>AS路径过滤器的<strong>默认行为是deny</strong>，即路由如果没有在某一次过滤中被permit则最终不能通过该过滤器的过滤。如果一个过滤器中的所有过滤规则都是deny，则没有路由能通过该过滤器的过滤，<strong>这种情况下需要在多次（或一次）deny之后设置一次permit，允许其余所有路由通过过滤器的过滤。</strong>(注意加空节点)</p>
-<p>本地始发的路由，再本地上做export方向的as过滤不行，原因：会先匹配，最后带上as-path发送给邻居</p>
-<h1 id="Community-Filter"><a href="#Community-Filter" class="headerlink" title="Community Filter"></a>Community Filter</h1><p>Community Filter与Community属性配合使用，可以在不便使用IP Prefix List和AS_Path Filter时，降低路由管理难度。</p>
-<p>团体属性过滤器有两种类型：</p>
-<p>基本Community Filter。匹配团体号或公认Community属性。（1-99）</p>
-<p><strong>高级Community Filter</strong>。使用正则表达式匹配团体号。（&gt;100）</p>
-<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240812194734.png" alt="QQ截图20240812194734"></p>
-<p>默认是internet</p>
-<p>配置：</p>
-<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240812195042.png" alt="QQ截图20240812195042"></p>
-<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240812195112.png" alt="QQ截图20240812195112"></p>
-<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240812195501.png" alt="QQ截图20240812195501"></p>
-<p>思路：</p>
-<p>先邻居开启允许通告com unity属性功能（单向的，如果对端也需要传递，对端也要开启）</p>
-<p>router-policy1设置路由的com unity值</p>
-<p>配置comunity-filter</p>
-<p>router-policy2中调用com unity-filter</p>
-<p>bgp视图下，对邻居的export&#x2F;import方向调用router-policy2</p>
-<h1 id="ORF"><a href="#ORF" class="headerlink" title="ORF"></a>ORF</h1><p>邻居按需发送路由</p>
-<p>如果设备希望只接收自己需要的路由，但对端设备又无法针对每个与它连接的设备维护不同的出口策略。此时，可以通过配置BGP基于前缀的ORF（Outbound Route Filters，出口路由过滤器）来满足两端设备的需求。</p>
-<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813163948.png" alt="QQ截图20240813163948"></p>
-<p>配置：</p>
-<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813164104.png" alt="QQ截图20240813164104"></p>
-<p>命令：[Huawei-bgp-af-ipv4] peer { group-name | ipv4-address } ip-prefix ip-prefix-name { import | export }</p>
-<p>import：对由指定对等体（组）接收的路由应用过滤策略。</p>
-<p>export：对向指定对等体（组）发送的路由应用过滤策略。</p>
-<p>命令：[Huawei-bgp] peer { group-name | ipv4-address } capability-advertise orf [ non-standard-compatible ] ip-prefix { both | receive | send } [ standard-match ]</p>
-<p>non-standard-compatible：指定与非标准设备兼容。</p>
-<p>both：表示允许发送和接收ORF报文。</p>
-<p>receive：表示只允许接收ORF报文。</p>
-<p>send：表示只允许发送ORF报文。</p>
-<p>standard-match：指定按照RFC标准规定的前缀匹配规则来匹配路由。</p>
-<p>案例：</p>
-<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813164433.png" alt="QQ截图20240813164433"></p>
-<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813164442.png" alt="QQ截图20240813164442"></p>
-<h1 id="BGP对等体组"><a href="#BGP对等体组" class="headerlink" title="BGP对等体组"></a>BGP对等体组</h1><p>对等体组（Peer Group）是一些具有某些相同策略的对等体的集合。</p>
-<p>当一个对等体加入对等体组中时，该对等体将获得与所在对等体组相同的配置。</p>
-<p>当对等体组的配置改变时，组内成员的配置也相应改变。</p>
-<p>在大型BGP网络中，对等体的数量会很多，其中很多对等体具有相同的策略，在配置时会重复使用一些命令，利用对等体组可以简化配置</p>
-<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813174230.png" alt="QQ截图20240813174230"></p>
-<p>group-name：指定对等体组的名称。字符串形式，区分大小写，不支持空格，长度范围是1~47。当输入的字符串两端使用双引号时，可在字符串中输入空格。</p>
-<p>external：表示创建EBGP对等体组。</p>
-<p>internal：表示创建IBGP对等体组。</p>
-<img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240813174326.png" alt="QQ截图20240813174326" style="zoom:67%;">
-
-<img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240813174332.png" alt="QQ截图20240813174332" style="zoom:67%;">
-
-<h1 id="BGP认证"><a href="#BGP认证" class="headerlink" title="BGP认证"></a>BGP认证</h1><p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813175629.png" alt="QQ截图20240813175629"></p>
-<p>BGP使用TCP作为传输协议，只要TCP数据包的源地址、目的地址、源端口、目的端口和TCP序号是正确的，BGP就会认为这个数据包有效，但数据包的大部分参数对于攻击者来说是不难获得的。</p>
-<p>为了保证BGP免受攻击，可以在BGP邻居之间使用MD5认证或者Keychain认证来降低被攻击的可能性。</p>
-<p>MD5算法配置简单，配置后生成单一密码，需要人为干预才可以更换密码。</p>
-<p>Keychain具有一组密码，可以根据配置自动切换，但是配置过程较为复杂，适用于对安全性能要求比较高的网络。</p>
-<p><strong>注意：BGP的MD5认证与BGP的Keychain认证互斥。</strong></p>
-<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813180027.png" alt="QQ截图20240813180027"></p>
-<h1 id="BGP的GTSM"><a href="#BGP的GTSM" class="headerlink" title="BGP的GTSM"></a>BGP的GTSM</h1><p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813175932.png" alt="QQ截图20240813175932"></p>
-<p>如果没有使能BGP的GTSM功能，设备收到大量非法BGP报文后，发现是发送给本机的报文，会直接上送控制层面处理。这时将会因为控制层面处理大量攻击报文，导致设备CPU占用率高，系统异常繁忙。</p>
-<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813185435.png" alt="QQ截图20240813185435"></p>
-<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813185453.png" alt="QQ截图20240813185453"></p>
-<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813185459.png" alt="QQ截图20240813185459"></p>
-<p>hops：指定需要检测的TTL跳数值。整数形式，取值范围是1~255，缺省值是255。如果配置为hops，则被检测的报文的TTL值有效范围为[255–hops+1, 255]。</p>
-<h1 id="4字节AS号"><a href="#4字节AS号" class="headerlink" title="4字节AS号"></a>4字节AS号</h1><p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813185852.png" alt="QQ截图20240813185852"></p>
-<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813185936.png" alt="QQ截图20240813185936"></p>
-<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813190108.png" alt="QQ截图20240813190108"></p>
-<h1 id="路由反射器"><a href="#路由反射器" class="headerlink" title="路由反射器"></a>路由反射器</h1><p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813190147.png" alt="QQ截图20240813190147"></p>
-<p>RR1和RR2形成备份，RR1down之后，client2可以从RR2反射学习到路由。配置一样的cluster id，减少路由。</p>
-<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813190325.png" alt="QQ截图20240813190325"></p>
-<p>每个集群中的RR之间建立不建立客户关系，普通的ibgp邻居</p>
-<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813190627.png" alt="QQ截图20240813190627"></p>
-<p>分级RR与单级RR的路由发布规则相同。</p>
-<p>分级RR设计需要考虑两个因素：</p>
-<p>顶层全互联的拓扑大小：如果IBGP全互联数量已经多到难以管理了，则可考虑引入RR分级部署。</p>
-<p>可替代路径的数量：该因素影响负载分担和资源消耗。越多的层次越会减少负载分担链路的数量，但需要的路由器资源更少。</p>
-<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813191028.png" alt="QQ截图20240813191028"></p>
-<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813191033.png" alt="QQ截图20240813191033"></p>
-]]></content>
-      <tags>
-        <tag>BGP高级特性</tag>
-        <tag>as-path-filter</tag>
-        <tag>comunity-filter</tag>
-        <tag>正则表达式</tag>
-        <tag>备份RR</tag>
-        <tag>分级RR</tag>
-        <tag>ORF</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>FTP实验</title>
-    <url>/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/</url>
-    <content><![CDATA[<h1 id="File-Transfer-Protocol-文件传输协议"><a href="#File-Transfer-Protocol-文件传输协议" class="headerlink" title="File Transfer Protocol 文件传输协议"></a>File Transfer Protocol 文件传输协议</h1><p>FTP服务器开启21号端口进行控制连接，20号端口与客户端建立数据连接</p>
-<p>ASCII ((American Standard Code for Information Interchange): 美国信息交换标准代码）是基于拉丁字母的一套电脑编码系统，主要用于显示现代英语和其他西欧语言，它是最通用的信息交换标准。</p>
-<p>FTP是用来传送文件的协议。使用FTP实现远程文件传输的同时，还可以保证数据传输的可靠性和高效性。</p>
-<p>FTP 是基于客户———服务器（C&#x2F;S）模型而设计的，在客户端与 FTP 服务器之间建立两个连接</p>
-<h2 id="传输方式"><a href="#传输方式" class="headerlink" title="传输方式"></a>传输方式</h2><p>FTP支持两种方式的传输：文本（ASCII）方式和二进制（Binary）方式。通常文本文件的传输采用ASCII方式，而图象、声音文件、加密和压缩文件等非文本文件采用二进制方式传输，如果为了从一个系统上传输文件而使用了与本地系统不同的计算机字节位数，那么就必须使用Tenex模式。FTP以ASCII方式作为缺省的文件传输方式。</p>
-<h2 id="传输过程"><a href="#传输过程" class="headerlink" title="传输过程"></a>传输过程</h2><p> 使用FTP进行文件传输时，会使用两个TCP连接。第一个连接是FTP客户端和FTP服务器间的控制连接。FTP服务器开启21号端口，等待FTP客户端发送连接请求。FTP客户端随机开启端口，向服务器发送建立连接的请求。控制连接用于在服务器和客户端之间传输控制命令。<br>        第二个连接是FTP客户端和FTP服务器间的数据连接。服务器使用TCP的20号端口与客户端建立数据连接。通常情况下，服务器主动建立或中断数据连接。</p>
-<h2 id="FTP服务器配置"><a href="#FTP服务器配置" class="headerlink" title="FTP服务器配置"></a>FTP服务器配置</h2><p>路由器和X7系列交换机均可提供FTP功能。<br>执行ftp server enable命令使能FTP功能。<br>执行set default ftp-directory命令设置FTP用户的默认工作目录。</p>
-<p>在配置FTP服务器时，可以使用AAA为每个用户分别配置登录账号和访问权限。 aaa命令用来进入AAA视图。</p>
-<p>  local-user user-name { access-limit max-number | ftp-directory directory | idle-timeout         minutes [ seconds ] | password cipher password [ opt ]         | privilege level level | state {active | block } } *命令用来创建本地用户，并配置本地用户的各项参数。</p>
-<pre><code>  user-name指定用户名。
-    local-user huawei service-type ftp命令用来配置本地用户的接入类型为ftp。
-    ftp-directory指定FTP用户可访问的目录。如果不配置FTP用户可访问的目录，则FTP用户无法登录设备。
-    access-limit指定用户名可建立的最大连接数目。
-    idle-timeout指定用户的闲置超时时间。
-    privilege level指定用户的优先级。
-</code></pre>
-<h2 id="命令详解"><a href="#命令详解" class="headerlink" title="命令详解"></a>命令详解</h2><h3 id="idle-timeout"><a href="#idle-timeout" class="headerlink" title="idle-timeout"></a>idle-timeout</h3><p><strong>idle-timeout</strong>命令用来设置用户连接的超时时间。</p>
-<p><strong>undo idle-timeout</strong>命令用来恢复超时时间的缺省值。</p>
-<p>缺省情况下，用户连接的超时时间是5分钟。</p>
-<p>命令格式</p>
-<p><strong>idle-timeout</strong> <em>minutes</em> [ <em>seconds</em> ]</p>
-<p><strong>undo idle-timeout</strong></p>
-<table>
-<thead>
-<tr>
-<th align="left"><em>minutes</em></th>
-<th>指定用户界面断连的超时时间的分钟数。</th>
-<th>整数形式，取值范围是0～35791，单位是分钟。</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left"><em>seconds</em></td>
-<td>指定用户界面断连的超时时间的秒数。</td>
-<td>整数形式，取值范围是0～59，单位是秒</td>
-</tr>
-</tbody></table>
-<p>缺省级别</p>
-<p>3：管理级</p>
-<ul>
-<li>设置执行命令<strong>idle-timeout</strong> <strong>0 0</strong>即关闭用户界面的超时断连功能。</li>
-<li>如果用户界面没有设置闲置断连功能，则会导致已登录的用户始终处于连接状态，给设备带来安全风险，同时还有可能导致其他用户无法获得连接。</li>
-<li>通常情况下，推荐设置用户界面断连的超时时间在10～15分钟之间。</li>
-</ul>
-<p># 设置超时为1分钟30秒。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">idle-timeout 1 30</span><br></pre></td></tr></table></figure>
-
-
-
-<h3 id="local-user-privilege-level"><a href="#local-user-privilege-level" class="headerlink" title="local-user privilege level"></a>local-user privilege level</h3><p>必须配置在3以上，否则ftp连接无法成功</p>
-<p><strong>local-user privilege level</strong>命令用来配置本地用户的优先级。</p>
-<p><strong>undo</strong> <strong>local-user privilege level</strong>命令用来将本地用户的优先级恢复为缺省配置。</p>
-<p>缺省情况下，本地用户（如Telnet用户、SSH用户）的优先级由管理模块来决定。</p>
-<p>命令格式</p>
-<p><strong>local-user</strong> <em>user-name</em> <strong>privilege level</strong> <em>level</em></p>
-<p><strong>undo local-user</strong> <em>user-name</em> <strong>privilege level</strong></p>
-<table>
-<thead>
-<tr>
-<th><em>user-name</em></th>
-<th>用户名。</th>
-<th>字符串形式，不支持空格，不区分大小写，长度范围是1~64。</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><em>level</em></td>
-<td>用户的优先级。</td>
-<td>整数形式，取值范围是0~15，取值越大，用户的优先级越高。缺省级别是0级。不同级别的用户登录后，只能使用等于或低于自己级别的命令</td>
-</tr>
-</tbody></table>
-<p>缺省情况下，命令级别分为0~3级：</p>
-<ul>
-<li>级别0即参观级，网络诊断工具命令（ping、tracert）、从本设备出发访问外部设备的命令（包括：Telnet 客户端、SSH）等。该级别命令不允许进行配置文件保存的操作。</li>
-<li>级别1即监控级，用于系统维护，包括display命令。该级别命令不允许进行配置文件保存的操作。</li>
-<li>级别2即配置级，可以使用业务配置命令，包括路由、各个网络层次的命令，向用户提供直接网络服务。</li>
-<li>级别3即管理级，用于系统基本运行的命令，对业务提供支撑作用，包括文件系统、FTP、TFTP、配置文件切换命令、备板控制命令、用户管理命令、命令级别设置命令、系统内部参数设置命令；用于业务故障诊断的debugging命令。</li>
-</ul>
-<h3 id="access-limit"><a href="#access-limit" class="headerlink" title="access-limit"></a>access-limit</h3><p><strong>access-limit</strong>命令用来配置当前域允许接入的用户数。</p>
-<p><strong>undo access-limit</strong>命令用来恢复缺省配置。</p>
-<p>缺省情况下，不限制接入的用户数目。</p>
-<p>命令格式</p>
-<p><strong>access-limit</strong> <em>max-number</em></p>
-<p><strong>undo access-limit</strong></p>
-<table>
-<thead>
-<tr>
-<th><em>max-number</em></th>
-<th>指定允许接入的用户数。</th>
-<th>整数形式，取值范围是0～283648。</th>
-</tr>
-</thead>
-<tbody><tr>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-</tbody></table>
-<p>为了更方便地管理用户访问设备，可以限制域下用户的在线数量。</p>
-<p><strong>注意事项</strong></p>
-<p>执行这条配置命令后，当接入用户数大于允许的用户数时，系统不再允许用户接入系统，提示用户认证失败。</p>
-<p><strong>access-limit</strong>命令对一个域下所能接入的用户总数进行限制，不区分接入用户的类型。</p>
-<p># 设置当前域最多允许接入100个用户。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">access-limit 100</span><br></pre></td></tr></table></figure>
-
-
-
-<h3 id="local-user-ftp-directory"><a href="#local-user-ftp-directory" class="headerlink" title="local-user ftp-directory"></a>local-user ftp-directory</h3><p><strong>local-user ftp-directory</strong>命令用来配置本地用户的FTP目录。</p>
-<p><strong>undo local-user ftp-directory</strong>命令用来将本地用户的FTP目录恢复为缺省配置。</p>
-<p>缺省情况下，本地用户的FTP目录为空。</p>
-<p>当需要将设备配置为FTP服务器，从而便于本地用户以FTP方式登录设备，对设备上的文件进行增加、删除、修改等操作时，可以通过本命令配置本地用户以FTP方式登录设备后所处的目录。</p>
-<p>不指定该目录时，本地用户无法以FTP方式登录设备。</p>
-<p>配置本地用户的FTP目录时，该用户必须已由local-user password命令建立。</p>
-<h3 id="local-user-password"><a href="#local-user-password" class="headerlink" title="local-user password"></a>local-user password</h3><p><strong>local-user password</strong>命令用来创建一个本地用户并配置该用户的登录密码，或者修改已创建用户的登录密码。</p>
-<p><strong>undo local-user</strong>命令用来删除一个本地用户。</p>
-<p>缺省情况下，系统没有本地用户。</p>
-<p><strong>local-user</strong> <em>user-name</em> <strong>password</strong> [ <strong>cipher</strong> <em>password</em> | <strong>irreversible-cipher</strong> <em>irreversible-cipher-password</em> ]</p>
-<p><strong>undo local-user</strong> <em>user-name</em></p>
-<p><strong>cipher</strong> <em>password</em></p>
-<p>指定密文密钥。密钥以明文或密文形式输入，但配置文件中保存为密文形式。</p>
-<p><strong>irreversible-cipher</strong> <em>irreversible-cipher-password</em></p>
-<p>指定不可逆密文密钥。密钥以明文或不可逆密文形式输入，但配置文件中保存为密文形式。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>1.FTP服务器需要开启TCP的21号端口来建立控制连接，20号端口来建立数据连接。</p>
-<p>2.如果用户无权访问任何工作目录，则需要定义一个默认的FTP目录。执行set default ftp-directory <directory location>命令建立默认目录。</directory></p>
-<h2 id="FTP实验"><a href="#FTP实验" class="headerlink" title="FTP实验"></a>FTP实验</h2><p>R1 做为FTP Server 进行配置<br>R2 做为Client 测试</p>
-<p>R1：<br>undo ter mo<br>sys<br>sysname R1<br>int g0&#x2F;0&#x2F;0<br>ip add 192.168.1.1 24</p>
-<p>R2：<br>undo ter mo<br>sys<br>sysname R2<br>int g0&#x2F;0&#x2F;0<br>ip add 192.168.1.2 24</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/ftp1130183749.png" alt="ftp1130183749"></p>
-<p>R1:<br>ftp server enable<br>set default ftp-directory flash:&#x2F;</p>
-<p>（设置默认目录为flash:&#x2F;）</p>
-<p><strong>ftp server enable</strong>命令用来开启设备的FTP服务器功能，允许FTP用户登录。缺省情况下，FTP服务器功能处于关闭状态。</p>
-<p>其他可选的配置参数还包括：指定FTP服务器端口号、指定FTP服务器的源地址和配置FTP连接空闲时间等。</p>
-<p>R1：</p>
-<p>通过在AAA中设置用户名和密码（均为huawei）<br>aaa<br>local-user huawei password cipher huawei<br>local-user huawei service-type ftp<br>local-user huawei ftp-directory flash:&#x2F;<br>local-user huawei access-limit 200<br>local-user huawei idle-timeout 0 0<br>local-user huawei privilege level 3</p>
-<p>查看ftp server配置信息</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/diskvk30184121.png" alt="diskvk30184121"></p>
-<p>R2登录FTP服务器</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/ftpdenglu1130184259.png" alt="ftpdenglu1130184259"></p>
-<p>在R1和R2上分别保存文件text1.cfg和text2.cfg，用于后续测试</p>
-<p>R1：save text1.cfg</p>
-<p>R2：save text2.cfg</p>
-<p>R2上通过dir命令查看服务器上的文件</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/dirr2184558.png" alt="dirr2184558"></p>
-<p>R2从服务器上下载text1.cfg文件，并改名为newtext1.cfg</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/xiazaigaiming0184834.png" alt="xiazaigaiming0184834"></p>
-<p>R2本地查看dir</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/r2bendichakan30184952.png" alt="r2bendichakan30184952"></p>
-<p>put把本地文件text2.cfg上传到服务器，并改名为newtext2.cfg</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/putnew85130.png" alt="putnew85130"></p>
-<p>查看是否上传成功</p>
-<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/yanzg5227.png" alt="yanzg5227"></p>
-<p>关闭ftp连接：bye</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>FTP</tag>
       </tags>
   </entry>
   <entry>
@@ -1242,6 +889,359 @@
       </tags>
   </entry>
   <entry>
+    <title>BGP高级特性</title>
+    <url>/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/</url>
+    <content><![CDATA[<h1 id="正则表达式"><a href="#正则表达式" class="headerlink" title="正则表达式"></a>正则表达式</h1><p>正则表达式是按照一定的模板来匹配字符串的公式，由普通字符（如字符a到z）和特殊字符组成。</p>
+<p>普通字符：匹配的对象是普通字符本身。包括所有的大写和小写字母、数字、标点符号以及一些特殊符号。例如：a匹配abc中的a，10匹配10.113.25.155中的10，@匹配<a href="mailto:&#x78;&#120;&#x78;&#x40;&#120;&#x78;&#120;&#x2e;&#99;&#x6f;&#x6d;">&#x78;&#120;&#x78;&#x40;&#120;&#x78;&#120;&#x2e;&#99;&#x6f;&#x6d;</a>中的@。</p>
+<p>特殊字符：配合普通字符匹配复杂或特殊的字符串组合。位于普通字符之前或之后用来限制或扩充普通字符的独立控制字符或占位符。用来描述它前面的字符的重复使用方式。限定一个完整的范围。</p>
+<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240812193036.png" alt="QQ截图20240812193036"></p>
+<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240812193052.png" alt="QQ截图20240812193052"></p>
+<h1 id="AS-Path-Filter"><a href="#AS-Path-Filter" class="headerlink" title="AS_Path Filter"></a>AS_Path Filter</h1><p>AS_Path Filter是将BGP中的AS_Path属性作为匹配条件的过滤器，利用BGP路由携带的AS_Path列表对路由进行过滤。</p>
+<p>在不希望接收某些AS的路由时，可以利用AS_Path Filter对携带这些AS号的路由进行过滤，从而实现拒绝某些路由。</p>
+<img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240812193910.png" alt="QQ截图20240812193910" style="zoom:80%;">
+
+
+
+<p>配置</p>
+<img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240812194026.png" alt="QQ截图20240812194026" style="zoom:80%;">
+
+<p>（两种方式，①直接peer as-path-filter 1 export②用router-policy过滤）</p>
+<p>AS路径过滤器的<strong>默认行为是deny</strong>，即路由如果没有在某一次过滤中被permit则最终不能通过该过滤器的过滤。如果一个过滤器中的所有过滤规则都是deny，则没有路由能通过该过滤器的过滤，<strong>这种情况下需要在多次（或一次）deny之后设置一次permit，允许其余所有路由通过过滤器的过滤。</strong>(注意加空节点)</p>
+<p>本地始发的路由，再本地上做export方向的as过滤不行，原因：会先匹配，最后带上as-path发送给邻居</p>
+<h1 id="Community-Filter"><a href="#Community-Filter" class="headerlink" title="Community Filter"></a>Community Filter</h1><p>Community Filter与Community属性配合使用，可以在不便使用IP Prefix List和AS_Path Filter时，降低路由管理难度。</p>
+<p>团体属性过滤器有两种类型：</p>
+<p>基本Community Filter。匹配团体号或公认Community属性。（1-99）</p>
+<p><strong>高级Community Filter</strong>。使用正则表达式匹配团体号。（&gt;100）</p>
+<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240812194734.png" alt="QQ截图20240812194734"></p>
+<p>默认是internet</p>
+<p>配置：</p>
+<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240812195042.png" alt="QQ截图20240812195042"></p>
+<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240812195112.png" alt="QQ截图20240812195112"></p>
+<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240812195501.png" alt="QQ截图20240812195501"></p>
+<p>思路：</p>
+<p>先邻居开启允许通告com unity属性功能（单向的，如果对端也需要传递，对端也要开启）</p>
+<p>router-policy1设置路由的com unity值</p>
+<p>配置comunity-filter</p>
+<p>router-policy2中调用com unity-filter</p>
+<p>bgp视图下，对邻居的export&#x2F;import方向调用router-policy2</p>
+<h1 id="ORF"><a href="#ORF" class="headerlink" title="ORF"></a>ORF</h1><p>邻居按需发送路由</p>
+<p>如果设备希望只接收自己需要的路由，但对端设备又无法针对每个与它连接的设备维护不同的出口策略。此时，可以通过配置BGP基于前缀的ORF（Outbound Route Filters，出口路由过滤器）来满足两端设备的需求。</p>
+<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813163948.png" alt="QQ截图20240813163948"></p>
+<p>配置：</p>
+<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813164104.png" alt="QQ截图20240813164104"></p>
+<p>命令：[Huawei-bgp-af-ipv4] peer { group-name | ipv4-address } ip-prefix ip-prefix-name { import | export }</p>
+<p>import：对由指定对等体（组）接收的路由应用过滤策略。</p>
+<p>export：对向指定对等体（组）发送的路由应用过滤策略。</p>
+<p>命令：[Huawei-bgp] peer { group-name | ipv4-address } capability-advertise orf [ non-standard-compatible ] ip-prefix { both | receive | send } [ standard-match ]</p>
+<p>non-standard-compatible：指定与非标准设备兼容。</p>
+<p>both：表示允许发送和接收ORF报文。</p>
+<p>receive：表示只允许接收ORF报文。</p>
+<p>send：表示只允许发送ORF报文。</p>
+<p>standard-match：指定按照RFC标准规定的前缀匹配规则来匹配路由。</p>
+<p>案例：</p>
+<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813164433.png" alt="QQ截图20240813164433"></p>
+<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813164442.png" alt="QQ截图20240813164442"></p>
+<h1 id="BGP对等体组"><a href="#BGP对等体组" class="headerlink" title="BGP对等体组"></a>BGP对等体组</h1><p>对等体组（Peer Group）是一些具有某些相同策略的对等体的集合。</p>
+<p>当一个对等体加入对等体组中时，该对等体将获得与所在对等体组相同的配置。</p>
+<p>当对等体组的配置改变时，组内成员的配置也相应改变。</p>
+<p>在大型BGP网络中，对等体的数量会很多，其中很多对等体具有相同的策略，在配置时会重复使用一些命令，利用对等体组可以简化配置</p>
+<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813174230.png" alt="QQ截图20240813174230"></p>
+<p>group-name：指定对等体组的名称。字符串形式，区分大小写，不支持空格，长度范围是1~47。当输入的字符串两端使用双引号时，可在字符串中输入空格。</p>
+<p>external：表示创建EBGP对等体组。</p>
+<p>internal：表示创建IBGP对等体组。</p>
+<img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240813174326.png" alt="QQ截图20240813174326" style="zoom:67%;">
+
+<img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240813174332.png" alt="QQ截图20240813174332" style="zoom:67%;">
+
+<h1 id="BGP认证"><a href="#BGP认证" class="headerlink" title="BGP认证"></a>BGP认证</h1><p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813175629.png" alt="QQ截图20240813175629"></p>
+<p>BGP使用TCP作为传输协议，只要TCP数据包的源地址、目的地址、源端口、目的端口和TCP序号是正确的，BGP就会认为这个数据包有效，但数据包的大部分参数对于攻击者来说是不难获得的。</p>
+<p>为了保证BGP免受攻击，可以在BGP邻居之间使用MD5认证或者Keychain认证来降低被攻击的可能性。</p>
+<p>MD5算法配置简单，配置后生成单一密码，需要人为干预才可以更换密码。</p>
+<p>Keychain具有一组密码，可以根据配置自动切换，但是配置过程较为复杂，适用于对安全性能要求比较高的网络。</p>
+<p><strong>注意：BGP的MD5认证与BGP的Keychain认证互斥。</strong></p>
+<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813180027.png" alt="QQ截图20240813180027"></p>
+<h1 id="BGP的GTSM"><a href="#BGP的GTSM" class="headerlink" title="BGP的GTSM"></a>BGP的GTSM</h1><p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813175932.png" alt="QQ截图20240813175932"></p>
+<p>如果没有使能BGP的GTSM功能，设备收到大量非法BGP报文后，发现是发送给本机的报文，会直接上送控制层面处理。这时将会因为控制层面处理大量攻击报文，导致设备CPU占用率高，系统异常繁忙。</p>
+<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813185435.png" alt="QQ截图20240813185435"></p>
+<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813185453.png" alt="QQ截图20240813185453"></p>
+<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813185459.png" alt="QQ截图20240813185459"></p>
+<p>hops：指定需要检测的TTL跳数值。整数形式，取值范围是1~255，缺省值是255。如果配置为hops，则被检测的报文的TTL值有效范围为[255–hops+1, 255]。</p>
+<h1 id="4字节AS号"><a href="#4字节AS号" class="headerlink" title="4字节AS号"></a>4字节AS号</h1><p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813185852.png" alt="QQ截图20240813185852"></p>
+<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813185936.png" alt="QQ截图20240813185936"></p>
+<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813190108.png" alt="QQ截图20240813190108"></p>
+<h1 id="路由反射器"><a href="#路由反射器" class="headerlink" title="路由反射器"></a>路由反射器</h1><p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813190147.png" alt="QQ截图20240813190147"></p>
+<p>RR1和RR2形成备份，RR1down之后，client2可以从RR2反射学习到路由。配置一样的cluster id，减少路由。</p>
+<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813190325.png" alt="QQ截图20240813190325"></p>
+<p>每个集群中的RR之间建立不建立客户关系，普通的ibgp邻居</p>
+<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813190627.png" alt="QQ截图20240813190627"></p>
+<p>分级RR与单级RR的路由发布规则相同。</p>
+<p>分级RR设计需要考虑两个因素：</p>
+<p>顶层全互联的拓扑大小：如果IBGP全互联数量已经多到难以管理了，则可考虑引入RR分级部署。</p>
+<p>可替代路径的数量：该因素影响负载分担和资源消耗。越多的层次越会减少负载分担链路的数量，但需要的路由器资源更少。</p>
+<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813191028.png" alt="QQ截图20240813191028"></p>
+<p><img src="/2024/08/12/BGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240813191033.png" alt="QQ截图20240813191033"></p>
+]]></content>
+      <tags>
+        <tag>BGP高级特性</tag>
+        <tag>as-path-filter</tag>
+        <tag>comunity-filter</tag>
+        <tag>正则表达式</tag>
+        <tag>备份RR</tag>
+        <tag>分级RR</tag>
+        <tag>ORF</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>FTP实验</title>
+    <url>/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/</url>
+    <content><![CDATA[<h1 id="File-Transfer-Protocol-文件传输协议"><a href="#File-Transfer-Protocol-文件传输协议" class="headerlink" title="File Transfer Protocol 文件传输协议"></a>File Transfer Protocol 文件传输协议</h1><p>FTP服务器开启21号端口进行控制连接，20号端口与客户端建立数据连接</p>
+<p>ASCII ((American Standard Code for Information Interchange): 美国信息交换标准代码）是基于拉丁字母的一套电脑编码系统，主要用于显示现代英语和其他西欧语言，它是最通用的信息交换标准。</p>
+<p>FTP是用来传送文件的协议。使用FTP实现远程文件传输的同时，还可以保证数据传输的可靠性和高效性。</p>
+<p>FTP 是基于客户———服务器（C&#x2F;S）模型而设计的，在客户端与 FTP 服务器之间建立两个连接</p>
+<h2 id="传输方式"><a href="#传输方式" class="headerlink" title="传输方式"></a>传输方式</h2><p>FTP支持两种方式的传输：文本（ASCII）方式和二进制（Binary）方式。通常文本文件的传输采用ASCII方式，而图象、声音文件、加密和压缩文件等非文本文件采用二进制方式传输，如果为了从一个系统上传输文件而使用了与本地系统不同的计算机字节位数，那么就必须使用Tenex模式。FTP以ASCII方式作为缺省的文件传输方式。</p>
+<h2 id="传输过程"><a href="#传输过程" class="headerlink" title="传输过程"></a>传输过程</h2><p> 使用FTP进行文件传输时，会使用两个TCP连接。第一个连接是FTP客户端和FTP服务器间的控制连接。FTP服务器开启21号端口，等待FTP客户端发送连接请求。FTP客户端随机开启端口，向服务器发送建立连接的请求。控制连接用于在服务器和客户端之间传输控制命令。<br>        第二个连接是FTP客户端和FTP服务器间的数据连接。服务器使用TCP的20号端口与客户端建立数据连接。通常情况下，服务器主动建立或中断数据连接。</p>
+<h2 id="FTP服务器配置"><a href="#FTP服务器配置" class="headerlink" title="FTP服务器配置"></a>FTP服务器配置</h2><p>路由器和X7系列交换机均可提供FTP功能。<br>执行ftp server enable命令使能FTP功能。<br>执行set default ftp-directory命令设置FTP用户的默认工作目录。</p>
+<p>在配置FTP服务器时，可以使用AAA为每个用户分别配置登录账号和访问权限。 aaa命令用来进入AAA视图。</p>
+<p>  local-user user-name { access-limit max-number | ftp-directory directory | idle-timeout         minutes [ seconds ] | password cipher password [ opt ]         | privilege level level | state {active | block } } *命令用来创建本地用户，并配置本地用户的各项参数。</p>
+<pre><code>  user-name指定用户名。
+    local-user huawei service-type ftp命令用来配置本地用户的接入类型为ftp。
+    ftp-directory指定FTP用户可访问的目录。如果不配置FTP用户可访问的目录，则FTP用户无法登录设备。
+    access-limit指定用户名可建立的最大连接数目。
+    idle-timeout指定用户的闲置超时时间。
+    privilege level指定用户的优先级。
+</code></pre>
+<h2 id="命令详解"><a href="#命令详解" class="headerlink" title="命令详解"></a>命令详解</h2><h3 id="idle-timeout"><a href="#idle-timeout" class="headerlink" title="idle-timeout"></a>idle-timeout</h3><p><strong>idle-timeout</strong>命令用来设置用户连接的超时时间。</p>
+<p><strong>undo idle-timeout</strong>命令用来恢复超时时间的缺省值。</p>
+<p>缺省情况下，用户连接的超时时间是5分钟。</p>
+<p>命令格式</p>
+<p><strong>idle-timeout</strong> <em>minutes</em> [ <em>seconds</em> ]</p>
+<p><strong>undo idle-timeout</strong></p>
+<table>
+<thead>
+<tr>
+<th align="left"><em>minutes</em></th>
+<th>指定用户界面断连的超时时间的分钟数。</th>
+<th>整数形式，取值范围是0～35791，单位是分钟。</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><em>seconds</em></td>
+<td>指定用户界面断连的超时时间的秒数。</td>
+<td>整数形式，取值范围是0～59，单位是秒</td>
+</tr>
+</tbody></table>
+<p>缺省级别</p>
+<p>3：管理级</p>
+<ul>
+<li>设置执行命令<strong>idle-timeout</strong> <strong>0 0</strong>即关闭用户界面的超时断连功能。</li>
+<li>如果用户界面没有设置闲置断连功能，则会导致已登录的用户始终处于连接状态，给设备带来安全风险，同时还有可能导致其他用户无法获得连接。</li>
+<li>通常情况下，推荐设置用户界面断连的超时时间在10～15分钟之间。</li>
+</ul>
+<p># 设置超时为1分钟30秒。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">idle-timeout 1 30</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="local-user-privilege-level"><a href="#local-user-privilege-level" class="headerlink" title="local-user privilege level"></a>local-user privilege level</h3><p>必须配置在3以上，否则ftp连接无法成功</p>
+<p><strong>local-user privilege level</strong>命令用来配置本地用户的优先级。</p>
+<p><strong>undo</strong> <strong>local-user privilege level</strong>命令用来将本地用户的优先级恢复为缺省配置。</p>
+<p>缺省情况下，本地用户（如Telnet用户、SSH用户）的优先级由管理模块来决定。</p>
+<p>命令格式</p>
+<p><strong>local-user</strong> <em>user-name</em> <strong>privilege level</strong> <em>level</em></p>
+<p><strong>undo local-user</strong> <em>user-name</em> <strong>privilege level</strong></p>
+<table>
+<thead>
+<tr>
+<th><em>user-name</em></th>
+<th>用户名。</th>
+<th>字符串形式，不支持空格，不区分大小写，长度范围是1~64。</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><em>level</em></td>
+<td>用户的优先级。</td>
+<td>整数形式，取值范围是0~15，取值越大，用户的优先级越高。缺省级别是0级。不同级别的用户登录后，只能使用等于或低于自己级别的命令</td>
+</tr>
+</tbody></table>
+<p>缺省情况下，命令级别分为0~3级：</p>
+<ul>
+<li>级别0即参观级，网络诊断工具命令（ping、tracert）、从本设备出发访问外部设备的命令（包括：Telnet 客户端、SSH）等。该级别命令不允许进行配置文件保存的操作。</li>
+<li>级别1即监控级，用于系统维护，包括display命令。该级别命令不允许进行配置文件保存的操作。</li>
+<li>级别2即配置级，可以使用业务配置命令，包括路由、各个网络层次的命令，向用户提供直接网络服务。</li>
+<li>级别3即管理级，用于系统基本运行的命令，对业务提供支撑作用，包括文件系统、FTP、TFTP、配置文件切换命令、备板控制命令、用户管理命令、命令级别设置命令、系统内部参数设置命令；用于业务故障诊断的debugging命令。</li>
+</ul>
+<h3 id="access-limit"><a href="#access-limit" class="headerlink" title="access-limit"></a>access-limit</h3><p><strong>access-limit</strong>命令用来配置当前域允许接入的用户数。</p>
+<p><strong>undo access-limit</strong>命令用来恢复缺省配置。</p>
+<p>缺省情况下，不限制接入的用户数目。</p>
+<p>命令格式</p>
+<p><strong>access-limit</strong> <em>max-number</em></p>
+<p><strong>undo access-limit</strong></p>
+<table>
+<thead>
+<tr>
+<th><em>max-number</em></th>
+<th>指定允许接入的用户数。</th>
+<th>整数形式，取值范围是0～283648。</th>
+</tr>
+</thead>
+<tbody><tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>为了更方便地管理用户访问设备，可以限制域下用户的在线数量。</p>
+<p><strong>注意事项</strong></p>
+<p>执行这条配置命令后，当接入用户数大于允许的用户数时，系统不再允许用户接入系统，提示用户认证失败。</p>
+<p><strong>access-limit</strong>命令对一个域下所能接入的用户总数进行限制，不区分接入用户的类型。</p>
+<p># 设置当前域最多允许接入100个用户。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">access-limit 100</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="local-user-ftp-directory"><a href="#local-user-ftp-directory" class="headerlink" title="local-user ftp-directory"></a>local-user ftp-directory</h3><p><strong>local-user ftp-directory</strong>命令用来配置本地用户的FTP目录。</p>
+<p><strong>undo local-user ftp-directory</strong>命令用来将本地用户的FTP目录恢复为缺省配置。</p>
+<p>缺省情况下，本地用户的FTP目录为空。</p>
+<p>当需要将设备配置为FTP服务器，从而便于本地用户以FTP方式登录设备，对设备上的文件进行增加、删除、修改等操作时，可以通过本命令配置本地用户以FTP方式登录设备后所处的目录。</p>
+<p>不指定该目录时，本地用户无法以FTP方式登录设备。</p>
+<p>配置本地用户的FTP目录时，该用户必须已由local-user password命令建立。</p>
+<h3 id="local-user-password"><a href="#local-user-password" class="headerlink" title="local-user password"></a>local-user password</h3><p><strong>local-user password</strong>命令用来创建一个本地用户并配置该用户的登录密码，或者修改已创建用户的登录密码。</p>
+<p><strong>undo local-user</strong>命令用来删除一个本地用户。</p>
+<p>缺省情况下，系统没有本地用户。</p>
+<p><strong>local-user</strong> <em>user-name</em> <strong>password</strong> [ <strong>cipher</strong> <em>password</em> | <strong>irreversible-cipher</strong> <em>irreversible-cipher-password</em> ]</p>
+<p><strong>undo local-user</strong> <em>user-name</em></p>
+<p><strong>cipher</strong> <em>password</em></p>
+<p>指定密文密钥。密钥以明文或密文形式输入，但配置文件中保存为密文形式。</p>
+<p><strong>irreversible-cipher</strong> <em>irreversible-cipher-password</em></p>
+<p>指定不可逆密文密钥。密钥以明文或不可逆密文形式输入，但配置文件中保存为密文形式。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>1.FTP服务器需要开启TCP的21号端口来建立控制连接，20号端口来建立数据连接。</p>
+<p>2.如果用户无权访问任何工作目录，则需要定义一个默认的FTP目录。执行set default ftp-directory <directory location>命令建立默认目录。</directory></p>
+<h2 id="FTP实验"><a href="#FTP实验" class="headerlink" title="FTP实验"></a>FTP实验</h2><p>R1 做为FTP Server 进行配置<br>R2 做为Client 测试</p>
+<p>R1：<br>undo ter mo<br>sys<br>sysname R1<br>int g0&#x2F;0&#x2F;0<br>ip add 192.168.1.1 24</p>
+<p>R2：<br>undo ter mo<br>sys<br>sysname R2<br>int g0&#x2F;0&#x2F;0<br>ip add 192.168.1.2 24</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/ftp1130183749.png" alt="ftp1130183749"></p>
+<p>R1:<br>ftp server enable<br>set default ftp-directory flash:&#x2F;</p>
+<p>（设置默认目录为flash:&#x2F;）</p>
+<p><strong>ftp server enable</strong>命令用来开启设备的FTP服务器功能，允许FTP用户登录。缺省情况下，FTP服务器功能处于关闭状态。</p>
+<p>其他可选的配置参数还包括：指定FTP服务器端口号、指定FTP服务器的源地址和配置FTP连接空闲时间等。</p>
+<p>R1：</p>
+<p>通过在AAA中设置用户名和密码（均为huawei）<br>aaa<br>local-user huawei password cipher huawei<br>local-user huawei service-type ftp<br>local-user huawei ftp-directory flash:&#x2F;<br>local-user huawei access-limit 200<br>local-user huawei idle-timeout 0 0<br>local-user huawei privilege level 3</p>
+<p>查看ftp server配置信息</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/diskvk30184121.png" alt="diskvk30184121"></p>
+<p>R2登录FTP服务器</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/ftpdenglu1130184259.png" alt="ftpdenglu1130184259"></p>
+<p>在R1和R2上分别保存文件text1.cfg和text2.cfg，用于后续测试</p>
+<p>R1：save text1.cfg</p>
+<p>R2：save text2.cfg</p>
+<p>R2上通过dir命令查看服务器上的文件</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/dirr2184558.png" alt="dirr2184558"></p>
+<p>R2从服务器上下载text1.cfg文件，并改名为newtext1.cfg</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/xiazaigaiming0184834.png" alt="xiazaigaiming0184834"></p>
+<p>R2本地查看dir</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/r2bendichakan30184952.png" alt="r2bendichakan30184952"></p>
+<p>put把本地文件text2.cfg上传到服务器，并改名为newtext2.cfg</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/putnew85130.png" alt="putnew85130"></p>
+<p>查看是否上传成功</p>
+<p><img src="/2023/11/30/FTP%E5%AE%9E%E9%AA%8C/yanzg5227.png" alt="yanzg5227"></p>
+<p>关闭ftp连接：bye</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>FTP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>BGP路由反射器</title>
+    <url>/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/</url>
+    <content><![CDATA[<h1 id="BGP路由反射器"><a href="#BGP路由反射器" class="headerlink" title="BGP路由反射器"></a>BGP路由反射器</h1><p>由于水平分割的原因，为了保证AS内所有的BGP路由器都能学习到完整的BGP路由，就必须在AS内实现IBGP全互联。</p>
+<p>然而实现IBGP全互联存在诸多短板：</p>
+<p> 路由器需维护大量的TCP及BGP连接，尤其在路由器数量较多时。</p>
+<p> AS内BGP网络的可扩展性较差，因为通过纯手工配置命令。</p>
+<p>为了解决该问题，可应用到RR路由反射器技术。</p>
+<p>1、Client：RR客户端，在RR设备上通过手动指定。</p>
+<blockquote>
+<p>指定命令：peer 邻居 reflect-client</p>
+</blockquote>
+<p>2、除了指定的设备为客户端，其它设备均为非客户端。</p>
+<p>实验：</p>
+<p>R1、R2、R3、R4都属于AS64511，其连接方式、互联接口地址如图所示。每台设备均创建Loopback0接口，IP地址为10.0.x.x&#x2F;32，其中x为设备编号。R1、R2上的Loopback1地址分别为10.1.1.1&#x2F;24、10.2.2.2&#x2F;24，用于模拟用户网段。</p>
+<span id="more"></span>
+
+<p>所有设备都使用Loopback0地址作为BGP Router ID，R1与R2、R2与R3、R3与R4、R4与R2之间基于直连接口建立IBGP对等体关系，其中R1为R2的路由反射器客户端，R2为R3的路由反射器客户端，R3为R4的路由反射器客户端。</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/bgpluy8165208.png" alt="bgpluy8165208"></p>
+<p>配置ip地址：略</p>
+<p>建立ibgp对等体：略</p>
+<h1 id="配置路由反射器"><a href="#配置路由反射器" class="headerlink" title="配置路由反射器"></a>配置路由反射器</h1><p>#R2上将R1配置为路由反射器客户端</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] peer 10.0.1.1 reflect-client</p>
+<p>#R3上将R2配置为路由反射器客户端</p>
+<p>[R3]bgp 64511</p>
+<p>[R3-bgp] peer 10.0.2.2 reflect-client</p>
+<p>#R4上将R3配置为路由反射器客户端</p>
+<p>[R4]bgp 64511</p>
+<p>[R4-bgp] peer 10.0.3.3 reflect-client</p>
+<h1 id="验证Orginator-ID实现路由防环"><a href="#验证Orginator-ID实现路由防环" class="headerlink" title="验证Orginator_ID实现路由防环"></a>验证Orginator_ID实现路由防环</h1><p>在本步骤中，我们将在R2上发布BGP路由10.2.2.0&#x2F;24，并观察该路由依次经路由反射器R3、R4反射后，被通告回R2从而引发潜在路由环路风险的情况。</p>
+<p>缺省情况下，R2发布BGP路由后，该路由将被R2直接通告给R4，另一方面也会通过R3反射给R4，此时R4将优选R2直接通告过来的路由，从而不会再将R3反射过来的路由再反射回给R2。为此，我们需要在R2上部署路由策略，使R2不直接向R4通告10.2.2.0&#x2F;24路由。</p>
+<p>#配置路由策略</p>
+<p>[R2]acl number 2000</p>
+<p>[R2-acl-basic-2000] rule 5 permit</p>
+<p>[R2-acl-basic-2000] quit</p>
+<p>[R2]route-policy bgp deny node 10</p>
+<p>[R2-route-policy] if-match acl 2000</p>
+<p>#在BGP中调用路由策略</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] peer 10.0.24.4 route-policy bgp export</p>
+<p>#在R2上发布路由</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] network 10.2.2.0 24</p>
+<p>#R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/chakan102224728.png" alt="chakan102224728"></p>
+<p>R2将该条路由通告给了R3、R1，但是并未通告给R4。</p>
+<p>#R3上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r174808.png" alt="r174808"></p>
+<p>R3将来自反射器客户端的BGP路由10.2.2.0&#x2F;24反射给了10.0.34.4（R4）。同时该BGP路由的nexthop为10.0.23.2。</p>
+<p># R4上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/r4chakan80119.png" alt="r4chakan80119"></p>
+<p>该条路由来自反射器客户端R3，原始路由经由R3反射，路由的nexthop地址并未改变，同时R3为其添加了Orginator_ID属性，值为10.0.2.2。同时R4将该条路由反射给了R2。</p>
+<p>#再次在R2上查看BGP路由10.2.2.0&#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zacifa80349.png" alt="zacifa80349"></p>
+<p>依旧只存在本地通告的BGP路由，没有R4通告的BGP路由。</p>
+<p>#在R2上查看BGP对等体10.0.4.4的详细信息</p>
+<p>display bgp peer 10.0.4.4 verbose</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/safhaofbsh1128180629.png" alt="safhaofbsh1128180629"></p>
+<p>从输出信息可以看到R2从R4收到了1个Update报文，未向R4发送Update报文（路由策略限制），但是本地BGP路由表中不存在由R4通告的BGP路由10.2.2.0&#x2F;24。</p>
+<p>R4通告的BGP路由Orginator_ID属性值与本地的Router ID一致，R2忽略了该路由通告。</p>
+<h1 id="验证Cluster-List实现路由防环"><a href="#验证Cluster-List实现路由防环" class="headerlink" title="验证Cluster_List实现路由防环"></a>验证Cluster_List实现路由防环</h1><p>为了方便观察现象，取消R2上的BGP路由发布，在R1上将Loopback1接口路由发布到BGP，观察Cluster_List如何防止环路。</p>
+<p>#取消R2上的BGP路由发布</p>
+<p>[R2]bgp 64511</p>
+<p>[R2-bgp] undo network 10.2.2.0 255.255.255.0</p>
+<p>#在R1上将Loopback1接口路由发布到BGP</p>
+<p>[R1]bgp 64511</p>
+<p>[R1-bgp] network 10.1.1.0 24</p>
+<p>#依次在R1、R2、R3、R4上查看BGP路由10.1.1.0 &#x2F;24的明细信息</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/xinfuaiell181000.png" alt="xinfuaiell181000"></p>
+<p>R1为BGP路由10.1.1.0&#x2F;24的始发者，R1将路由通告给了R2</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/2xinfahol128181116.png" alt="2xinfahol128181116"></p>
+<p>来自路由反射器客户端R1的BGP路由10.1.1.0&#x2F;24，R2将其反射给了R3</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/3xinmbxmcx1128181206.png" alt="3xinmbxmcx1128181206"></p>
+<p>来自路由反射器客户端R2的BGP路由10.1.1.0&#x2F;24，R2反射时添加了Cluster_List属性，值为10.0.2.2，R3将该条路由反射给了R4</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/44xinm1334.png" alt="44xinm1334"></p>
+<p>来自路由反射器客户端R3的BGP路由10.1.1.0&#x2F;24，R3反射时添加了Cluster_List属性的值，当前值为10.0.3.3，10.0.2.2，R4将该条路由反射给了R2</p>
+<p>#再次查看R2的BGP路由表</p>
+<p><img src="/2023/11/28/BGP%E8%B7%AF%E7%94%B1%E5%8F%8D%E5%B0%84%E5%99%A8/zaizaici661435.png" alt="zaizaici661435"></p>
+<p>R2的BGP路由表中依旧只有一条来自r1的BGP路由10.1.1.0&#x2F;24。</p>
+<p>4通告的BGP路由其Cluster_List属性值中包含了R2的Cluster-ID，R2忽略了该路由通告。</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>BGP路由反射器</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Hub-Spoke组网</title>
     <url>/2024/08/19/Hub-Spoke%E7%BB%84%E7%BD%91/</url>
     <content><![CDATA[<p><img src="/2024/08/19/Hub-Spoke%E7%BB%84%E7%BD%91/QQ%E6%88%AA%E5%9B%BE20240819201731.png" alt="QQ截图20240819201731"></p>
@@ -1344,114 +1344,6 @@
       <tags>
         <tag>hybrid</tag>
         <tag>tag</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>IGP高级特性</title>
-    <url>/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/</url>
-    <content><![CDATA[<h1 id="OSPF快速收敛"><a href="#OSPF快速收敛" class="headerlink" title="OSPF快速收敛"></a>OSPF快速收敛</h1><h2 id="PRC"><a href="#PRC" class="headerlink" title="PRC"></a>PRC</h2><img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809161634.png" alt="QQ截图20240809161634" style="zoom:67%;">
-
-<h2 id="智能定时器"><a href="#智能定时器" class="headerlink" title="智能定时器"></a>智能定时器</h2><img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809162021.png" alt="QQ截图20240809162021" style="zoom:67%;">
-
-<p><img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240809162324.png" alt="QQ截图20240809162324"></p>
-<h2 id="OSPF-IP-FRR"><a href="#OSPF-IP-FRR" class="headerlink" title="OSPF IP FRR"></a>OSPF IP FRR</h2><p>OSPF IP FRR是动态IP FRR，利用<strong>LFA</strong>（Loop-Free Alternates）算法预先计算出备份路径，保存在转发表中，以备在故障时将流量快速切换到备份链路上，保证流量不中断，从而达到流量保护的目的，该功能可将故障恢复时间降低到50 ms以内。</p>
-<p>LFA计算备份链路的基本思路是：以可提供备份链路的邻居为根节点，利用SPF算法计算出到目的节点的最短距离。然后，按照不等式计算出开销最小且无环的备份链路</p>
-<img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809162757.png" alt="QQ截图20240809162757" style="zoom:67%;">
-
-<img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809163017.png" alt="QQ截图20240809163017" style="zoom:67%;">
-
-<h2 id="ospf与bfd联动"><a href="#ospf与bfd联动" class="headerlink" title="ospf与bfd联动"></a>ospf与bfd联动</h2><img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809163502.png" alt="QQ截图20240809163502" style="zoom:67%;">
-
-<h2 id="等价路由"><a href="#等价路由" class="headerlink" title="等价路由"></a>等价路由</h2><p>当路由表中存在到达同一目的地址，且<strong>同一路由协议</strong>发现的多条路由时，若这几条路由的<strong>开销值也相同</strong>，那么这些路由就是等价路由，可以实现负载分担。</p>
-<p>设备将按照负载分担的方式从多条等价路由发送报文到同一目的地址。     </p>
-<p>设置进行负载分担的等价路由的最大数量：</p>
-<p>[Huawei-ospf-1] maximum load-balancing number</p>
-<img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809163956.png" alt="QQ截图20240809163956" style="zoom:67%;">
-
-<h2 id="缺省路由"><a href="#缺省路由" class="headerlink" title="缺省路由"></a>缺省路由</h2><img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809164431.png" alt="QQ截图20240809164431" style="zoom:67%;">
-
-<p>通告：</p>
-<img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809164812.png" alt="QQ截图20240809164812" style="zoom:67%;">
-
-<h2 id="过滤LSA"><a href="#过滤LSA" class="headerlink" title="过滤LSA"></a>过滤LSA</h2><img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809165622.png" alt="QQ截图20240809165622" style="zoom:67%;">
-
-<img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809165629.png" alt="QQ截图20240809165629" style="zoom:67%;">
-
-<img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809195947.png" alt="QQ截图20240809195947" style="zoom:67%;">
-
-<img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809195954.png" alt="QQ截图20240809195954" style="zoom:67%;">
-
-<img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809200001.png" alt="QQ截图20240809200001" style="zoom:67%;">
-
-<img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809200006.png" alt="QQ截图20240809200006" style="zoom:67%;">
-
-<h2 id="ospf与bgp联动"><a href="#ospf与bgp联动" class="headerlink" title="ospf与bgp联动"></a>ospf与bgp联动</h2><p>当有新的设备加入到网络中，或者设备重启时，可能会出现在BGP收敛期间内网络流量丢失的现象。这是IGP收敛速度比BGP快造成的。<img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240809200417.png" alt="QQ截图20240809200417"></p>
-<h2 id="FA"><a href="#FA" class="headerlink" title="FA"></a>FA</h2><p>FA（Forwarding Address，转发地址）：到达所通告的目的地的数据包应该被转发到的地址，如果转发地址为0.0.0.0，那么数据包将被转发到始发<strong>ASBR</strong>上。</p>
-<p>OSPF的Type5 LSA和Type7 LSA中包含一个特别的字段FA，FA的引入使得OSPF在某些特殊的场景下可以避免次优路径问题。</p>
-<p><img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240809200658.png" alt="QQ截图20240809200658"></p>
-<p>当ASBR引入外部路由时，若Type5 LSA中的FA字段为0，表示路由器认为到达目的网段的数据包应该发往该ASBR；</p>
-<p>若Type5 LSA中的FA字段不为0，表示路由器认为到达目的网段的数据包应该发往这个FA所标识的设备。</p>
-<p>当以下条件全部满足时，FA字段才可以被设置为非0：</p>
-<p>ASBR在其连接外部网络的接口（外部路由的出接口）上激活了OSPF；</p>
-<p>该接口没有被配置为Silent-Interface；该接口的OSPF网络类型为Broadcast或NBMA；</p>
-<p>该接口的IP地址在OSPF配置的network命令指定的网段范围内；</p>
-<p>到达FA地址的路由必须是OSPF区域内部路由或区域间路由，这样接收到该外部LSA的路由器才能够加载该LSA进入路由表。加载的外部LSA生成的路由条目下一跳与到达FA地址的下一跳相同。</p>
-<p>NSSA区域Type7 LSA转化为Type5 LSA：<br>缺省情况下，转换路由器是NSSA区域<strong>中Router ID最大的区域边界路由器（ABR）</strong>。<br>LSA头部Options字段中的P-bit（Propagate bit）用于告知转化路由器该条Type7 LSA是否需要转化为Type5 LSA。<strong>只有P-bit置位并且FA不为0的Type7 LSA才能转化为Type5 LSA。</strong><br>区域边界路由器产生的Type7 LSA缺省路由不会置位P-bit。<br>注意：所有的OSPF LSA有相同的LSA头部，P-bit在LSA头部中的Options字段。</p>
-<h2 id="GR"><a href="#GR" class="headerlink" title="GR"></a>GR</h2><p>GR（Graceful Restart，平滑重启）技术保证了设备在重启过程中转发层面能够继续指导数据的转发，同时控制层面邻居关系的重建以及路由计算等动作不会影响转发层面的功能，从而避免了路由振荡引发的业务中断，保证了关键业务的数据转发，提高了整网的可靠性。</p>
-<h1 id="ISIS高级特性"><a href="#ISIS高级特性" class="headerlink" title="ISIS高级特性"></a>ISIS高级特性</h1><h2 id="I-SPF"><a href="#I-SPF" class="headerlink" title="I-SPF"></a>I-SPF</h2><p>I-SPF的工作原理：当网络拓扑改变的时候，只对<strong>受影响的节点</strong>进行路由计算，而不是对全部节点重新进行路由计算，从而加快了路由的计算。</p>
-<p>使用SPF算法进行路由计算：当网络拓扑中有一个节点发生变化时，SPF算法需要重新计算网络中的所有节点，计算时间长，占用过多的CPU资源，影响整个网络的收敛速度。</p>
-<p>I-SPF改进了SPF算法，除了第一次SPF计算时需要计算全部节点外，之后每次都通过I-SPF计算受到影响的节点，而最后生成的最短路径树与原来的算法所计算的结果相同，大大降低了CPU的占用率，提高了网络收敛速度。</p>
-<p><strong>在IS-IS网络中，I-SPF和PRC结合使用。</strong></p>
-<p>如果I-SPF计算后的最短路径树改变，PRC会只处理那个<strong>变化的节点上</strong>的所有叶子（路由）。如果经过I-SPF计算后的最短路径树并没有变化，则PRC只处理变化的叶子信息。比如一个节点使能一个IS-IS接口，则整个网络拓扑的最短路径树是不变的，这时PRC只更新这个节点的接口路由，从而节省CPU占用率。</p>
-<p><img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240812185722.png" alt="QQ截图20240812185722"></p>
-<p>（注意区分PRC，I-SPF是计算变化的节点，PRC计算变化的路由）</p>
-<h2 id="LSP快速扩散"><a href="#LSP快速扩散" class="headerlink" title="LSP快速扩散"></a>LSP快速扩散</h2><p>LSP快速扩散：此特性可以加快LSP的扩散速度。</p>
-<p>正常情况下，当IS-IS路由器收到其它路由器发来的LSP时，如果此LSP比本地LSDB中相应的LSP要新，则更新LSDB中的LSP，并用一个定时器定期将LSDB内已更新的LSP扩散出去。</p>
-<p>LSP快速扩散特性改进了这种方式，使能了此特性的设备收到一个或多个较新的LSP时，在路由计算之前，<strong>先将小于指定数目的LSP扩散出去，</strong>加快LSDB的同步过程。这种方式在很大程度上可以提高整个网络的收敛速度。</p>
-<p> 配置LSP快速扩散：</p>
-<p>[Huawei-isis-1] flash-flood [ lsp-count | max-timer-interval interval | [ level-1 | level-2 ] ]</p>
-<p>注意：用户可以指定每次扩散的LSP数量，这个数量是针对所有IS-IS接口的。如果需要发送的LSP的数量大于这个数，则就发送lsp-count个LSP。如果配置了定时器，在路由计算之前如果这个定时器未超时，则立即扩散；否则在该定时器超时后发送。</p>
-<p>lsp-count：指定每个接口一次扩散LSP的最大数量。整数形式，取值范围是1～15。缺省值是5。</p>
-<p>max-timer-interval interval：指定LSP扩散的最大间隔时间。整数形式，取值范围是10～50000，单位是毫秒。缺省值是10毫秒。</p>
-<p>level-1：表示在Level-1中使能此特性。如果命令中没有指定级别，则缺省同时在Level-1和Level-2中使能此功能。</p>
-<p>level-2：表示在Level-2中使能此特性。如果命令中没有指定级别，则缺省同时在Level-1和Level-2中使能此功能。</p>
-<h2 id="等价路由-1"><a href="#等价路由-1" class="headerlink" title="等价路由"></a>等价路由</h2><p>当IS-IS网络中有多条冗余链路时，可能会出现多条等价路由，</p>
-<p>此时可以采取两种方式：配置负载分担。</p>
-<p>流量会被均匀的分配到每条链路上。该方式可以提高网络中链路的利用率及减少某些链路负担过重造成阻塞发生的情况。但是由于对流量转发具有一定的随机性，因此可能不利于对业务流量的管理。</p>
-<p>配置等价路由优先级。</p>
-<p>针对等价路由中的每一条路由，明确指定其优先级，优先级高的路由将被优选，优先级低的路由可以作为备用链路。当IS-IS网络中有多条冗余链路时，可能会出现多条等价路由，即达到某一目的网段有多条等开销路径。配置等价路由优先级可以在不修改原有配置的基础上，<strong>指定某条路由被优选</strong>，便于业务的管理，同时提高网络的可靠性。注意：配置等价路由优先级后，IS-IS设备在转发到达目的网段的流量时，将不采用负载分担方式，而是将流量转发到优先级最高的下一跳。</p>
-<img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240812190929.png" alt="QQ截图20240812190929" style="zoom:67%;">
-
-<h2 id="缺省路由-1"><a href="#缺省路由-1" class="headerlink" title="缺省路由"></a>缺省路由</h2><p>在IS-IS中，主要通过以下3种方式控制缺省路由的生成和发布。</p>
-<p>在Level-1-2设备上，控制其产生的Level-1 LSP中ATT位的置位情况。</p>
-<p>在Level-1设备上，通过配置使其即使收到ATT位置位的Level-1 LSP也不会自动产生缺省路由。</p>
-<p>在IS-IS中发布缺省路由</p>
-<p><img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240812191212.png" alt="QQ截图20240812191212"></p>
-<p><strong>设置ATT置位控制产生缺省路由</strong>:</p>
-<p>IS-IS规定，如果IS-IS Level-1-2设备根据LSDB判断通过Level-2区域比Level-1区域能够到达更多的区域，该设备会在所发布的Level-1 LSP内将ATT位置位。对于收到ATT位置位的LSP报文的Level-1设备，会生成一条目的地为发送该LSP的Level-1-2设备地址的<strong>缺省路由</strong>。</p>
-<p>以上是协议的默认原则，在实际应用中，可以根据需要对ATT比特位进行手动配置以更好地为网络服务。</p>
-<p><img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240812191438.png" alt="QQ截图20240812191438"></p>
-<p>命令：</p>
-<p><strong>[Huawei-isis-1] attached-bit advertise { always | never }always：</strong>指定ATT位永远置位，收到该LSP的Level-1设备会生成缺省路由。never：指定ATT位永不置位，可以避免Level-1设备生成缺省路由，减小路由表的规模。</p>
-<p>虽然ATT位同时在Level-1 LSP和Level-2 LSP中进行了定义，但是它只会在Level-1 LSP中被置位，并且只有Level-1-2设备会设置这个字段，因此，该命令仅对Level-1-2设备生效。</p>
-<p>配置Level-1设备不将缺省路由下发到路由表，有以下两种方式可以实现：</p>
-<p>在Level-1-2设备上配置<strong>attached-bit advertise never</strong>命令，使得其不会发布ATT位置位的LSP。</p>
-<p>在与Level-1-2设备相连的Level-1设备上配置<strong>attached-bit avoid-learning</strong>命令。其中，attached-bit avoid-learning命令适用于需要针对指定设备配置的情况。</p>
-<p><strong>ISIS发布缺省路由</strong></p>
-<p>在具有外部路由的边界设备上配置IS-IS发布缺省路由可以使该设备在IS-IS路由域内发布一条0.0.0.0&#x2F;0的缺省路由。</p>
-<p>在执行此配置后，IS-IS域内的其他设备在转发流量时，将所有去往外部路由域的流量首先转发到该设备，然后通过该设备去往外部路由域。</p>
-<p>通常，当网络中部署了IS-IS和其他路由协议时，为了实现IS-IS域内的流量可以到达IS-IS域外，通常有如下两种方式：在边界设备上配置IS-IS设备向IS-IS域发布缺省路由。该方式较为简单，不需要学习外部路由。在边界设备上将其他路由域的路由引入到IS-IS中。</p>
-<p><strong>[Huawei-isis-1] default-route-advertise [ always | match default | route-policy route-policy-name ] [ cost cost | tag tag | [ level-1 | level-1-2 | level-2 ] ] [ avoid-learning ]</strong></p>
-<h2 id="LSP分片"><a href="#LSP分片" class="headerlink" title="LSP分片"></a>LSP分片</h2><img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240812192048.png" alt="QQ截图20240812192048" style="zoom:67%;">
-
-<p><img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240812192150.png" alt="QQ截图20240812192150"></p>
-<p>Mode-2工作原理：虚拟系统不参与路由SPF计算，网络中所有路由器都知道虚拟系统生成的LSP实际属于初始系统。</p>
-]]></content>
-      <categories>
-        <category>基础知识</category>
-      </categories>
-      <tags>
-        <tag>IGP高级特性</tag>
       </tags>
   </entry>
   <entry>
@@ -1717,6 +1609,114 @@
       </categories>
   </entry>
   <entry>
+    <title>IGP高级特性</title>
+    <url>/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/</url>
+    <content><![CDATA[<h1 id="OSPF快速收敛"><a href="#OSPF快速收敛" class="headerlink" title="OSPF快速收敛"></a>OSPF快速收敛</h1><h2 id="PRC"><a href="#PRC" class="headerlink" title="PRC"></a>PRC</h2><img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809161634.png" alt="QQ截图20240809161634" style="zoom:67%;">
+
+<h2 id="智能定时器"><a href="#智能定时器" class="headerlink" title="智能定时器"></a>智能定时器</h2><img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809162021.png" alt="QQ截图20240809162021" style="zoom:67%;">
+
+<p><img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240809162324.png" alt="QQ截图20240809162324"></p>
+<h2 id="OSPF-IP-FRR"><a href="#OSPF-IP-FRR" class="headerlink" title="OSPF IP FRR"></a>OSPF IP FRR</h2><p>OSPF IP FRR是动态IP FRR，利用<strong>LFA</strong>（Loop-Free Alternates）算法预先计算出备份路径，保存在转发表中，以备在故障时将流量快速切换到备份链路上，保证流量不中断，从而达到流量保护的目的，该功能可将故障恢复时间降低到50 ms以内。</p>
+<p>LFA计算备份链路的基本思路是：以可提供备份链路的邻居为根节点，利用SPF算法计算出到目的节点的最短距离。然后，按照不等式计算出开销最小且无环的备份链路</p>
+<img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809162757.png" alt="QQ截图20240809162757" style="zoom:67%;">
+
+<img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809163017.png" alt="QQ截图20240809163017" style="zoom:67%;">
+
+<h2 id="ospf与bfd联动"><a href="#ospf与bfd联动" class="headerlink" title="ospf与bfd联动"></a>ospf与bfd联动</h2><img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809163502.png" alt="QQ截图20240809163502" style="zoom:67%;">
+
+<h2 id="等价路由"><a href="#等价路由" class="headerlink" title="等价路由"></a>等价路由</h2><p>当路由表中存在到达同一目的地址，且<strong>同一路由协议</strong>发现的多条路由时，若这几条路由的<strong>开销值也相同</strong>，那么这些路由就是等价路由，可以实现负载分担。</p>
+<p>设备将按照负载分担的方式从多条等价路由发送报文到同一目的地址。     </p>
+<p>设置进行负载分担的等价路由的最大数量：</p>
+<p>[Huawei-ospf-1] maximum load-balancing number</p>
+<img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809163956.png" alt="QQ截图20240809163956" style="zoom:67%;">
+
+<h2 id="缺省路由"><a href="#缺省路由" class="headerlink" title="缺省路由"></a>缺省路由</h2><img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809164431.png" alt="QQ截图20240809164431" style="zoom:67%;">
+
+<p>通告：</p>
+<img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809164812.png" alt="QQ截图20240809164812" style="zoom:67%;">
+
+<h2 id="过滤LSA"><a href="#过滤LSA" class="headerlink" title="过滤LSA"></a>过滤LSA</h2><img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809165622.png" alt="QQ截图20240809165622" style="zoom:67%;">
+
+<img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809165629.png" alt="QQ截图20240809165629" style="zoom:67%;">
+
+<img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809195947.png" alt="QQ截图20240809195947" style="zoom:67%;">
+
+<img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809195954.png" alt="QQ截图20240809195954" style="zoom:67%;">
+
+<img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809200001.png" alt="QQ截图20240809200001" style="zoom:67%;">
+
+<img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240809200006.png" alt="QQ截图20240809200006" style="zoom:67%;">
+
+<h2 id="ospf与bgp联动"><a href="#ospf与bgp联动" class="headerlink" title="ospf与bgp联动"></a>ospf与bgp联动</h2><p>当有新的设备加入到网络中，或者设备重启时，可能会出现在BGP收敛期间内网络流量丢失的现象。这是IGP收敛速度比BGP快造成的。<img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240809200417.png" alt="QQ截图20240809200417"></p>
+<h2 id="FA"><a href="#FA" class="headerlink" title="FA"></a>FA</h2><p>FA（Forwarding Address，转发地址）：到达所通告的目的地的数据包应该被转发到的地址，如果转发地址为0.0.0.0，那么数据包将被转发到始发<strong>ASBR</strong>上。</p>
+<p>OSPF的Type5 LSA和Type7 LSA中包含一个特别的字段FA，FA的引入使得OSPF在某些特殊的场景下可以避免次优路径问题。</p>
+<p><img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240809200658.png" alt="QQ截图20240809200658"></p>
+<p>当ASBR引入外部路由时，若Type5 LSA中的FA字段为0，表示路由器认为到达目的网段的数据包应该发往该ASBR；</p>
+<p>若Type5 LSA中的FA字段不为0，表示路由器认为到达目的网段的数据包应该发往这个FA所标识的设备。</p>
+<p>当以下条件全部满足时，FA字段才可以被设置为非0：</p>
+<p>ASBR在其连接外部网络的接口（外部路由的出接口）上激活了OSPF；</p>
+<p>该接口没有被配置为Silent-Interface；该接口的OSPF网络类型为Broadcast或NBMA；</p>
+<p>该接口的IP地址在OSPF配置的network命令指定的网段范围内；</p>
+<p>到达FA地址的路由必须是OSPF区域内部路由或区域间路由，这样接收到该外部LSA的路由器才能够加载该LSA进入路由表。加载的外部LSA生成的路由条目下一跳与到达FA地址的下一跳相同。</p>
+<p>NSSA区域Type7 LSA转化为Type5 LSA：<br>缺省情况下，转换路由器是NSSA区域<strong>中Router ID最大的区域边界路由器（ABR）</strong>。<br>LSA头部Options字段中的P-bit（Propagate bit）用于告知转化路由器该条Type7 LSA是否需要转化为Type5 LSA。<strong>只有P-bit置位并且FA不为0的Type7 LSA才能转化为Type5 LSA。</strong><br>区域边界路由器产生的Type7 LSA缺省路由不会置位P-bit。<br>注意：所有的OSPF LSA有相同的LSA头部，P-bit在LSA头部中的Options字段。</p>
+<h2 id="GR"><a href="#GR" class="headerlink" title="GR"></a>GR</h2><p>GR（Graceful Restart，平滑重启）技术保证了设备在重启过程中转发层面能够继续指导数据的转发，同时控制层面邻居关系的重建以及路由计算等动作不会影响转发层面的功能，从而避免了路由振荡引发的业务中断，保证了关键业务的数据转发，提高了整网的可靠性。</p>
+<h1 id="ISIS高级特性"><a href="#ISIS高级特性" class="headerlink" title="ISIS高级特性"></a>ISIS高级特性</h1><h2 id="I-SPF"><a href="#I-SPF" class="headerlink" title="I-SPF"></a>I-SPF</h2><p>I-SPF的工作原理：当网络拓扑改变的时候，只对<strong>受影响的节点</strong>进行路由计算，而不是对全部节点重新进行路由计算，从而加快了路由的计算。</p>
+<p>使用SPF算法进行路由计算：当网络拓扑中有一个节点发生变化时，SPF算法需要重新计算网络中的所有节点，计算时间长，占用过多的CPU资源，影响整个网络的收敛速度。</p>
+<p>I-SPF改进了SPF算法，除了第一次SPF计算时需要计算全部节点外，之后每次都通过I-SPF计算受到影响的节点，而最后生成的最短路径树与原来的算法所计算的结果相同，大大降低了CPU的占用率，提高了网络收敛速度。</p>
+<p><strong>在IS-IS网络中，I-SPF和PRC结合使用。</strong></p>
+<p>如果I-SPF计算后的最短路径树改变，PRC会只处理那个<strong>变化的节点上</strong>的所有叶子（路由）。如果经过I-SPF计算后的最短路径树并没有变化，则PRC只处理变化的叶子信息。比如一个节点使能一个IS-IS接口，则整个网络拓扑的最短路径树是不变的，这时PRC只更新这个节点的接口路由，从而节省CPU占用率。</p>
+<p><img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240812185722.png" alt="QQ截图20240812185722"></p>
+<p>（注意区分PRC，I-SPF是计算变化的节点，PRC计算变化的路由）</p>
+<h2 id="LSP快速扩散"><a href="#LSP快速扩散" class="headerlink" title="LSP快速扩散"></a>LSP快速扩散</h2><p>LSP快速扩散：此特性可以加快LSP的扩散速度。</p>
+<p>正常情况下，当IS-IS路由器收到其它路由器发来的LSP时，如果此LSP比本地LSDB中相应的LSP要新，则更新LSDB中的LSP，并用一个定时器定期将LSDB内已更新的LSP扩散出去。</p>
+<p>LSP快速扩散特性改进了这种方式，使能了此特性的设备收到一个或多个较新的LSP时，在路由计算之前，<strong>先将小于指定数目的LSP扩散出去，</strong>加快LSDB的同步过程。这种方式在很大程度上可以提高整个网络的收敛速度。</p>
+<p> 配置LSP快速扩散：</p>
+<p>[Huawei-isis-1] flash-flood [ lsp-count | max-timer-interval interval | [ level-1 | level-2 ] ]</p>
+<p>注意：用户可以指定每次扩散的LSP数量，这个数量是针对所有IS-IS接口的。如果需要发送的LSP的数量大于这个数，则就发送lsp-count个LSP。如果配置了定时器，在路由计算之前如果这个定时器未超时，则立即扩散；否则在该定时器超时后发送。</p>
+<p>lsp-count：指定每个接口一次扩散LSP的最大数量。整数形式，取值范围是1～15。缺省值是5。</p>
+<p>max-timer-interval interval：指定LSP扩散的最大间隔时间。整数形式，取值范围是10～50000，单位是毫秒。缺省值是10毫秒。</p>
+<p>level-1：表示在Level-1中使能此特性。如果命令中没有指定级别，则缺省同时在Level-1和Level-2中使能此功能。</p>
+<p>level-2：表示在Level-2中使能此特性。如果命令中没有指定级别，则缺省同时在Level-1和Level-2中使能此功能。</p>
+<h2 id="等价路由-1"><a href="#等价路由-1" class="headerlink" title="等价路由"></a>等价路由</h2><p>当IS-IS网络中有多条冗余链路时，可能会出现多条等价路由，</p>
+<p>此时可以采取两种方式：配置负载分担。</p>
+<p>流量会被均匀的分配到每条链路上。该方式可以提高网络中链路的利用率及减少某些链路负担过重造成阻塞发生的情况。但是由于对流量转发具有一定的随机性，因此可能不利于对业务流量的管理。</p>
+<p>配置等价路由优先级。</p>
+<p>针对等价路由中的每一条路由，明确指定其优先级，优先级高的路由将被优选，优先级低的路由可以作为备用链路。当IS-IS网络中有多条冗余链路时，可能会出现多条等价路由，即达到某一目的网段有多条等开销路径。配置等价路由优先级可以在不修改原有配置的基础上，<strong>指定某条路由被优选</strong>，便于业务的管理，同时提高网络的可靠性。注意：配置等价路由优先级后，IS-IS设备在转发到达目的网段的流量时，将不采用负载分担方式，而是将流量转发到优先级最高的下一跳。</p>
+<img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240812190929.png" alt="QQ截图20240812190929" style="zoom:67%;">
+
+<h2 id="缺省路由-1"><a href="#缺省路由-1" class="headerlink" title="缺省路由"></a>缺省路由</h2><p>在IS-IS中，主要通过以下3种方式控制缺省路由的生成和发布。</p>
+<p>在Level-1-2设备上，控制其产生的Level-1 LSP中ATT位的置位情况。</p>
+<p>在Level-1设备上，通过配置使其即使收到ATT位置位的Level-1 LSP也不会自动产生缺省路由。</p>
+<p>在IS-IS中发布缺省路由</p>
+<p><img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240812191212.png" alt="QQ截图20240812191212"></p>
+<p><strong>设置ATT置位控制产生缺省路由</strong>:</p>
+<p>IS-IS规定，如果IS-IS Level-1-2设备根据LSDB判断通过Level-2区域比Level-1区域能够到达更多的区域，该设备会在所发布的Level-1 LSP内将ATT位置位。对于收到ATT位置位的LSP报文的Level-1设备，会生成一条目的地为发送该LSP的Level-1-2设备地址的<strong>缺省路由</strong>。</p>
+<p>以上是协议的默认原则，在实际应用中，可以根据需要对ATT比特位进行手动配置以更好地为网络服务。</p>
+<p><img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240812191438.png" alt="QQ截图20240812191438"></p>
+<p>命令：</p>
+<p><strong>[Huawei-isis-1] attached-bit advertise { always | never }always：</strong>指定ATT位永远置位，收到该LSP的Level-1设备会生成缺省路由。never：指定ATT位永不置位，可以避免Level-1设备生成缺省路由，减小路由表的规模。</p>
+<p>虽然ATT位同时在Level-1 LSP和Level-2 LSP中进行了定义，但是它只会在Level-1 LSP中被置位，并且只有Level-1-2设备会设置这个字段，因此，该命令仅对Level-1-2设备生效。</p>
+<p>配置Level-1设备不将缺省路由下发到路由表，有以下两种方式可以实现：</p>
+<p>在Level-1-2设备上配置<strong>attached-bit advertise never</strong>命令，使得其不会发布ATT位置位的LSP。</p>
+<p>在与Level-1-2设备相连的Level-1设备上配置<strong>attached-bit avoid-learning</strong>命令。其中，attached-bit avoid-learning命令适用于需要针对指定设备配置的情况。</p>
+<p><strong>ISIS发布缺省路由</strong></p>
+<p>在具有外部路由的边界设备上配置IS-IS发布缺省路由可以使该设备在IS-IS路由域内发布一条0.0.0.0&#x2F;0的缺省路由。</p>
+<p>在执行此配置后，IS-IS域内的其他设备在转发流量时，将所有去往外部路由域的流量首先转发到该设备，然后通过该设备去往外部路由域。</p>
+<p>通常，当网络中部署了IS-IS和其他路由协议时，为了实现IS-IS域内的流量可以到达IS-IS域外，通常有如下两种方式：在边界设备上配置IS-IS设备向IS-IS域发布缺省路由。该方式较为简单，不需要学习外部路由。在边界设备上将其他路由域的路由引入到IS-IS中。</p>
+<p><strong>[Huawei-isis-1] default-route-advertise [ always | match default | route-policy route-policy-name ] [ cost cost | tag tag | [ level-1 | level-1-2 | level-2 ] ] [ avoid-learning ]</strong></p>
+<h2 id="LSP分片"><a href="#LSP分片" class="headerlink" title="LSP分片"></a>LSP分片</h2><img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ截图20240812192048.png" alt="QQ截图20240812192048" style="zoom:67%;">
+
+<p><img src="/2024/08/09/IGP%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7/QQ%E6%88%AA%E5%9B%BE20240812192150.png" alt="QQ截图20240812192150"></p>
+<p>Mode-2工作原理：虚拟系统不参与路由SPF计算，网络中所有路由器都知道虚拟系统生成的LSP实际属于初始系统。</p>
+]]></content>
+      <categories>
+        <category>基础知识</category>
+      </categories>
+      <tags>
+        <tag>IGP高级特性</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>IPv6</title>
     <url>/2024/08/06/IPv6/</url>
     <content><![CDATA[<h1 id="地址格式"><a href="#地址格式" class="headerlink" title="地址格式"></a>地址格式</h1><img src="/2024/08/06/IPv6/QQ截图20240806184336.png" alt="QQ截图20240806184336" style="zoom:67%;">
@@ -1975,206 +1975,6 @@
       </categories>
       <tags>
         <tag>IS-IS</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>MPLSVPN实验</title>
-    <url>/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/</url>
-    <content><![CDATA[<p>网络架构</p>
-<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240816211302.png" alt="QQ截图20240816211302" style="zoom:67%;">
-
-<p>MPLS VPN不是单一的一种VPN技术，是多种技术结合的综合解决方案，主要包含下列技术：MP-BGP：负责在PE与PE之间传递站点内的路由信息。LDP：负责PE与PE之间的隧道建立。VRF：负责PE的VPN用户管理。静态路由、IGP、BGP：负责PE与CE之间的路由信息交换。</p>
-<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240816211714.png" alt="QQ截图20240816211714" style="zoom:80%;">
-
-
-
-
-
-<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240816211801.png" alt="QQ截图20240816211801" style="zoom:80%;">
-
-<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240816211834.png" alt="QQ截图20240816211834" style="zoom:80%;">
-
-<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240816211845.png" alt="QQ截图20240816211845" style="zoom:80%;">
-
-<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240816211901.png" alt="QQ截图20240816211901" style="zoom:80%;">
-
-<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240816212112.png" alt="QQ截图20240816212112" style="zoom:80%;">
-
-<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240816212116.png" alt="QQ截图20240816212116" style="zoom:80%;">
-
-<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240816212144.png" alt="QQ截图20240816212144" style="zoom:80%;">
-
-<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240816212148.png" alt="QQ截图20240816212148" style="zoom:80%;">
-
-
-
-
-
-<h1 id="实验"><a href="#实验" class="headerlink" title="实验"></a>实验</h1><p><img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ%E6%88%AA%E5%9B%BE20240701192326.png" alt="QQ截图20240701192326"></p>
-<p>配置接口ip地址以及loopback 0地址：略</p>
-<p>目的：CE1和CE2之间不能互访，CE1和CE2可以访问CE3</p>
-<p><strong>创建VPN实例</strong></p>
-<p>ip vpn-instance CE1<br> ipv4-family<br>  route-distinguisher 100:1<br>  vpn-target 100:1 export-extcommunity<br>  vpn-target 100:1 import-extcommunity</p>
-<p>[PE1-GigabitEthernet0&#x2F;0&#x2F;0]ip binding vpn-instance CE1 （接口绑定）</p>
-<p>注意：绑定VPN实例后，接口配置会消失，注意重新配置ip</p>
-<p>ip vpn-instance CE2<br> ipv4-family<br>  route-distinguisher 200:1<br>  vpn-target 200:1 export-extcommunity<br>  vpn-target 100:1 import-extcommunity</p>
-<p>[PE1-GigabitEthernet0&#x2F;0&#x2F;1]ip binding vpn-instance CE2</p>
-<p>PE2上创建VPN实例CE3</p>
-<p>ip vpn-instance CE3<br> ipv4-family<br>  route-distinguisher 100:1<br>  vpn-target 100:1 export-extcommunity<br>  vpn-target 100:1 200:1 import-extcommunity</p>
-<p>[PE2-GigabitEthernet0&#x2F;0&#x2F;1]ip binding vpn-instance CE3</p>
-<p><strong>PE2和CE3之间OSPF配置</strong></p>
-<p>PE2：</p>
-<p>ospf 1 vpn-instance CE3 （注意在vpn实例中）<br> area 0.0.0.0<br>  network 10.0.56.0 0.0.0.255</p>
-<p>CE3：</p>
-<p>ospf 1<br> area 0.0.0.0<br>  network 10.0.56.0 0.0.0.255</p>
-<p><strong>配置CE1和PE1之间的EBGP：</strong></p>
-<p>CE1：</p>
-<p>bgp 100<br> router-id 1.1.1.1<br> peer 10.0.12.2 as-number 200</p>
-<p>PE1：</p>
-<p>bgp 200<br> router-id 3.3.3.3<br>[PE1-bgp]ipv4-family vpn-instance CE1	（注意在vpn实例中建立）<br>[PE1-bgp-CE1]peer 10.0.12.1 as-number 100</p>
-<p>查看bgp邻居关系：</p>
-<p>[PE1]display bgp vpnv4 vpn-instance CE1 peer </p>
-<p><strong>运营商网络之间的OSPF配置</strong></p>
-<p>PE1：</p>
-<p>ospf 1<br> area 0.0.0.0<br>  network 10.0.24.0 0.0.0.255<br>  network 3.3.3.3 0.0.0.0</p>
-<p>P：</p>
-<p>ospf 1<br> area 0.0.0.0<br>  network 10.0.24.0 0.0.0.255<br>  network 10.0.45.0 0.0.0.255<br>  network 4.4.4.4 0.0.0.0</p>
-<p>PE2：</p>
-<p>ospf 2 （注意是进程2，因为进程1在VPN实例CE3中使用过了，ospf本地进程唯一）<br> area 0.0.0.0<br>  network 10.0.45.0 0.0.0.255<br>  network 5.5.5.5 0.0.0.0</p>
-<p><strong>运营商网络的MPLS配置</strong></p>
-<p>PE1：</p>
-<p>mpls lsr-id 3.3.3.3<br>mpls<br>mpls ldp</p>
-<p>interface GigabitEthernet0&#x2F;0&#x2F;2<br> mpls<br> mpls ldp</p>
-<p>剩余重复操作略</p>
-<p><strong>PE1和PE2之间bgp建立</strong></p>
-<p>PE2：</p>
-<p>bgp 200<br> peer 3.3.3.3 as-number 200<br> peer 3.3.3.3 connect-interface LoopBack0<br> ipv4-family vpnv4<br>  peer 3.3.3.3 enable</p>
-<p>PE1同理操作</p>
-<p><strong>路由</strong></p>
-<p>在CE1上创建loopback 1接口：10.10.10.10</p>
-<p>在CE1上network宣告进入bgp进程</p>
-<p><PE2>dis bgp vpnv4 all routing-table</PE2></p>
-<p>查看已经学习到了10.10.10.10网段的路由</p>
-<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240701184638.png" alt="QQ截图20240701184638" style="zoom:50%;">
-
-<p>此时这条路由可以到达PE2</p>
-<p>无法到达CE3</p>
-<p>[PE2-ospf-1]import-route bgp </p>
-<p>在PE2上ospf 1进程引入bgp，此时CE3可以学习到</p>
-<p>（注意是进程1，进程2是运营商网络的ospf，进程1是VPN实例CE3的ospf）</p>
-<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240701185128.png" alt="QQ截图20240701185128" style="zoom: 50%;">
-
-<p>CE3上也添加一条loopback 1</p>
-<p>[CE3-LoopBack1]ip address 30.30.30.30 32</p>
-<p>[CE3-ospf-1]import-route direct （引入）</p>
-<p>将右边ospf引入bgp</p>
-<p>[PE2]bgp 200</p>
-<p>[PE2-bgp]ipv4-family vpn-instance CE3 （注意在实例中引入）</p>
-<p>[PE2-bgp-CE3]import-route ospf 1 （注意指明进程，默认是1）</p>
-<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240701190120.png" alt="QQ截图20240701190120" style="zoom:67%;">
-
-<p>此时bgp进程中学习到了30.30.30.30网段</p>
-<p>在CE1上pingCE3的30.30.30.30（注意ping的时候加源地址-a）</p>
-<p><img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ%E6%88%AA%E5%9B%BE20240701190246.png" alt="QQ截图20240701190246"></p>
-<p>可以通了</p>
-<p>CE2的路由</p>
-<p>[PE1]ip route-static vpn-instance CE2 2.2.2.2 32 10.0.23.1</p>
-<p>添加一条关于VPN实例CE2的静态路由，</p>
-<p>PE1上查看CE2实例路由表</p>
-<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240701190835.png" alt="QQ截图20240701190835" style="zoom: 50%;">
-
-<p>可以学习到了</p>
-<p>PE1在BGP中引入静态路由</p>
-<p>[PE1]bgp 200</p>
-<p>[PE1-bgp]ipv4-family vpn-instance CE2  （注意在实例中）</p>
-<p>[PE1-bgp-CE2]import-route static</p>
-<p>CE2上添加默认路由</p>
-<p>[CE2]ip route-static 0.0.0.0 0 10.0.23.2</p>
-<p>此时CE2可以ping通CE3的30.30.30.30</p>
-<p><img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ%E6%88%AA%E5%9B%BE20240701192215.png" alt="QQ截图20240701192215"></p>
-<p>实验瑕疵：</p>
-<p>[PE1]dis bgp vpnv4 all routing-table</p>
-<p><img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ%E6%88%AA%E5%9B%BE20240701192933.png" alt="QQ截图20240701192933"></p>
-<p>可以看到，10.10.10.10网段可能传递给CE2的VPN实例</p>
-<p>但是CE1和CE2之间仍然不能互访，这是因为CE2的2.2.2.2不会传递给CE1的VPN实例</p>
-<p>原因：CE1和CE2的RT值设置原因，CE1的export 是100：1，CE2的import是100:1，就导致CE2也会接受CE1传递的VPN实例，但是CE2传递的，CE1不会接受，所以理论上也实现了实验要求，但是不够完美。</p>
-<p>总结<strong>注意的几个点：</strong></p>
-<p>1.没有建立mpls，bgp学习到的路由不被优选，原因是mp-bgp传递路由带标签，基于一个隧道转发，需要基于mpls协议，所以需要建立mpls才行</p>
-<p>2.PE设备上ospf注意区分运营商网络的igp和ce到pe之间的ospf进程号</p>
-<p>3.讲的情况是运营商之间的bgp和ce之间的igp互相引入，但是考虑真实情况，可以不把bgp的路由引入ce之间的igp，可以下发缺省路由，但是需要在vpn实例进程中下发，对端也要配置路由才行</p>
-<p>4.运营商网络之间建立ibgp，P设备上不建，注意开启邻居vpnv4的功能</p>
-<p>5.区分路由和数据的概念，本质上mpls是为了传递数据的，所以不同的vpn实例带不同的标签是为了区分不同vpn的数据。mp-bgp是为了区分不同vpn的路由（RT，RD），所以需要结合使用</p>
-<p>6.如果ce和pe之间是静态，注意在vpn实例中配置路由</p>
-<p>7.查看bgp路由，dis bgp vpnv4 all（代表所有vpn实例）routing-table</p>
-<p>8.注意接口绑定vpn实例后，ip会消失，重新配置</p>
-<p>9.RD值本地路由器唯一就行</p>
-<p>10.RT值可以携带多个，注意规划合理，发布出去的export带上所有配置的RT export值，对端查看，只要有一个import能匹配上就可以接受</p>
-]]></content>
-      <categories>
-        <category>ie实验</category>
-      </categories>
-      <tags>
-        <tag>RT</tag>
-        <tag>MPLS VPN</tag>
-        <tag>MP-BGP</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>PPP/PPPoE</title>
-    <url>/2024/05/02/PPP-PPPoE/</url>
-    <content><![CDATA[<p>PPP（点到点协议 ），该协议支持认证（PAP、CHAP）、该协议中还包括LCP、NCP协议</p>
-<p>PPP链路的建立有三个阶段的协商过程，链路层协商、认证协商（可选）和网络层协商。<br>1）链路层协商：通过LCP报文进行链路参数协商，建立链路层连接。</p>
-<p>链路层协议（LCP）协商的参数有MRU（最大接收单元）、认证方式（不认证、PAP、CHAP）、魔术字（检测是否有环路）</p>
-<img src="/2024/05/02/PPP-PPPoE/微信截图_20240531153136.png" alt="微信截图_20240531153136" style="zoom:67%;">
-
-<p><img src="/2024/05/02/PPP-PPPoE/wps1.jpg" alt="img"> </p>
-<p><img src="/2024/05/02/PPP-PPPoE/wps2.jpg" alt="img"> </p>
-<p><img src="/2024/05/02/PPP-PPPoE/wps3.jpg" alt="img"> </p>
-<p>2）认证协商（可选）：通过链路建立阶段协商的认证方式进行链路认证。</p>
-<p><img src="/2024/05/02/PPP-PPPoE/wps4.jpg" alt="img"> </p>
-<p><img src="/2024/05/02/PPP-PPPoE/wps5.jpg" alt="img"> </p>
-<p>3）网络层协商 ：通过NCP协商来选择和配置一个网络层协议并进行网络层参数协商。</p>
-<p><img src="/2024/05/02/PPP-PPPoE/wps6.jpg" alt="img"> </p>
-<p><img src="/2024/05/02/PPP-PPPoE/wps7.jpg" alt="img"> </p>
-<p>PPP协商时接口状态的变化：</p>
-<p><img src="/2024/05/02/PPP-PPPoE/wps8.jpg" alt="img"> </p>
-<p>正常PPP链路建立需要经历链路建立阶段、认证阶段和网络层协商阶段，详细过程如下：<br>通信双方开始建立PPP链路时，先进入到Establish阶段。<br>在Establish阶段，进行LCP协商：协商通信双方的MRU（Maximum Receive Unit，最大接收单元）、认证方式和魔术字（Magic Number）等选项。协商成功后进入Opened状态，表示底层链路已建立。<br>如果配置了认证，将进入Authenticate阶段。否则直接进入Network阶段。<br>在Authenticate阶段，会根据连接建立阶段协商的认证方式进行链路认证。认证方式有两种：PAP和CHAP。如果认证成功，进入Network阶段，否则进入Terminate阶段，拆除链路，LCP状态转为Down。<br>在Network阶段，PPP链路进行NCP协商。通过NCP协商来选择和配置一个网络层协议并进行网络层参数协商。最常见的NCP协议是IPCP，用来协商IP参数。<br>在Terminate阶段，如果所有的资源都被释放，通信双方将回到Dead阶段。<br>PPP运行过程中，可以随时中断连接，物理链路断开、认证失败、超时定时器时间到、管理员通过配置关闭连接等动作都可能导致链路进入Terminate阶段。</p>
-<p>网络运营商如何对用户上网行为进行收费和控制 ？ 针对特定的数据包，就必须识别发送方的身份。</p>
-<ol>
-<li>在以太网链路上，以太网技术虽然具有简单易用，成本低等特点，但是以太网广播网络的属性，使得其通信双方无法相互验证对方的身份，因而通信是不安全的。</li>
-<li>在PPP链路上，<strong>由于PPP协议自带认证功能</strong>，因此可以完美的解决上述问题。但是，PPP链路又无法实现多用户上网的需求。</li>
-<li>为了解决这个矛盾问题，解决用户上网行为管理和收费的问题，提出了<strong>将PPP数据帧封装在以太网数据帧里边</strong>从而在以太网网络中传输的技术——PPPoE技术。</li>
-</ol>
-<blockquote>
-<p>这里的PPP，就是指的PPP协议数据帧，而o就是over的意思，E就是Ethernet的意思，因此，PPPoE形象的说就是<strong>“在以太网上的PPP协议”</strong>。</p>
-</blockquote>
-<p>PPPoE技术可以将用户连接到远程接入设备上，并提供良好访问控制功能，提供了一种经济的用户接入技术，并实现了对用户的控制。</p>
-<p>PPPoE协议采用Client&#x2F;Server模式，普通用户一般为Client，而运营商为Server。</p>
-<p>PPPoE的建立分为<strong>Discover阶段</strong>和<strong>PPP Session阶段</strong>。</p>
-<ul>
-<li><p><strong>Discover阶段：</strong>主要是选择PPPoE服务器，并确定所要建立的会话标识符Session ID。</p>
-<p>当Client要运行PPPoE时，首先以广播的形式发送一个<strong>PADI（PPPoE Active Discovery Initiation）报文</strong>，该报文中含有Client端要请求的服务信息</p>
-<p>PPPoE服务器在收到该报文后，会以单播的方式发送一个<strong>PADO（PPPoE Active Discovery Offer）报文</strong>，对Client端的PADI报文进行回应。</p>
-<p>PPPoE Client端在收到这个报文后，会向PPPoE Server发送<strong>PADR（PPPoE Active Discovery Request）报文</strong>。在这个报文中，PPPoE Client会创建并携带一个<strong>PPPoE Session</strong>。</p>
-<p>PPPoE Server还会向客户端发送<strong>PADS（PPPoE Active Discovery Session-confirmation）报文</strong>，表示收到了该Session ID。</p>
-<p>发送<strong>PADT（PPPOE Active Discovery Terminate）</strong>报文，终止连接</p>
-</li>
-<li><p><strong>PPP Session阶段：</strong>即执行标准的PPP过程，包括LCP协商、PAP&#x2F;CHAP认证、NCP协商等阶段。</p>
-<p>PPP会话阶段包括<strong>LCP协商、PAP&#x2F;CHAP认证、NCP协商</strong>等阶段。需结合PPP链路建立过程来分析</p>
-</li>
-<li><p><img src="/2024/05/02/PPP-PPPoE/wc07_r.jpg" alt="wc07_r"></p>
-</li>
-</ul>
-<h1 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h1><img src="/2024/05/02/PPP-PPPoE/image-20240716200823058.png" alt="image-20240716200823058" style="zoom:67%;">
-
-<img src="/2024/05/02/PPP-PPPoE/image-20240716200936313.png" alt="image-20240716200936313" style="zoom: 67%;">
-]]></content>
-      <categories>
-        <category>基础知识</category>
-      </categories>
-      <tags>
-        <tag>PPP</tag>
-        <tag>PPPoE</tag>
       </tags>
   </entry>
   <entry>
@@ -2451,6 +2251,286 @@
       <tags>
         <tag>mpls</tag>
         <tag>ldp</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MPLSVPN实验</title>
+    <url>/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/</url>
+    <content><![CDATA[<p>网络架构</p>
+<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240816211302.png" alt="QQ截图20240816211302" style="zoom:67%;">
+
+<p>MPLS VPN不是单一的一种VPN技术，是多种技术结合的综合解决方案，主要包含下列技术：MP-BGP：负责在PE与PE之间传递站点内的路由信息。LDP：负责PE与PE之间的隧道建立。VRF：负责PE的VPN用户管理。静态路由、IGP、BGP：负责PE与CE之间的路由信息交换。</p>
+<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240816211714.png" alt="QQ截图20240816211714" style="zoom:80%;">
+
+
+
+
+
+<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240816211801.png" alt="QQ截图20240816211801" style="zoom:80%;">
+
+<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240816211834.png" alt="QQ截图20240816211834" style="zoom:80%;">
+
+<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240816211845.png" alt="QQ截图20240816211845" style="zoom:80%;">
+
+<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240816211901.png" alt="QQ截图20240816211901" style="zoom:80%;">
+
+<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240816212112.png" alt="QQ截图20240816212112" style="zoom:80%;">
+
+<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240816212116.png" alt="QQ截图20240816212116" style="zoom:80%;">
+
+<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240816212144.png" alt="QQ截图20240816212144" style="zoom:80%;">
+
+<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240816212148.png" alt="QQ截图20240816212148" style="zoom:80%;">
+
+
+
+
+
+<h1 id="实验"><a href="#实验" class="headerlink" title="实验"></a>实验</h1><p><img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ%E6%88%AA%E5%9B%BE20240701192326.png" alt="QQ截图20240701192326"></p>
+<p>配置接口ip地址以及loopback 0地址：略</p>
+<p>目的：CE1和CE2之间不能互访，CE1和CE2可以访问CE3</p>
+<p><strong>创建VPN实例</strong></p>
+<p>ip vpn-instance CE1<br> ipv4-family<br>  route-distinguisher 100:1<br>  vpn-target 100:1 export-extcommunity<br>  vpn-target 100:1 import-extcommunity</p>
+<p>[PE1-GigabitEthernet0&#x2F;0&#x2F;0]ip binding vpn-instance CE1 （接口绑定）</p>
+<p>注意：绑定VPN实例后，接口配置会消失，注意重新配置ip</p>
+<p>ip vpn-instance CE2<br> ipv4-family<br>  route-distinguisher 200:1<br>  vpn-target 200:1 export-extcommunity<br>  vpn-target 100:1 import-extcommunity</p>
+<p>[PE1-GigabitEthernet0&#x2F;0&#x2F;1]ip binding vpn-instance CE2</p>
+<p>PE2上创建VPN实例CE3</p>
+<p>ip vpn-instance CE3<br> ipv4-family<br>  route-distinguisher 100:1<br>  vpn-target 100:1 export-extcommunity<br>  vpn-target 100:1 200:1 import-extcommunity</p>
+<p>[PE2-GigabitEthernet0&#x2F;0&#x2F;1]ip binding vpn-instance CE3</p>
+<p><strong>PE2和CE3之间OSPF配置</strong></p>
+<p>PE2：</p>
+<p>ospf 1 vpn-instance CE3 （注意在vpn实例中）<br> area 0.0.0.0<br>  network 10.0.56.0 0.0.0.255</p>
+<p>CE3：</p>
+<p>ospf 1<br> area 0.0.0.0<br>  network 10.0.56.0 0.0.0.255</p>
+<p><strong>配置CE1和PE1之间的EBGP：</strong></p>
+<p>CE1：</p>
+<p>bgp 100<br> router-id 1.1.1.1<br> peer 10.0.12.2 as-number 200</p>
+<p>PE1：</p>
+<p>bgp 200<br> router-id 3.3.3.3<br>[PE1-bgp]ipv4-family vpn-instance CE1	（注意在vpn实例中建立）<br>[PE1-bgp-CE1]peer 10.0.12.1 as-number 100</p>
+<p>查看bgp邻居关系：</p>
+<p>[PE1]display bgp vpnv4 vpn-instance CE1 peer </p>
+<p><strong>运营商网络之间的OSPF配置</strong></p>
+<p>PE1：</p>
+<p>ospf 1<br> area 0.0.0.0<br>  network 10.0.24.0 0.0.0.255<br>  network 3.3.3.3 0.0.0.0</p>
+<p>P：</p>
+<p>ospf 1<br> area 0.0.0.0<br>  network 10.0.24.0 0.0.0.255<br>  network 10.0.45.0 0.0.0.255<br>  network 4.4.4.4 0.0.0.0</p>
+<p>PE2：</p>
+<p>ospf 2 （注意是进程2，因为进程1在VPN实例CE3中使用过了，ospf本地进程唯一）<br> area 0.0.0.0<br>  network 10.0.45.0 0.0.0.255<br>  network 5.5.5.5 0.0.0.0</p>
+<p><strong>运营商网络的MPLS配置</strong></p>
+<p>PE1：</p>
+<p>mpls lsr-id 3.3.3.3<br>mpls<br>mpls ldp</p>
+<p>interface GigabitEthernet0&#x2F;0&#x2F;2<br> mpls<br> mpls ldp</p>
+<p>剩余重复操作略</p>
+<p><strong>PE1和PE2之间bgp建立</strong></p>
+<p>PE2：</p>
+<p>bgp 200<br> peer 3.3.3.3 as-number 200<br> peer 3.3.3.3 connect-interface LoopBack0<br> ipv4-family vpnv4<br>  peer 3.3.3.3 enable</p>
+<p>PE1同理操作</p>
+<p><strong>路由</strong></p>
+<p>在CE1上创建loopback 1接口：10.10.10.10</p>
+<p>在CE1上network宣告进入bgp进程</p>
+<p><PE2>dis bgp vpnv4 all routing-table</PE2></p>
+<p>查看已经学习到了10.10.10.10网段的路由</p>
+<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240701184638.png" alt="QQ截图20240701184638" style="zoom:50%;">
+
+<p>此时这条路由可以到达PE2</p>
+<p>无法到达CE3</p>
+<p>[PE2-ospf-1]import-route bgp </p>
+<p>在PE2上ospf 1进程引入bgp，此时CE3可以学习到</p>
+<p>（注意是进程1，进程2是运营商网络的ospf，进程1是VPN实例CE3的ospf）</p>
+<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240701185128.png" alt="QQ截图20240701185128" style="zoom: 50%;">
+
+<p>CE3上也添加一条loopback 1</p>
+<p>[CE3-LoopBack1]ip address 30.30.30.30 32</p>
+<p>[CE3-ospf-1]import-route direct （引入）</p>
+<p>将右边ospf引入bgp</p>
+<p>[PE2]bgp 200</p>
+<p>[PE2-bgp]ipv4-family vpn-instance CE3 （注意在实例中引入）</p>
+<p>[PE2-bgp-CE3]import-route ospf 1 （注意指明进程，默认是1）</p>
+<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240701190120.png" alt="QQ截图20240701190120" style="zoom:67%;">
+
+<p>此时bgp进程中学习到了30.30.30.30网段</p>
+<p>在CE1上pingCE3的30.30.30.30（注意ping的时候加源地址-a）</p>
+<p><img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ%E6%88%AA%E5%9B%BE20240701190246.png" alt="QQ截图20240701190246"></p>
+<p>可以通了</p>
+<p>CE2的路由</p>
+<p>[PE1]ip route-static vpn-instance CE2 2.2.2.2 32 10.0.23.1</p>
+<p>添加一条关于VPN实例CE2的静态路由，</p>
+<p>PE1上查看CE2实例路由表</p>
+<img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ截图20240701190835.png" alt="QQ截图20240701190835" style="zoom: 50%;">
+
+<p>可以学习到了</p>
+<p>PE1在BGP中引入静态路由</p>
+<p>[PE1]bgp 200</p>
+<p>[PE1-bgp]ipv4-family vpn-instance CE2  （注意在实例中）</p>
+<p>[PE1-bgp-CE2]import-route static</p>
+<p>CE2上添加默认路由</p>
+<p>[CE2]ip route-static 0.0.0.0 0 10.0.23.2</p>
+<p>此时CE2可以ping通CE3的30.30.30.30</p>
+<p><img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ%E6%88%AA%E5%9B%BE20240701192215.png" alt="QQ截图20240701192215"></p>
+<p>实验瑕疵：</p>
+<p>[PE1]dis bgp vpnv4 all routing-table</p>
+<p><img src="/2024/07/01/MPLSVPN%E5%AE%9E%E9%AA%8C/QQ%E6%88%AA%E5%9B%BE20240701192933.png" alt="QQ截图20240701192933"></p>
+<p>可以看到，10.10.10.10网段可能传递给CE2的VPN实例</p>
+<p>但是CE1和CE2之间仍然不能互访，这是因为CE2的2.2.2.2不会传递给CE1的VPN实例</p>
+<p>原因：CE1和CE2的RT值设置原因，CE1的export 是100：1，CE2的import是100:1，就导致CE2也会接受CE1传递的VPN实例，但是CE2传递的，CE1不会接受，所以理论上也实现了实验要求，但是不够完美。</p>
+<p>总结<strong>注意的几个点：</strong></p>
+<p>1.没有建立mpls，bgp学习到的路由不被优选，原因是mp-bgp传递路由带标签，基于一个隧道转发，需要基于mpls协议，所以需要建立mpls才行</p>
+<p>2.PE设备上ospf注意区分运营商网络的igp和ce到pe之间的ospf进程号</p>
+<p>3.讲的情况是运营商之间的bgp和ce之间的igp互相引入，但是考虑真实情况，可以不把bgp的路由引入ce之间的igp，可以下发缺省路由，但是需要在vpn实例进程中下发，对端也要配置路由才行</p>
+<p>4.运营商网络之间建立ibgp，P设备上不建，注意开启邻居vpnv4的功能</p>
+<p>5.区分路由和数据的概念，本质上mpls是为了传递数据的，所以不同的vpn实例带不同的标签是为了区分不同vpn的数据。mp-bgp是为了区分不同vpn的路由（RT，RD），所以需要结合使用</p>
+<p>6.如果ce和pe之间是静态，注意在vpn实例中配置路由</p>
+<p>7.查看bgp路由，dis bgp vpnv4 all（代表所有vpn实例）routing-table</p>
+<p>8.注意接口绑定vpn实例后，ip会消失，重新配置</p>
+<p>9.RD值本地路由器唯一就行</p>
+<p>10.RT值可以携带多个，注意规划合理，发布出去的export带上所有配置的RT export值，对端查看，只要有一个import能匹配上就可以接受</p>
+]]></content>
+      <categories>
+        <category>ie实验</category>
+      </categories>
+      <tags>
+        <tag>RT</tag>
+        <tag>MPLS VPN</tag>
+        <tag>MP-BGP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MPLSVPN跨域</title>
+    <url>/2024/08/20/MPLSVPN%E8%B7%A8%E5%9F%9F/</url>
+    <content><![CDATA[<h1 id="Option-A"><a href="#Option-A" class="headerlink" title="Option A"></a>Option A</h1><p>跨域VPN-OptionA是基本BGP&#x2F;MPLS IP VPN在跨域环境下的应用，ASBR之间不需要运行MPLS，也不需要为跨域进行特殊配置。这种方式下，两个AS的边界路由器ASBR直接相连，ASBR同时也是各自所在自治系统的PE。两个ASBR都把对端ASBR看作自己的CE设备，通过EBGP对等体关系向对端发布IPv4路由。<img src="/2024/08/20/MPLSVPN%E8%B7%A8%E5%9F%9F/QQ%E6%88%AA%E5%9B%BE20240820214403.png" alt="QQ截图20240820214403"></p>
+<p>注意，每个跨域vpn在asbr PE上都需要一个接口绑定相应的VRF</p>
+<p>跨域VPN-OptionA是基本IPv4 L3VPN在跨域环境下的应用，ASBR之间不需要运行MPLS，也不需要为跨域进行特殊配置。这种方式下，两个AS的边界ASBR直接相连，ASBR同时也是各自所在自治系统的PE。<strong>两个ASBR都把对端ASBR看作自己的CE设备</strong>，将会为每一个VPN创建VPN实例，使用<strong>EBGP</strong>方式向对端发布IPv4路由。（ASBR PE在VPN实例下建立EBGP，传递IPv4路由）</p>
+<p>采用跨域VPN-OptionA方案，要求AS的边界设备ASBR支持VPN实例，能够管理VPN路由。并且，ASBR上必须需要为每个跨域的VPN准备专用的接口（可以是子接口、物理接口、捆绑的逻辑接口）。因此，此方案对ASBR的性能要求较高，但ASBR上不必为跨域做任何特殊的配置。</p>
+<img src="/2024/08/20/MPLSVPN%E8%B7%A8%E5%9F%9F/QQ截图20240820214904.png" alt="QQ截图20240820214904" style="zoom:67%;">
+
+<p><img src="/2024/08/20/MPLSVPN%E8%B7%A8%E5%9F%9F/QQ%E6%88%AA%E5%9B%BE20240820215101.png" alt="QQ截图20240820215101"></p>
+<p>我们只通过单方向来解释控制平面的工作过程，同时假设在站点Site1有一VPN路由Client1连接，如上图，现在需要把Client1这条路由从CE1穿过AS100和AS200传递到CE2：</p>
+<p>在AS100中，通过运行LDP协议，PE1分配一个与去往PE1的路由相关联的隧道标签(外层标签)T1给P1。</p>
+<p>在AS100中，通过运行LDP协议，P1分配一个与去往PE1的路由相关联的隧道标签(外层标签)T2给ASBR-PE1。</p>
+<p>在AS200中，同样通过运行LDP协议，ASBR-PE2分配一个与去往ASBR-PE2的路由相关联的隧道标签(外层标签)T3给P2。</p>
+<p>在AS200中，通过运行LDP协议，P2分配一个与去往ASBR-PE2的路由相关联的隧道标签(外层标签)T4给PE2。</p>
+<p>CE1 通告路由Client1给PE1，路由的下一跳为CE1的接口地址。</p>
+<p>PE1将IPv4路由Client1通过MP-BGP重发布为VPNv4路由，并且下一跳改为PE1，分配一个VPN标签V1，然后通告给ASBR-PE1。</p>
+<p>ASBR-PE1将VPNv4路由变为IPv4路由，把IPv4路由Client1通告给ASBR-PE2，并且下一跳指向ASBR-PE1。</p>
+<p>ASBR-PE2将IPv4路由Client1通过MP-BGP重发布为VPNv4路由，并且下一跳为ASBR-PE2，为该路由分配一个VPN标签V2，将其通告给PE2。PE2将VPNv4路由转变为IPv4路由Client1，把路由Client1通告给CE2，并且下一跳指向PE2。</p>
+<p><img src="/2024/08/20/MPLSVPN%E8%B7%A8%E5%9F%9F/QQ%E6%88%AA%E5%9B%BE20240820215108.png" alt="QQ截图20240820215108"></p>
+<p>通过前文的过程分析，我们从反向来分析转发平面的工作过程，即CE2要发送一个目的地为Client1的IP报文给CE1，如上图所示：</p>
+<p>CE2发送一个目的地为Client1的IP报文给PE2。PE2收到IP报文后进行MPLS标签的封装，先封装VPN标签V2，再封装外层标签T4，然后将此报文发送给P2。</p>
+<p>P2进行标签交换，把外层标签T4换成T3，然后将此报文发送给ASBR-PE2。</p>
+<p>ASBR-PE2去掉所有标签，将报文(普通IP报文)转发给ASBR-PE1。</p>
+<p>ASBR-PE1收到IP报文后进行MPLS标签的封装，先封装VPN标签V1，再封装外层标签T2，然后将此报文发送给P1。</p>
+<p>P1进行标签交换，把外层标签T2换成T1，然后将此报文发送给PE1。PE1收到后去掉所有标签，将报文(普通IP报文)转发给CE1。</p>
+<p>实验：</p>
+<p><img src="/2024/08/20/MPLSVPN%E8%B7%A8%E5%9F%9F/QQ%E6%88%AA%E5%9B%BE20240820215303.png" alt="QQ截图20240820215303"></p>
+<p>R10和R11属于VPN aa能够互通，R1和R8属于VPN bb能够互通。</p>
+<p>配置接口ip</p>
+<p>创建VPN实例aa和bb，绑定接口</p>
+<p>配置CE和PE之间的EBGP（PE在实例配）</p>
+<p>配置骨干网的igp协议</p>
+<p>配置骨干网的MP-BGP（ibgp 开启vpnv4）</p>
+<p>R4R5配置EBGP（实例中，因为有两个vpn所以需要额外创建一个子接口绑定bb，建立EBGP）</p>
+<p>基本配置不再赘述，基本和单域的一致</p>
+<p>R4所有配置</p>
+<p>sysname R4<br>#</p>
+<p>ip vpn-instance aa<br> ipv4-family<br>  route-distinguisher 500:1<br>  vpn-target 1:1 export-extcommunity<br>  vpn-target 1:1 import-extcommunity<br>#</p>
+<p>ip vpn-instance bb<br> ipv4-family<br>  route-distinguisher 700:1<br>  vpn-target 2:2 export-extcommunity<br>  vpn-target 2:2 import-extcommunity<br>#<br>mpls lsr-id 4.4.4.4<br>mpls<br>#<br>mpls ldp<br>#<br>interface GigabitEthernet0&#x2F;0&#x2F;0<br> ip address 10.0.34.4 255.255.255.0<br> mpls<br> mpls ldp<br>#<br>interface GigabitEthernet0&#x2F;0&#x2F;1<br> ip binding vpn-instance aa<br> ip address 10.0.45.4 255.255.255.0<br>#<br>interface GigabitEthernet0&#x2F;0&#x2F;1.1（子接口绑定VPN bb）<br> dot1q termination vid 10<br> ip binding vpn-instance bb<br> ip address 10.0.54.4 255.255.255.0<br> arp broadcast enable</p>
+<h1 id><a href="#" class="headerlink" title></a></h1><p>interface LoopBack0<br> ip address 4.4.4.4 255.255.255.255<br>#<br>bgp 100<br> peer 2.2.2.2 as-number 100<br> peer 2.2.2.2 connect-interface LoopBack0</p>
+<h1 id="-1"><a href="#-1" class="headerlink" title></a></h1><p> ipv4-family vpnv4<br>  policy vpn-target<br>  peer 2.2.2.2 enable<br> #<br> ipv4-family vpn-instance aa<br>  peer 10.0.45.5 as-number 200<br> #<br> ipv4-family vpn-instance bb（子接口的EBGP）<br>  peer 10.0.54.5 as-number 200<br>#<br>ospf 1<br> area 0.0.0.0<br>  network 10.0.34.0 0.0.0.255<br>  network 4.4.4.4 0.0.0.0</p>
+<p>R5所有配置</p>
+<p>sysname R5</p>
+<h1 id="-2"><a href="#-2" class="headerlink" title></a></h1><p>ip vpn-instance aa<br> ipv4-family<br>  route-distinguisher 600:1<br>  vpn-target 3:3 export-extcommunity<br>  vpn-target 3:3 import-extcommunity<br>#<br>ip vpn-instance bb<br> ipv4-family<br>  route-distinguisher 800:1<br>  vpn-target 4:4 export-extcommunity<br>  vpn-target 4:4 import-extcommunity<br>#<br>mpls lsr-id 5.5.5.5<br>mpls<br>#<br>mpls ldp<br>#<br>isis 1<br> is-level level-2<br> network-entity 49.0000.0000.0005.00<br>#<br>interface GigabitEthernet0&#x2F;0&#x2F;0<br> ip binding vpn-instance aa<br> ip address 10.0.45.5 255.255.255.0<br>#<br>interface GigabitEthernet0&#x2F;0&#x2F;0.1<br> dot1q termination vid 10<br> ip binding vpn-instance bb<br> ip address 10.0.54.5 255.255.255.0<br> arp broadcast enable<br>#<br>interface GigabitEthernet0&#x2F;0&#x2F;1<br> ip address 10.0.56.5 255.255.255.0<br> isis enable 1<br> mpls<br> mpls ldp<br>#<br>interface LoopBack0<br> ip address 5.5.5.5 255.255.255.255<br> isis enable 1<br>#<br>bgp 200<br> peer 7.7.7.7 as-number 200<br> peer 7.7.7.7 connect-interface LoopBack0<br> #<br> ipv4-family unicast<br>  undo synchronization<br>  peer 7.7.7.7 enable<br> #<br> ipv4-family vpnv4<br>  policy vpn-target<br>  peer 7.7.7.7 enable<br> #<br> ipv4-family vpn-instance aa<br>  peer 10.0.45.4 as-number 100<br> #<br> ipv4-family vpn-instance bb<br>  peer 10.0.54.4 as-number 100<br>#</p>
+<p><img src="/2024/08/20/MPLSVPN%E8%B7%A8%E5%9F%9F/QQ%E6%88%AA%E5%9B%BE20240820220218.png" alt="QQ截图20240820220218"></p>
+<p>此时R11能学习到R10的10.10.10.10路由，能通</p>
+<p>同理下边的VPN也是</p>
+<h1 id="Option-B"><a href="#Option-B" class="headerlink" title="Option B"></a>Option B</h1><img src="/2024/08/20/MPLSVPN%E8%B7%A8%E5%9F%9F/QQ截图20240820220343.png" alt="QQ截图20240820220343" style="zoom:80%;">
+
+<p><img src="/2024/08/20/MPLSVPN%E8%B7%A8%E5%9F%9F/QQ%E6%88%AA%E5%9B%BE20240820220442.png" alt="QQ截图20240820220442"></p>
+<p>从PE1传递到ASBR1，再到ASBR2，之间不比较RT，RT还是之前最原始的RT，<strong>所以PE1和PE2的RT要匹配（一样）</strong></p>
+<p><img src="/2024/08/20/MPLSVPN%E8%B7%A8%E5%9F%9F/QQ%E6%88%AA%E5%9B%BE20240820220446.png" alt="QQ截图20240820220446"></p>
+<p>当VPN实例数量较多时，可以部署专门的RR设备。如图，AS内的PE和ASBR设备只与RR设备建立MP-BGP邻居关系，由RR负责路由的反射传递，PE和ASBR之间无需建立BGP邻居。RR只负责控制平面的VPNv4路由传递，数据转发时，流量不经过RR。</p>
+<p><img src="/2024/08/20/MPLSVPN%E8%B7%A8%E5%9F%9F/QQ%E6%88%AA%E5%9B%BE20240820220451.png" alt="QQ截图20240820220451"></p>
+<p><img src="/2024/08/20/MPLSVPN%E8%B7%A8%E5%9F%9F/QQ%E6%88%AA%E5%9B%BE20240820222821.png" alt="QQ截图20240820222821"></p>
+<p>配置思路：</p>
+<p>各AS内的MPLS骨干网上分别配置MPLS基本能力和MPLS LDP，建立LDP LSP。（略）</p>
+<p>各AS内，PE与ASBR-PE之间建立MP-IBGP对等体关系，交换VPN路由信息。（略）</p>
+<p>各AS内，与CE相连的PE上需配置VPN实例，PE与CE之间建立EBGP对等体关系，交换VPN路由信息。（略）</p>
+<p><strong>在ASBR上与另一ASBR相连接口上分别使能MPLS</strong>，且ASBR之间建立MP-EBGP对等体关系，<strong>并且不对接收的VPNv4路由进行VPN-target过滤。</strong> </p>
+<p>（OptionA中ASBR之间走的是ipv4，所以不需要，mpls，ipv4报文携带数据过去。OptionB中两个ASBR之间传递vpnv4路由，所以要开启mpls走隧道，并且要开启分配标签apply-label per-nexthop，并且不比较RT undo policy vpn-target）两端的RT必须一样才能接受</p>
+<p>R4配置</p>
+<p>sysname R4<br>#</p>
+<h1 id="-3"><a href="#-3" class="headerlink" title></a></h1><p>mpls lsr-id 4.4.4.4<br>mpls<br>#<br>mpls ldp<br>#</p>
+<p>interface GigabitEthernet0&#x2F;0&#x2F;0<br> ip address 10.0.34.4 255.255.255.0<br> mpls<br> mpls ldp<br>#<br>interface GigabitEthernet0&#x2F;0&#x2F;1<br> ip address 10.0.45.4 255.255.255.0<br> mpls<br>#</p>
+<h1 id="-4"><a href="#-4" class="headerlink" title></a></h1><p>interface LoopBack0</p>
+<p> ip address 4.4.4.4 255.255.255.255<br>#<br>bgp 100<br> peer 2.2.2.2 as-number 100<br> peer 2.2.2.2 connect-interface LoopBack0<br> peer 10.0.45.5 as-number 200<br> #<br> ipv4-family unicast<br>  undo synchronization<br>  peer 2.2.2.2 enable<br>  peer 10.0.45.5 enable（ASBR之间开启MP-BGP）<br> #<br> ipv4-family vpnv4<br>  undo policy vpn-target（不比较RT）<br>  apply-label per-nexthop（给ASBR之间喷配标签）<br>  peer 2.2.2.2 enable<br>  peer 10.0.45.5 enable<br>#</p>
+<p>ospf 1<br> area 0.0.0.0<br>  network 10.0.34.0 0.0.0.255<br>  network 4.4.4.4 0.0.0.0</p>
+<p>R5</p>
+<h1 id="-5"><a href="#-5" class="headerlink" title></a></h1><p>sysname R5<br>#<br>mpls lsr-id 5.5.5.5<br>mpls<br>#<br>mpls ldp<br>#<br>isis 1<br> is-level level-2<br> network-entity 49.0000.0000.0005.00<br>#<br>interface GigabitEthernet0&#x2F;0&#x2F;0<br> ip address 10.0.45.5 255.255.255.0<br> mpls<br>#</p>
+<p>interface GigabitEthernet0&#x2F;0&#x2F;1<br> ip address 10.0.56.5 255.255.255.0<br> isis enable 1<br> mpls<br> mpls ldp<br>#<br>interface GigabitEthernet0&#x2F;0&#x2F;2<br>#<br>interface GigabitEthernet0&#x2F;0&#x2F;3<br>#<br>interface LoopBack0<br> ip address 5.5.5.5 255.255.255.255<br> isis enable 1<br>#<br>bgp 200<br> peer 7.7.7.7 as-number 200<br> peer 7.7.7.7 connect-interface LoopBack0<br> peer 10.0.45.4 as-number 100<br> #<br> ipv4-family unicast<br>  undo synchronization<br>  peer 7.7.7.7 enable<br>  peer 10.0.45.4 enable<br> #<br> ipv4-family vpnv4<br>  undo policy vpn-target<br>  apply-label per-nexthop<br>  peer 7.7.7.7 enable<br>  peer 10.0.45.4 enable<br>#</p>
+]]></content>
+      <categories>
+        <category>ie实验</category>
+      </categories>
+      <tags>
+        <tag>跨域</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>PPP/PPPoE</title>
+    <url>/2024/05/02/PPP-PPPoE/</url>
+    <content><![CDATA[<p>PPP（点到点协议 ），该协议支持认证（PAP、CHAP）、该协议中还包括LCP、NCP协议</p>
+<p>PPP链路的建立有三个阶段的协商过程，链路层协商、认证协商（可选）和网络层协商。<br>1）链路层协商：通过LCP报文进行链路参数协商，建立链路层连接。</p>
+<p>链路层协议（LCP）协商的参数有MRU（最大接收单元）、认证方式（不认证、PAP、CHAP）、魔术字（检测是否有环路）</p>
+<img src="/2024/05/02/PPP-PPPoE/微信截图_20240531153136.png" alt="微信截图_20240531153136" style="zoom:67%;">
+
+<p><img src="/2024/05/02/PPP-PPPoE/wps1.jpg" alt="img"> </p>
+<p><img src="/2024/05/02/PPP-PPPoE/wps2.jpg" alt="img"> </p>
+<p><img src="/2024/05/02/PPP-PPPoE/wps3.jpg" alt="img"> </p>
+<p>2）认证协商（可选）：通过链路建立阶段协商的认证方式进行链路认证。</p>
+<p><img src="/2024/05/02/PPP-PPPoE/wps4.jpg" alt="img"> </p>
+<p><img src="/2024/05/02/PPP-PPPoE/wps5.jpg" alt="img"> </p>
+<p>3）网络层协商 ：通过NCP协商来选择和配置一个网络层协议并进行网络层参数协商。</p>
+<p><img src="/2024/05/02/PPP-PPPoE/wps6.jpg" alt="img"> </p>
+<p><img src="/2024/05/02/PPP-PPPoE/wps7.jpg" alt="img"> </p>
+<p>PPP协商时接口状态的变化：</p>
+<p><img src="/2024/05/02/PPP-PPPoE/wps8.jpg" alt="img"> </p>
+<p>正常PPP链路建立需要经历链路建立阶段、认证阶段和网络层协商阶段，详细过程如下：<br>通信双方开始建立PPP链路时，先进入到Establish阶段。<br>在Establish阶段，进行LCP协商：协商通信双方的MRU（Maximum Receive Unit，最大接收单元）、认证方式和魔术字（Magic Number）等选项。协商成功后进入Opened状态，表示底层链路已建立。<br>如果配置了认证，将进入Authenticate阶段。否则直接进入Network阶段。<br>在Authenticate阶段，会根据连接建立阶段协商的认证方式进行链路认证。认证方式有两种：PAP和CHAP。如果认证成功，进入Network阶段，否则进入Terminate阶段，拆除链路，LCP状态转为Down。<br>在Network阶段，PPP链路进行NCP协商。通过NCP协商来选择和配置一个网络层协议并进行网络层参数协商。最常见的NCP协议是IPCP，用来协商IP参数。<br>在Terminate阶段，如果所有的资源都被释放，通信双方将回到Dead阶段。<br>PPP运行过程中，可以随时中断连接，物理链路断开、认证失败、超时定时器时间到、管理员通过配置关闭连接等动作都可能导致链路进入Terminate阶段。</p>
+<p>网络运营商如何对用户上网行为进行收费和控制 ？ 针对特定的数据包，就必须识别发送方的身份。</p>
+<ol>
+<li>在以太网链路上，以太网技术虽然具有简单易用，成本低等特点，但是以太网广播网络的属性，使得其通信双方无法相互验证对方的身份，因而通信是不安全的。</li>
+<li>在PPP链路上，<strong>由于PPP协议自带认证功能</strong>，因此可以完美的解决上述问题。但是，PPP链路又无法实现多用户上网的需求。</li>
+<li>为了解决这个矛盾问题，解决用户上网行为管理和收费的问题，提出了<strong>将PPP数据帧封装在以太网数据帧里边</strong>从而在以太网网络中传输的技术——PPPoE技术。</li>
+</ol>
+<blockquote>
+<p>这里的PPP，就是指的PPP协议数据帧，而o就是over的意思，E就是Ethernet的意思，因此，PPPoE形象的说就是<strong>“在以太网上的PPP协议”</strong>。</p>
+</blockquote>
+<p>PPPoE技术可以将用户连接到远程接入设备上，并提供良好访问控制功能，提供了一种经济的用户接入技术，并实现了对用户的控制。</p>
+<p>PPPoE协议采用Client&#x2F;Server模式，普通用户一般为Client，而运营商为Server。</p>
+<p>PPPoE的建立分为<strong>Discover阶段</strong>和<strong>PPP Session阶段</strong>。</p>
+<ul>
+<li><p><strong>Discover阶段：</strong>主要是选择PPPoE服务器，并确定所要建立的会话标识符Session ID。</p>
+<p>当Client要运行PPPoE时，首先以广播的形式发送一个<strong>PADI（PPPoE Active Discovery Initiation）报文</strong>，该报文中含有Client端要请求的服务信息</p>
+<p>PPPoE服务器在收到该报文后，会以单播的方式发送一个<strong>PADO（PPPoE Active Discovery Offer）报文</strong>，对Client端的PADI报文进行回应。</p>
+<p>PPPoE Client端在收到这个报文后，会向PPPoE Server发送<strong>PADR（PPPoE Active Discovery Request）报文</strong>。在这个报文中，PPPoE Client会创建并携带一个<strong>PPPoE Session</strong>。</p>
+<p>PPPoE Server还会向客户端发送<strong>PADS（PPPoE Active Discovery Session-confirmation）报文</strong>，表示收到了该Session ID。</p>
+<p>发送<strong>PADT（PPPOE Active Discovery Terminate）</strong>报文，终止连接</p>
+</li>
+<li><p><strong>PPP Session阶段：</strong>即执行标准的PPP过程，包括LCP协商、PAP&#x2F;CHAP认证、NCP协商等阶段。</p>
+<p>PPP会话阶段包括<strong>LCP协商、PAP&#x2F;CHAP认证、NCP协商</strong>等阶段。需结合PPP链路建立过程来分析</p>
+</li>
+<li><p><img src="/2024/05/02/PPP-PPPoE/wc07_r.jpg" alt="wc07_r"></p>
+</li>
+</ul>
+<h1 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h1><img src="/2024/05/02/PPP-PPPoE/image-20240716200823058.png" alt="image-20240716200823058" style="zoom:67%;">
+
+<img src="/2024/05/02/PPP-PPPoE/image-20240716200936313.png" alt="image-20240716200936313" style="zoom: 67%;">
+]]></content>
+      <categories>
+        <category>基础知识</category>
+      </categories>
+      <tags>
+        <tag>PPP</tag>
+        <tag>PPPoE</tag>
       </tags>
   </entry>
   <entry>
@@ -3063,47 +3143,6 @@
       </tags>
   </entry>
   <entry>
-    <title>VRF</title>
-    <url>/2024/06/23/VRF/</url>
-    <content><![CDATA[<p><img src="/2024/06/23/VRF/20190301110350669.png" alt="20190301110350669"></p>
-<p><img src="/2024/06/23/VRF/20190301110855304.png" alt="20190301110855304"></p>
-<p>假设PC1与R2这一侧的网络属于一个独立的业务；PC2与R3这一侧的网络属于另一个独立的业务，由于设备资源有限或者其他方面的原因，这两个独立的业务的相关节点连接在R1上，也就是同一台设备上。那么在完成相关配置后，R1的路由表如上图所示。<br>现在如果PC1要发一个数据包到2.2.2.2，那么这个数据包在到达R1后，R1就会去查看自己的路由表，发现有一条2.2.2.0&#x2F;24的路由匹配，因此将这个IP包从GE0&#x2F;0&#x2F;2口转发给192.168.100.2。这是没有问题的，然而如果PC1要访问3.3.3.0&#x2F;24网络呢？也是无压力的，因为数据包到达R1后，她照样查找路由表结果发现有匹配的路由，因此将数据包转给R3。但是实际上，从业务的角度考虑，我们禁止PC1访问3.3.3.0&#x2F;24网络。<br>那么怎么办？</p>
-<p><img src="/2024/06/23/VRF/20190301110351539.png" alt="20190301110351539"></p>
-<p><img src="/2024/06/23/VRF/2019030111115184.png" alt="2019030111115184"></p>
-<p>现在，我们在R1上创建两个VRF：VRF1及VRF2，创建完成后，我们可以理解为，拥有了两台虚拟路由器。当然，现在这两台虚拟路由器上啥也没有。<br>接下去我们将GE0&#x2F;0&#x2F;1口及GE0&#x2F;0&#x2F;2口绑定到VRF1；将GE0&#x2F;0&#x2F;3及GE0&#x2F;0&#x2F;4口绑定到VRF2。如此一来这两台虚拟路由器就各自拥有了两个物理接口。值得注意的是，这两台虚拟路由器是虽然都在同一台物理设备上，但是却是隔离的，他们将有自己的接口，自己的路由表，自己的ARP表等等相关的内容。我们的环境就变成有点像这样：</p>
-<p><img src="/2024/06/23/VRF/20190301111226761.png" alt="20190301111226761"></p>
-<p>我们看到，VRF1及VRF2有了自己的接口，也有了自己的路由表。并且相互之间是隔离的。<br>现在PC1要发送一个数据包到2.2.2.2，R1从接口GE0&#x2F;0&#x2F;1收到了这个数据包，由于此时GE0&#x2F;0&#x2F;1已经绑定到了VRF1，因此在执行目的IP的路由查找的时候，查的是VRF1的路由表，查找到匹配的路由条目后，间个数据包从其指示的GE0&#x2F;0&#x2F;1口转发给下一跳192.168.100.2。</p>
-<p>那么如果PC1要访问3.3.3.3呢？数据包发到了R1，R1从接口GE0&#x2F;0&#x2F;1收到了这个数据包，于是它在做路由查找的时候，查的仍然是VRF1的路由表。经过查表后，它发现并无匹配的条目，因此将数据包丢弃。</p>
-<p><img src="/2024/06/23/VRF/20190301111315435.png" alt="20190301111315435"></p>
-<p>实验</p>
-<img src="/2024/06/23/VRF/QQ截图20240623181526.png" alt="QQ截图20240623181526" style="zoom:80%;">
-
-<p>如图，R2属于VPN实例aa，R3属于VPN实例bb，要求pc1可以访问R2，不能访问R3。PC2可以访问R3，不能访问R2.</p>
-<p>R1下做单臂路由，创建VPN实例aa和bb，子接口分别绑定相应的VPN实例。g0&#x2F;0&#x2F;0绑定vpn实例aa，g0&#x2F;0&#x2F;1绑定vpn实例bb。</p>
-<p>S1创建vlan，划分接口：略</p>
-<p>注意：接口绑定VPN实例后，ip地址的配置会被移除，需要重新配置</p>
-<p>创建vpn实例：</p>
-<p>ip vpn-instance aa</p>
-<p> ipv4-family #使能ipv4地址簇</p>
-<p>接口绑定：ip binding vpn-instance aa</p>
-<p>查看vpn路由表：dis ip routing-table vpn-instance aa</p>
-<p>静态路由：ip route-static vpn-instance aa 2.2.2.2 32 192.168.10.1 </p>
-<p>ping命令：ping -vpn-instance aa 192.168.10.1</p>
-<p>R2上添加回程路由：略</p>
-<p>至此，PC1可以ping通R2</p>
-<p>R1上创建ospf：ospf 1 router-id 1.1.1.1 vpn-instance bb</p>
-<p>宣告网段：略</p>
-<p>R3上ospf宣告3.3.3.3</p>
-<p>pc2ping通3.3.3.3</p>
-]]></content>
-      <categories>
-        <category>ip实验</category>
-      </categories>
-      <tags>
-        <tag>VRF</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>VRRP</title>
     <url>/2024/05/25/VRRP/</url>
     <content><![CDATA[<h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><p>虚拟路由冗余协议VRRP（Virtual Router Redundancy Protocol）通过把几台路由设备联合组成一台虚拟的路由设备，将虚拟路由设备的IP地址作为用户的默认网关实现与外部网络通信。当网关设备发生故障时，VRRP机制能够选举新的网关设备承担数据流量，从而保障网络的可靠通信。</p>
@@ -3442,6 +3481,47 @@
       <tags>
         <tag>VRRP</tag>
         <tag>BFD</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>VRF</title>
+    <url>/2024/06/23/VRF/</url>
+    <content><![CDATA[<p><img src="/2024/06/23/VRF/20190301110350669.png" alt="20190301110350669"></p>
+<p><img src="/2024/06/23/VRF/20190301110855304.png" alt="20190301110855304"></p>
+<p>假设PC1与R2这一侧的网络属于一个独立的业务；PC2与R3这一侧的网络属于另一个独立的业务，由于设备资源有限或者其他方面的原因，这两个独立的业务的相关节点连接在R1上，也就是同一台设备上。那么在完成相关配置后，R1的路由表如上图所示。<br>现在如果PC1要发一个数据包到2.2.2.2，那么这个数据包在到达R1后，R1就会去查看自己的路由表，发现有一条2.2.2.0&#x2F;24的路由匹配，因此将这个IP包从GE0&#x2F;0&#x2F;2口转发给192.168.100.2。这是没有问题的，然而如果PC1要访问3.3.3.0&#x2F;24网络呢？也是无压力的，因为数据包到达R1后，她照样查找路由表结果发现有匹配的路由，因此将数据包转给R3。但是实际上，从业务的角度考虑，我们禁止PC1访问3.3.3.0&#x2F;24网络。<br>那么怎么办？</p>
+<p><img src="/2024/06/23/VRF/20190301110351539.png" alt="20190301110351539"></p>
+<p><img src="/2024/06/23/VRF/2019030111115184.png" alt="2019030111115184"></p>
+<p>现在，我们在R1上创建两个VRF：VRF1及VRF2，创建完成后，我们可以理解为，拥有了两台虚拟路由器。当然，现在这两台虚拟路由器上啥也没有。<br>接下去我们将GE0&#x2F;0&#x2F;1口及GE0&#x2F;0&#x2F;2口绑定到VRF1；将GE0&#x2F;0&#x2F;3及GE0&#x2F;0&#x2F;4口绑定到VRF2。如此一来这两台虚拟路由器就各自拥有了两个物理接口。值得注意的是，这两台虚拟路由器是虽然都在同一台物理设备上，但是却是隔离的，他们将有自己的接口，自己的路由表，自己的ARP表等等相关的内容。我们的环境就变成有点像这样：</p>
+<p><img src="/2024/06/23/VRF/20190301111226761.png" alt="20190301111226761"></p>
+<p>我们看到，VRF1及VRF2有了自己的接口，也有了自己的路由表。并且相互之间是隔离的。<br>现在PC1要发送一个数据包到2.2.2.2，R1从接口GE0&#x2F;0&#x2F;1收到了这个数据包，由于此时GE0&#x2F;0&#x2F;1已经绑定到了VRF1，因此在执行目的IP的路由查找的时候，查的是VRF1的路由表，查找到匹配的路由条目后，间个数据包从其指示的GE0&#x2F;0&#x2F;1口转发给下一跳192.168.100.2。</p>
+<p>那么如果PC1要访问3.3.3.3呢？数据包发到了R1，R1从接口GE0&#x2F;0&#x2F;1收到了这个数据包，于是它在做路由查找的时候，查的仍然是VRF1的路由表。经过查表后，它发现并无匹配的条目，因此将数据包丢弃。</p>
+<p><img src="/2024/06/23/VRF/20190301111315435.png" alt="20190301111315435"></p>
+<p>实验</p>
+<img src="/2024/06/23/VRF/QQ截图20240623181526.png" alt="QQ截图20240623181526" style="zoom:80%;">
+
+<p>如图，R2属于VPN实例aa，R3属于VPN实例bb，要求pc1可以访问R2，不能访问R3。PC2可以访问R3，不能访问R2.</p>
+<p>R1下做单臂路由，创建VPN实例aa和bb，子接口分别绑定相应的VPN实例。g0&#x2F;0&#x2F;0绑定vpn实例aa，g0&#x2F;0&#x2F;1绑定vpn实例bb。</p>
+<p>S1创建vlan，划分接口：略</p>
+<p>注意：接口绑定VPN实例后，ip地址的配置会被移除，需要重新配置</p>
+<p>创建vpn实例：</p>
+<p>ip vpn-instance aa</p>
+<p> ipv4-family #使能ipv4地址簇</p>
+<p>接口绑定：ip binding vpn-instance aa</p>
+<p>查看vpn路由表：dis ip routing-table vpn-instance aa</p>
+<p>静态路由：ip route-static vpn-instance aa 2.2.2.2 32 192.168.10.1 </p>
+<p>ping命令：ping -vpn-instance aa 192.168.10.1</p>
+<p>R2上添加回程路由：略</p>
+<p>至此，PC1可以ping通R2</p>
+<p>R1上创建ospf：ospf 1 router-id 1.1.1.1 vpn-instance bb</p>
+<p>宣告网段：略</p>
+<p>R3上ospf宣告3.3.3.3</p>
+<p>pc2ping通3.3.3.3</p>
+]]></content>
+      <categories>
+        <category>ip实验</category>
+      </categories>
+      <tags>
+        <tag>VRF</tag>
       </tags>
   </entry>
   <entry>
@@ -5221,6 +5301,136 @@
       </tags>
   </entry>
   <entry>
+    <title>网络安全技术</title>
+    <url>/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/</url>
+    <content><![CDATA[<h1 id="端口隔离"><a href="#端口隔离" class="headerlink" title="端口隔离"></a>端口隔离</h1><p>为了实现报文之间的二层隔离，用户可以将不同的端口加入不同的VLAN，但这样会浪费有限的VLAN资源。采用端口隔离功能，可以实现同一VLAN内端口之间的隔离。用户只需要将端口加入到隔离组中，就可以实现隔离组内端口之间二层数据的隔离。端口隔离功能为用户提供了更安全、更灵活的组网方案。</p>
+<p>端口隔离分为二层隔离三层互通和二层三层都隔离两种模式：</p>
+<ul>
+<li>如果用户希望隔离同一VLAN内的广播报文，但是不同端口下的用户还可以进行三层通信，则可以将隔离模式设置为二层隔离三层互通。</li>
+<li>如果用户希望同一VLAN不同端口下用户彻底无法通信，则可以将隔离模式配置为二层三层均隔离。</li>
+</ul>
+<p><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ%E6%88%AA%E5%9B%BE20240813192115.png" alt="QQ截图20240813192115"></p>
+<p><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ%E6%88%AA%E5%9B%BE20240813214627.png" alt="QQ截图20240813214627"></p>
+<p><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ%E6%88%AA%E5%9B%BE20240813214643.png" alt="QQ截图20240813214643"></p>
+<p><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ%E6%88%AA%E5%9B%BE20240813214648.png" alt="QQ截图20240813214648"></p>
+<h1 id="MAC地址表安全"><a href="#MAC地址表安全" class="headerlink" title="MAC地址表安全"></a>MAC地址表安全</h1><p>动态MAC地址表项：由接口通过报文中的源MAC地址学习获得，表项可老化。在系统复位、接口板热插拔或接口板复位后，动态表项会丢失。</p>
+<p>静态MAC地址表项：由用户手工配置并下发到各接口板，表项不老化。在系统复位、接口板热插拔或接口板复位后，保存的表项不会丢失。接口和MAC地址静态绑定后，其他接口收到源MAC是该MAC地址的报文将会被丢弃。</p>
+<p>黑洞MAC地址表项：由用户手工配置，并下发到各接口板，表项不可老化。配置黑洞MAC地址后，源MAC地址或目的MAC地址是该MAC的报文将会被丢弃。</p>
+<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813215022.png" alt="QQ截图20240813215022" style="zoom:67%;">
+
+<h1 id="端口安全"><a href="#端口安全" class="headerlink" title="端口安全"></a>端口安全</h1><p>通过在交换机的特定接口上部署端口安全，可以限制接口的MAC地址学习数量，并且配置出现越限时的惩罚措施。</p>
+<p>端口安全通过将接口学习到的动态MAC地址转换为安全MAC地址（包括安全动态MAC，安全静态MAC和Sticky MAC），阻止非法用户通过本接口和交换机通信，从而增强设备的安全性。</p>
+<p><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ%E6%88%AA%E5%9B%BE20240813215328.png" alt="QQ截图20240813215328"></p>
+<h1 id="MAC地址漂移"><a href="#MAC地址漂移" class="headerlink" title="MAC地址漂移"></a>MAC地址漂移</h1><p>MAC地址漂移是指交换机上一个VLAN内有两个端口学习到同一个MAC地址，后学习到的MAC地址表项覆盖原MAC地址表项的现象。</p>
+<p>当一个MAC地址在两个端口之间频繁发生迁移时，即会产生MAC地址漂移现象。</p>
+<p>正常情况下，网络中不会在短时间内出现大量MAC地址漂移的情况。出现这种现象一般都意味着网络中存在环路，或者存在网络攻击行为。</p>
+<p>防止mac地址漂移：</p>
+<p><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ%E6%88%AA%E5%9B%BE20240813215508.png" alt="QQ截图20240813215508"></p>
+<p>交换机支持MAC地址漂移检测机制，分为以下两种方式：</p>
+<p>基于VLAN的MAC地址漂移检测</p>
+<p>配置<strong>VLAN的MAC地址漂移</strong>检测功能可以检测指定VLAN下的所有的MAC地址是否发生漂移。当MAC地址发生漂移后，可以配置指定的动作，例如告警、阻断接口或阻断MAC地址。</p>
+<p><strong>全局MAC地址漂移检测</strong>该功能可以检测设备上的所有的MAC地址是否发生了漂移。若发生漂移，设备会上报告警到网管系统。用户也可以指定发生漂移后的处理动作，例如将接口关闭或退出VLAN。</p>
+<h1 id="MACsec"><a href="#MACsec" class="headerlink" title="MACsec"></a>MACsec</h1><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813220540.png" alt="QQ截图20240813220540" style="zoom:67%;">
+
+<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813220545.png" alt="QQ截图20240813220545" style="zoom:67%;">
+
+<h1 id="交换机流量控制"><a href="#交换机流量控制" class="headerlink" title="交换机流量控制"></a>交换机流量控制</h1><p>流量抑制：</p>
+<p>络中存在的问题：正常情况下，当设备某个二层以太接口收到广播、未知组播或未知单播报文时，会向同一VLAN内的其他二层以太接口转发这些报文，从而导致流量泛洪，降低设备转发性能。</p>
+<p>当设备某个以太接口收到已知组播或已知单播报文时，如果某种报文流量过大则可能会对设备造成冲击，影响其他业务的正常处理。</p>
+<p>可用的解决方案：流量抑制可以通过配置阈值来限制广播、未知组播、未知单播、已知组播和已知单播报文的速率，防止广播、未知组播报文和未知单播报文产生流量泛洪，阻止已知组播报文和已知单播报文的大流量冲击。</p>
+<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813221236.png" alt="QQ截图20240813221236" style="zoom:67%;">
+
+<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813221241.png" alt="QQ截图20240813221241" style="zoom:67%;">
+
+<p>在交换机接口的入方向，例如下图中SW1的GE0&#x2F;0&#x2F;1入方向，通过流量抑制功能可以限制任意报文的发送速率。</p>
+<p>在交换机接口出方向，例如下图中SW1的GE0&#x2F;0&#x2F;1出方向，通过流量抑制功能可以阻塞广播，未知组播和未知单播报文。</p>
+<p>在交换机的VLAN视图下，通过配置VLAN内流量抑制限制VLAN内广播报文。</p>
+<p>风暴控制：</p>
+<p>网络中存在的问题：正常情况下，当设备某个二层以太接口收到广播、未知组播或未知单播报文时，会向同一VLAN内的其他二层以太接口转发这些报文，如果网络存在环路，则会导致广播风暴，严重降低设备转发性能。</p>
+<p>可用的解决方案：风暴控制可以通过阻塞报文或关闭端口来阻断广播、未知组播和未知单播报文的流量。</p>
+<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813221726.png" alt="QQ截图20240813221726" style="zoom:67%;">
+
+<p>风暴控制与流量抑制相比的优势是可以同时监控接口下的广播报文、未知组播报文和未知单播报文各自的包平均速率，并根据阈值对接口采取阻塞相关报文或者关闭物理接口的惩罚动作。</p>
+<h1 id="DHCP-Snooping"><a href="#DHCP-Snooping" class="headerlink" title="DHCP Snooping"></a>DHCP Snooping</h1><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813222210.png" alt="QQ截图20240813222210" style="zoom:67%;">
+
+<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813223518.png" alt="QQ截图20240813223518" style="zoom:67%;">
+
+<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813223721.png" alt="QQ截图20240813223721" style="zoom:67%;">
+
+<p>DHCP Snooping绑定表根据DHCP租期进行老化或根据用户释放IP地址时发出的DHCP Release报文自动删除对应表项。</p>
+<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813223730.png" alt="QQ截图20240813223730" style="zoom:67%;">
+
+<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813223736.png" alt="QQ截图20240813223736" style="zoom:67%;">
+
+<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813223741.png" alt="QQ截图20240813223741" style="zoom:67%;">
+
+<p>DHCP饿死攻击是攻击者通过持续大量地向DHCP Server申请IP地址来实现的，其目的是耗尽DHCP Server地址池中的IP地址，导致DHCP Server没有IP地址分配给正常的用户。</p>
+<p>DHCP消息中有一个名叫CHADDR（Client Hardware Address）的字段，该字段是由DHCP客户端填写的，表示的是客户端的硬件地址（也就是客户端的MAC地址）。DHCP Server是针对CHADDR来分配IP地址的，对于不同的CHADDR，DHCP Server会分配不同的IP地址；DHCP Server无法区分什么样的CHADDR是合法的，什么样的CHADDR是非法的。利用这个漏洞，攻击者每申请一个IP地址时，就在DHCP消息的CHADDR字段中填写一个不同的值，以此来冒充是不同的用户在申请IP地址</p>
+<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813223746.png" alt="QQ截图20240813223746" style="zoom:67%;">
+
+<p>为了弥补上述漏洞，从而阻止饿死攻击，DHCP Snooping技术支持在端口下对DHCP Request报文的源MAC地址与CHADDR进行一致性检查：如果二者相同，则转发报文；如果二者不相同，则丢弃。如果要在某端口下实施源MAC地址与CHADDR的一致性检查，可以在该端口下使用命令dhcp snooping check dhcp-chaddr enable。还可能存在这样一种饿死攻击，就是攻击者不断同时变换MAC地址和CHADDR，并且每一次变换时，都让CHADDR与MAC地址相同，如此一来，便可以躲过上述源MAC地址与CHADDR的一致性检查！</p>
+<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813223759.png" alt="QQ截图20240813223759" style="zoom:67%;">
+
+<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813223804.png" alt="QQ截图20240813223804" style="zoom:67%;">
+
+<h1 id="IPSG"><a href="#IPSG" class="headerlink" title="IPSG"></a>IPSG</h1><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813231402.png" alt="QQ截图20240813231402" style="zoom:67%;">
+
+<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813231407.png" alt="QQ截图20240813231407" style="zoom:67%;">
+
+<h1 id="防火墙双机热备"><a href="#防火墙双机热备" class="headerlink" title="防火墙双机热备"></a>防火墙双机热备</h1><p>在网络中部署防火墙双机时面临的问题</p>
+<p><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ%E6%88%AA%E5%9B%BE20240814185824.png" alt="QQ截图20240814185824"></p>
+<p>双机热备需要两台硬件和软件配置均相同的防火墙组成双机热备系统。</p>
+<p>防火墙之间通过独立的链路连接（心跳线），通过心跳线了解对端的健康状况，向对端备份配置和表项（如会话表、IPsec SA等）。</p>
+<p>当一台防火墙出现故障时，业务流量能平滑地切换到另一台设备上处理，使业务不中断。</p>
+<p>部署要求：</p>
+<p>目前只支持两台设备进行双机热备。</p>
+<p>主备设备的产品型号和版本必须相同。</p>
+<p>主备设备业务板和接口卡的位置、类型和数目都须相同，否则会出现主用设备备份过去的信息，与备用设备的物理配置无法兼容，导致主备切换后出现问题</p>
+<p><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ%E6%88%AA%E5%9B%BE20240814190427.png" alt="QQ截图20240814190427"></p>
+<p>为了实现主用设备出现故障时备用设备能平滑地接替工作，必须在主用和备用设备之间备份关键配置命令和状态信息。</p>
+<p>防火墙能够备份的配置如下：</p>
+<p>策略：安全策略、NAT策略（包括NAT地址池）、NAT Server等。对象：地址、地区、服务、应用、用户等。</p>
+<p>网络：安全区域、DNS、IPsec、SSL VPN等。</p>
+<p>系统：管理员、虚拟系统、日志配置。</p>
+<p>防火墙能够备份的状态信息如下：会话表、SeverMap表、黑名单&#x2F;白名单、PAT方式端口映射表、NO-PAT方式地址映射表、二层转发表（静态MAC备份）、AAA用户表（缺省用户admin不备份）、在线用户监控表、PKI证书、IPsec备份等。</p>
+<h1 id="防火墙虚拟系统"><a href="#防火墙虚拟系统" class="headerlink" title="防火墙虚拟系统"></a>防火墙虚拟系统</h1><p><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ%E6%88%AA%E5%9B%BE20240814190623.png" alt="QQ截图20240814190623"></p>
+<p><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ%E6%88%AA%E5%9B%BE20240814190730.png" alt="QQ截图20240814190730"></p>
+<p>1、创建虚拟系统</p>
+<p>[FW1]vsys enable </p>
+<p>[FW1]vsys name A</p>
+<p>[FW1-vsys-A]assign interface g1&#x2F;0&#x2F;0</p>
+<p>2、接口加入安全区域</p>
+<p>[FW1]switch vsys A</p>
+<p>[FW1-A]firewall zone trust </p>
+<p>[FW1-A-zone-trust]add int g1&#x2F;0&#x2F;0</p>
+<p>[FW1-A]fir zon untrust </p>
+<p>[FW1-A-zone-untrust]add interface Virtual-if 1</p>
+<p>3、配置IP地址</p>
+<p>4、配置安全策略</p>
+<p>进入虚拟系统配置安全策略</p>
+<p>se</p>
+<p> rule name 111</p>
+<p>  source-zone trust</p>
+<p>  destination-zone untrust</p>
+<p>  source-address 10.1.1.0 mask 255.255.255.0</p>
+<p>  destination-address 10.2.2.0 mask 255.255.255.0</p>
+<p>  service icmp</p>
+<p>  action permit</p>
+<p>5、配置路由</p>
+<p>每个虚拟系统都只有自己的路由，需要配置虚拟系统之间的互通路由</p>
+<p>[FW1]ip route-static vpn-instance A 10.2.2.0 24 vpn-instance B</p>
+]]></content>
+      <categories>
+        <category>基础知识</category>
+      </categories>
+      <tags>
+        <tag>端口隔离</tag>
+        <tag>DHCP Snooping</tag>
+        <tag>MAC地址漂移</tag>
+        <tag>MAC地址表安全</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>组播</title>
     <url>/2024/05/10/%E7%BB%84%E6%92%AD/</url>
     <content><![CDATA[<h1 id="组播简介"><a href="#组播简介" class="headerlink" title="组播简介"></a>组播简介</h1><p>组播（Multicast）是在一台源IP主机和多台（一组）IP主机之间进行，中间的网络设备根</p>
@@ -5691,136 +5901,6 @@
       <tags>
         <tag>IGMP</tag>
         <tag>PIM</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>网络安全技术</title>
-    <url>/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/</url>
-    <content><![CDATA[<h1 id="端口隔离"><a href="#端口隔离" class="headerlink" title="端口隔离"></a>端口隔离</h1><p>为了实现报文之间的二层隔离，用户可以将不同的端口加入不同的VLAN，但这样会浪费有限的VLAN资源。采用端口隔离功能，可以实现同一VLAN内端口之间的隔离。用户只需要将端口加入到隔离组中，就可以实现隔离组内端口之间二层数据的隔离。端口隔离功能为用户提供了更安全、更灵活的组网方案。</p>
-<p>端口隔离分为二层隔离三层互通和二层三层都隔离两种模式：</p>
-<ul>
-<li>如果用户希望隔离同一VLAN内的广播报文，但是不同端口下的用户还可以进行三层通信，则可以将隔离模式设置为二层隔离三层互通。</li>
-<li>如果用户希望同一VLAN不同端口下用户彻底无法通信，则可以将隔离模式配置为二层三层均隔离。</li>
-</ul>
-<p><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ%E6%88%AA%E5%9B%BE20240813192115.png" alt="QQ截图20240813192115"></p>
-<p><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ%E6%88%AA%E5%9B%BE20240813214627.png" alt="QQ截图20240813214627"></p>
-<p><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ%E6%88%AA%E5%9B%BE20240813214643.png" alt="QQ截图20240813214643"></p>
-<p><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ%E6%88%AA%E5%9B%BE20240813214648.png" alt="QQ截图20240813214648"></p>
-<h1 id="MAC地址表安全"><a href="#MAC地址表安全" class="headerlink" title="MAC地址表安全"></a>MAC地址表安全</h1><p>动态MAC地址表项：由接口通过报文中的源MAC地址学习获得，表项可老化。在系统复位、接口板热插拔或接口板复位后，动态表项会丢失。</p>
-<p>静态MAC地址表项：由用户手工配置并下发到各接口板，表项不老化。在系统复位、接口板热插拔或接口板复位后，保存的表项不会丢失。接口和MAC地址静态绑定后，其他接口收到源MAC是该MAC地址的报文将会被丢弃。</p>
-<p>黑洞MAC地址表项：由用户手工配置，并下发到各接口板，表项不可老化。配置黑洞MAC地址后，源MAC地址或目的MAC地址是该MAC的报文将会被丢弃。</p>
-<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813215022.png" alt="QQ截图20240813215022" style="zoom:67%;">
-
-<h1 id="端口安全"><a href="#端口安全" class="headerlink" title="端口安全"></a>端口安全</h1><p>通过在交换机的特定接口上部署端口安全，可以限制接口的MAC地址学习数量，并且配置出现越限时的惩罚措施。</p>
-<p>端口安全通过将接口学习到的动态MAC地址转换为安全MAC地址（包括安全动态MAC，安全静态MAC和Sticky MAC），阻止非法用户通过本接口和交换机通信，从而增强设备的安全性。</p>
-<p><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ%E6%88%AA%E5%9B%BE20240813215328.png" alt="QQ截图20240813215328"></p>
-<h1 id="MAC地址漂移"><a href="#MAC地址漂移" class="headerlink" title="MAC地址漂移"></a>MAC地址漂移</h1><p>MAC地址漂移是指交换机上一个VLAN内有两个端口学习到同一个MAC地址，后学习到的MAC地址表项覆盖原MAC地址表项的现象。</p>
-<p>当一个MAC地址在两个端口之间频繁发生迁移时，即会产生MAC地址漂移现象。</p>
-<p>正常情况下，网络中不会在短时间内出现大量MAC地址漂移的情况。出现这种现象一般都意味着网络中存在环路，或者存在网络攻击行为。</p>
-<p>防止mac地址漂移：</p>
-<p><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ%E6%88%AA%E5%9B%BE20240813215508.png" alt="QQ截图20240813215508"></p>
-<p>交换机支持MAC地址漂移检测机制，分为以下两种方式：</p>
-<p>基于VLAN的MAC地址漂移检测</p>
-<p>配置<strong>VLAN的MAC地址漂移</strong>检测功能可以检测指定VLAN下的所有的MAC地址是否发生漂移。当MAC地址发生漂移后，可以配置指定的动作，例如告警、阻断接口或阻断MAC地址。</p>
-<p><strong>全局MAC地址漂移检测</strong>该功能可以检测设备上的所有的MAC地址是否发生了漂移。若发生漂移，设备会上报告警到网管系统。用户也可以指定发生漂移后的处理动作，例如将接口关闭或退出VLAN。</p>
-<h1 id="MACsec"><a href="#MACsec" class="headerlink" title="MACsec"></a>MACsec</h1><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813220540.png" alt="QQ截图20240813220540" style="zoom:67%;">
-
-<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813220545.png" alt="QQ截图20240813220545" style="zoom:67%;">
-
-<h1 id="交换机流量控制"><a href="#交换机流量控制" class="headerlink" title="交换机流量控制"></a>交换机流量控制</h1><p>流量抑制：</p>
-<p>络中存在的问题：正常情况下，当设备某个二层以太接口收到广播、未知组播或未知单播报文时，会向同一VLAN内的其他二层以太接口转发这些报文，从而导致流量泛洪，降低设备转发性能。</p>
-<p>当设备某个以太接口收到已知组播或已知单播报文时，如果某种报文流量过大则可能会对设备造成冲击，影响其他业务的正常处理。</p>
-<p>可用的解决方案：流量抑制可以通过配置阈值来限制广播、未知组播、未知单播、已知组播和已知单播报文的速率，防止广播、未知组播报文和未知单播报文产生流量泛洪，阻止已知组播报文和已知单播报文的大流量冲击。</p>
-<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813221236.png" alt="QQ截图20240813221236" style="zoom:67%;">
-
-<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813221241.png" alt="QQ截图20240813221241" style="zoom:67%;">
-
-<p>在交换机接口的入方向，例如下图中SW1的GE0&#x2F;0&#x2F;1入方向，通过流量抑制功能可以限制任意报文的发送速率。</p>
-<p>在交换机接口出方向，例如下图中SW1的GE0&#x2F;0&#x2F;1出方向，通过流量抑制功能可以阻塞广播，未知组播和未知单播报文。</p>
-<p>在交换机的VLAN视图下，通过配置VLAN内流量抑制限制VLAN内广播报文。</p>
-<p>风暴控制：</p>
-<p>网络中存在的问题：正常情况下，当设备某个二层以太接口收到广播、未知组播或未知单播报文时，会向同一VLAN内的其他二层以太接口转发这些报文，如果网络存在环路，则会导致广播风暴，严重降低设备转发性能。</p>
-<p>可用的解决方案：风暴控制可以通过阻塞报文或关闭端口来阻断广播、未知组播和未知单播报文的流量。</p>
-<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813221726.png" alt="QQ截图20240813221726" style="zoom:67%;">
-
-<p>风暴控制与流量抑制相比的优势是可以同时监控接口下的广播报文、未知组播报文和未知单播报文各自的包平均速率，并根据阈值对接口采取阻塞相关报文或者关闭物理接口的惩罚动作。</p>
-<h1 id="DHCP-Snooping"><a href="#DHCP-Snooping" class="headerlink" title="DHCP Snooping"></a>DHCP Snooping</h1><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813222210.png" alt="QQ截图20240813222210" style="zoom:67%;">
-
-<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813223518.png" alt="QQ截图20240813223518" style="zoom:67%;">
-
-<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813223721.png" alt="QQ截图20240813223721" style="zoom:67%;">
-
-<p>DHCP Snooping绑定表根据DHCP租期进行老化或根据用户释放IP地址时发出的DHCP Release报文自动删除对应表项。</p>
-<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813223730.png" alt="QQ截图20240813223730" style="zoom:67%;">
-
-<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813223736.png" alt="QQ截图20240813223736" style="zoom:67%;">
-
-<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813223741.png" alt="QQ截图20240813223741" style="zoom:67%;">
-
-<p>DHCP饿死攻击是攻击者通过持续大量地向DHCP Server申请IP地址来实现的，其目的是耗尽DHCP Server地址池中的IP地址，导致DHCP Server没有IP地址分配给正常的用户。</p>
-<p>DHCP消息中有一个名叫CHADDR（Client Hardware Address）的字段，该字段是由DHCP客户端填写的，表示的是客户端的硬件地址（也就是客户端的MAC地址）。DHCP Server是针对CHADDR来分配IP地址的，对于不同的CHADDR，DHCP Server会分配不同的IP地址；DHCP Server无法区分什么样的CHADDR是合法的，什么样的CHADDR是非法的。利用这个漏洞，攻击者每申请一个IP地址时，就在DHCP消息的CHADDR字段中填写一个不同的值，以此来冒充是不同的用户在申请IP地址</p>
-<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813223746.png" alt="QQ截图20240813223746" style="zoom:67%;">
-
-<p>为了弥补上述漏洞，从而阻止饿死攻击，DHCP Snooping技术支持在端口下对DHCP Request报文的源MAC地址与CHADDR进行一致性检查：如果二者相同，则转发报文；如果二者不相同，则丢弃。如果要在某端口下实施源MAC地址与CHADDR的一致性检查，可以在该端口下使用命令dhcp snooping check dhcp-chaddr enable。还可能存在这样一种饿死攻击，就是攻击者不断同时变换MAC地址和CHADDR，并且每一次变换时，都让CHADDR与MAC地址相同，如此一来，便可以躲过上述源MAC地址与CHADDR的一致性检查！</p>
-<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813223759.png" alt="QQ截图20240813223759" style="zoom:67%;">
-
-<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813223804.png" alt="QQ截图20240813223804" style="zoom:67%;">
-
-<h1 id="IPSG"><a href="#IPSG" class="headerlink" title="IPSG"></a>IPSG</h1><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813231402.png" alt="QQ截图20240813231402" style="zoom:67%;">
-
-<img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ截图20240813231407.png" alt="QQ截图20240813231407" style="zoom:67%;">
-
-<h1 id="防火墙双机热备"><a href="#防火墙双机热备" class="headerlink" title="防火墙双机热备"></a>防火墙双机热备</h1><p>在网络中部署防火墙双机时面临的问题</p>
-<p><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ%E6%88%AA%E5%9B%BE20240814185824.png" alt="QQ截图20240814185824"></p>
-<p>双机热备需要两台硬件和软件配置均相同的防火墙组成双机热备系统。</p>
-<p>防火墙之间通过独立的链路连接（心跳线），通过心跳线了解对端的健康状况，向对端备份配置和表项（如会话表、IPsec SA等）。</p>
-<p>当一台防火墙出现故障时，业务流量能平滑地切换到另一台设备上处理，使业务不中断。</p>
-<p>部署要求：</p>
-<p>目前只支持两台设备进行双机热备。</p>
-<p>主备设备的产品型号和版本必须相同。</p>
-<p>主备设备业务板和接口卡的位置、类型和数目都须相同，否则会出现主用设备备份过去的信息，与备用设备的物理配置无法兼容，导致主备切换后出现问题</p>
-<p><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ%E6%88%AA%E5%9B%BE20240814190427.png" alt="QQ截图20240814190427"></p>
-<p>为了实现主用设备出现故障时备用设备能平滑地接替工作，必须在主用和备用设备之间备份关键配置命令和状态信息。</p>
-<p>防火墙能够备份的配置如下：</p>
-<p>策略：安全策略、NAT策略（包括NAT地址池）、NAT Server等。对象：地址、地区、服务、应用、用户等。</p>
-<p>网络：安全区域、DNS、IPsec、SSL VPN等。</p>
-<p>系统：管理员、虚拟系统、日志配置。</p>
-<p>防火墙能够备份的状态信息如下：会话表、SeverMap表、黑名单&#x2F;白名单、PAT方式端口映射表、NO-PAT方式地址映射表、二层转发表（静态MAC备份）、AAA用户表（缺省用户admin不备份）、在线用户监控表、PKI证书、IPsec备份等。</p>
-<h1 id="防火墙虚拟系统"><a href="#防火墙虚拟系统" class="headerlink" title="防火墙虚拟系统"></a>防火墙虚拟系统</h1><p><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ%E6%88%AA%E5%9B%BE20240814190623.png" alt="QQ截图20240814190623"></p>
-<p><img src="/2024/08/13/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E6%8A%80%E6%9C%AF/QQ%E6%88%AA%E5%9B%BE20240814190730.png" alt="QQ截图20240814190730"></p>
-<p>1、创建虚拟系统</p>
-<p>[FW1]vsys enable </p>
-<p>[FW1]vsys name A</p>
-<p>[FW1-vsys-A]assign interface g1&#x2F;0&#x2F;0</p>
-<p>2、接口加入安全区域</p>
-<p>[FW1]switch vsys A</p>
-<p>[FW1-A]firewall zone trust </p>
-<p>[FW1-A-zone-trust]add int g1&#x2F;0&#x2F;0</p>
-<p>[FW1-A]fir zon untrust </p>
-<p>[FW1-A-zone-untrust]add interface Virtual-if 1</p>
-<p>3、配置IP地址</p>
-<p>4、配置安全策略</p>
-<p>进入虚拟系统配置安全策略</p>
-<p>se</p>
-<p> rule name 111</p>
-<p>  source-zone trust</p>
-<p>  destination-zone untrust</p>
-<p>  source-address 10.1.1.0 mask 255.255.255.0</p>
-<p>  destination-address 10.2.2.0 mask 255.255.255.0</p>
-<p>  service icmp</p>
-<p>  action permit</p>
-<p>5、配置路由</p>
-<p>每个虚拟系统都只有自己的路由，需要配置虚拟系统之间的互通路由</p>
-<p>[FW1]ip route-static vpn-instance A 10.2.2.0 24 vpn-instance B</p>
-]]></content>
-      <categories>
-        <category>基础知识</category>
-      </categories>
-      <tags>
-        <tag>端口隔离</tag>
-        <tag>DHCP Snooping</tag>
-        <tag>MAC地址漂移</tag>
-        <tag>MAC地址表安全</tag>
       </tags>
   </entry>
   <entry>
