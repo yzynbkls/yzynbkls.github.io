@@ -2398,12 +2398,12 @@
   <entry>
     <title>MPLSVPN跨域</title>
     <url>/2024/08/20/MPLSVPN%E8%B7%A8%E5%9F%9F/</url>
-    <content><![CDATA[<h1 id="Option-A"><a href="#Option-A" class="headerlink" title="Option A"></a>Option A</h1><p>跨域VPN-OptionA是基本BGP&#x2F;MPLS IP VPN在跨域环境下的应用，ASBR之间不需要运行MPLS，也不需要为跨域进行特殊配置。这种方式下，两个AS的边界路由器ASBR直接相连，ASBR同时也是各自所在自治系统的PE。两个ASBR都把对端ASBR看作自己的CE设备，通过EBGP对等体关系向对端发布IPv4路由。<img src="/2024/08/20/MPLSVPN%E8%B7%A8%E5%9F%9F/QQ%E6%88%AA%E5%9B%BE20240820214403.png" alt="QQ截图20240820214403"></p>
+    <content><![CDATA[<h1>Option A</h1>
+<p>跨域VPN-OptionA是基本BGP/MPLS IP VPN在跨域环境下的应用，ASBR之间不需要运行MPLS，也不需要为跨域进行特殊配置。这种方式下，两个AS的边界路由器ASBR直接相连，ASBR同时也是各自所在自治系统的PE。两个ASBR都把对端ASBR看作自己的CE设备，通过EBGP对等体关系向对端发布IPv4路由。<img src="/2024/08/20/MPLSVPN%E8%B7%A8%E5%9F%9F/QQ%E6%88%AA%E5%9B%BE20240820214403.png" alt="QQ截图20240820214403"></p>
 <p>注意，每个跨域vpn在asbr PE上都需要一个接口绑定相应的VRF</p>
 <p>跨域VPN-OptionA是基本IPv4 L3VPN在跨域环境下的应用，ASBR之间不需要运行MPLS，也不需要为跨域进行特殊配置。这种方式下，两个AS的边界ASBR直接相连，ASBR同时也是各自所在自治系统的PE。<strong>两个ASBR都把对端ASBR看作自己的CE设备</strong>，将会为每一个VPN创建VPN实例，使用<strong>EBGP</strong>方式向对端发布IPv4路由。（ASBR PE在VPN实例下建立EBGP，传递IPv4路由）</p>
 <p>采用跨域VPN-OptionA方案，要求AS的边界设备ASBR支持VPN实例，能够管理VPN路由。并且，ASBR上必须需要为每个跨域的VPN准备专用的接口（可以是子接口、物理接口、捆绑的逻辑接口）。因此，此方案对ASBR的性能要求较高，但ASBR上不必为跨域做任何特殊的配置。</p>
 <img src="/2024/08/20/MPLSVPN%E8%B7%A8%E5%9F%9F/QQ截图20240820214904.png" alt="QQ截图20240820214904" style="zoom:67%;">
-
 <p><img src="/2024/08/20/MPLSVPN%E8%B7%A8%E5%9F%9F/QQ%E6%88%AA%E5%9B%BE20240820215101.png" alt="QQ截图20240820215101"></p>
 <p>我们只通过单方向来解释控制平面的工作过程，同时假设在站点Site1有一VPN路由Client1连接，如上图，现在需要把Client1这条路由从CE1穿过AS100和AS200传递到CE2：</p>
 <p>在AS100中，通过运行LDP协议，PE1分配一个与去往PE1的路由相关联的隧道标签(外层标签)T1给P1。</p>
@@ -2432,19 +2432,128 @@
 <p>R4R5配置EBGP（实例中，因为有两个vpn所以需要额外创建一个子接口绑定bb，建立EBGP）</p>
 <p>基本配置不再赘述，基本和单域的一致</p>
 <p>R4所有配置</p>
-<p>sysname R4<br>#</p>
-<p>ip vpn-instance aa<br> ipv4-family<br>  route-distinguisher 500:1<br>  vpn-target 1:1 export-extcommunity<br>  vpn-target 1:1 import-extcommunity<br>#</p>
-<p>ip vpn-instance bb<br> ipv4-family<br>  route-distinguisher 700:1<br>  vpn-target 2:2 export-extcommunity<br>  vpn-target 2:2 import-extcommunity<br>#<br>mpls lsr-id 4.4.4.4<br>mpls<br>#<br>mpls ldp<br>#<br>interface GigabitEthernet0&#x2F;0&#x2F;0<br> ip address 10.0.34.4 255.255.255.0<br> mpls<br> mpls ldp<br>#<br>interface GigabitEthernet0&#x2F;0&#x2F;1<br> ip binding vpn-instance aa<br> ip address 10.0.45.4 255.255.255.0<br>#<br>interface GigabitEthernet0&#x2F;0&#x2F;1.1（子接口绑定VPN bb）<br> dot1q termination vid 10<br> ip binding vpn-instance bb<br> ip address 10.0.54.4 255.255.255.0<br> arp broadcast enable</p>
-<h1 id><a href="#" class="headerlink" title></a></h1><p>interface LoopBack0<br> ip address 4.4.4.4 255.255.255.255<br>#<br>bgp 100<br> peer 2.2.2.2 as-number 100<br> peer 2.2.2.2 connect-interface LoopBack0</p>
-<h1 id="-1"><a href="#-1" class="headerlink" title></a></h1><p> ipv4-family vpnv4<br>  policy vpn-target<br>  peer 2.2.2.2 enable<br> #<br> ipv4-family vpn-instance aa<br>  peer 10.0.45.5 as-number 200<br> #<br> ipv4-family vpn-instance bb（子接口的EBGP）<br>  peer 10.0.54.5 as-number 200<br>#<br>ospf 1<br> area 0.0.0.0<br>  network 10.0.34.0 0.0.0.255<br>  network 4.4.4.4 0.0.0.0</p>
+<p>sysname R4</p>
+<h1></h1>
+<p>ip vpn-instance aa<br>
+ipv4-family<br>
+route-distinguisher 500:1<br>
+vpn-target 1:1 export-extcommunity<br>
+vpn-target 1:1 import-extcommunity</p>
+<h1></h1>
+<p>ip vpn-instance bb<br>
+ipv4-family<br>
+route-distinguisher 700:1<br>
+vpn-target 2:2 export-extcommunity<br>
+vpn-target 2:2 import-extcommunity</p>
+<h1></h1>
+<p>mpls lsr-id 4.4.4.4<br>
+mpls</p>
+<h1></h1>
+<p>mpls ldp</p>
+<h1></h1>
+<p>interface GigabitEthernet0/0/0<br>
+ip address 10.0.34.4 255.255.255.0<br>
+mpls<br>
+mpls ldp</p>
+<h1></h1>
+<p>interface GigabitEthernet0/0/1<br>
+ip binding vpn-instance aa<br>
+ip address 10.0.45.4 255.255.255.0</p>
+<h1></h1>
+<p>interface GigabitEthernet0/0/1.1（子接口绑定VPN bb）<br>
+dot1q termination vid 10<br>
+ip binding vpn-instance bb<br>
+ip address 10.0.54.4 255.255.255.0<br>
+arp broadcast enable</p>
+<h1></h1>
+<p>interface LoopBack0<br>
+ip address 4.4.4.4 255.255.255.255</p>
+<h1></h1>
+<p>bgp 100<br>
+peer 2.2.2.2 as-number 100<br>
+peer 2.2.2.2 connect-interface LoopBack0</p>
+<h1></h1>
+<p>ipv4-family vpnv4<br>
+policy vpn-target<br>
+peer 2.2.2.2 enable</p>
+<h1></h1>
+<p>ipv4-family vpn-instance aa<br>
+peer 10.0.45.5 as-number 200</p>
+<h1></h1>
+<p>ipv4-family vpn-instance bb（子接口的EBGP）<br>
+peer 10.0.54.5 as-number 200</p>
+<h1></h1>
+<p>ospf 1<br>
+area 0.0.0.0<br>
+network 10.0.34.0 0.0.0.255<br>
+network 4.4.4.4 0.0.0.0</p>
 <p>R5所有配置</p>
 <p>sysname R5</p>
-<h1 id="-2"><a href="#-2" class="headerlink" title></a></h1><p>ip vpn-instance aa<br> ipv4-family<br>  route-distinguisher 600:1<br>  vpn-target 3:3 export-extcommunity<br>  vpn-target 3:3 import-extcommunity<br>#<br>ip vpn-instance bb<br> ipv4-family<br>  route-distinguisher 800:1<br>  vpn-target 4:4 export-extcommunity<br>  vpn-target 4:4 import-extcommunity<br>#<br>mpls lsr-id 5.5.5.5<br>mpls<br>#<br>mpls ldp<br>#<br>isis 1<br> is-level level-2<br> network-entity 49.0000.0000.0005.00<br>#<br>interface GigabitEthernet0&#x2F;0&#x2F;0<br> ip binding vpn-instance aa<br> ip address 10.0.45.5 255.255.255.0<br>#<br>interface GigabitEthernet0&#x2F;0&#x2F;0.1<br> dot1q termination vid 10<br> ip binding vpn-instance bb<br> ip address 10.0.54.5 255.255.255.0<br> arp broadcast enable<br>#<br>interface GigabitEthernet0&#x2F;0&#x2F;1<br> ip address 10.0.56.5 255.255.255.0<br> isis enable 1<br> mpls<br> mpls ldp<br>#<br>interface LoopBack0<br> ip address 5.5.5.5 255.255.255.255<br> isis enable 1<br>#<br>bgp 200<br> peer 7.7.7.7 as-number 200<br> peer 7.7.7.7 connect-interface LoopBack0<br> #<br> ipv4-family unicast<br>  undo synchronization<br>  peer 7.7.7.7 enable<br> #<br> ipv4-family vpnv4<br>  policy vpn-target<br>  peer 7.7.7.7 enable<br> #<br> ipv4-family vpn-instance aa<br>  peer 10.0.45.4 as-number 100<br> #<br> ipv4-family vpn-instance bb<br>  peer 10.0.54.4 as-number 100<br>#</p>
+<h1></h1>
+<p>ip vpn-instance aa<br>
+ipv4-family<br>
+route-distinguisher 600:1<br>
+vpn-target 3:3 export-extcommunity<br>
+vpn-target 3:3 import-extcommunity</p>
+<h1></h1>
+<p>ip vpn-instance bb<br>
+ipv4-family<br>
+route-distinguisher 800:1<br>
+vpn-target 4:4 export-extcommunity<br>
+vpn-target 4:4 import-extcommunity</p>
+<h1></h1>
+<p>mpls lsr-id 5.5.5.5<br>
+mpls</p>
+<h1></h1>
+<p>mpls ldp</p>
+<h1></h1>
+<p>isis 1<br>
+is-level level-2<br>
+network-entity 49.0000.0000.0005.00</p>
+<h1></h1>
+<p>interface GigabitEthernet0/0/0<br>
+ip binding vpn-instance aa<br>
+ip address 10.0.45.5 255.255.255.0</p>
+<h1></h1>
+<p>interface GigabitEthernet0/0/0.1<br>
+dot1q termination vid 10<br>
+ip binding vpn-instance bb<br>
+ip address 10.0.54.5 255.255.255.0<br>
+arp broadcast enable</p>
+<h1></h1>
+<p>interface GigabitEthernet0/0/1<br>
+ip address 10.0.56.5 255.255.255.0<br>
+isis enable 1<br>
+mpls<br>
+mpls ldp</p>
+<h1></h1>
+<p>interface LoopBack0<br>
+ip address 5.5.5.5 255.255.255.255<br>
+isis enable 1</p>
+<h1></h1>
+<p>bgp 200<br>
+peer 7.7.7.7 as-number 200<br>
+peer 7.7.7.7 connect-interface LoopBack0</p>
+<h1></h1>
+<p>ipv4-family unicast<br>
+undo synchronization<br>
+peer 7.7.7.7 enable</p>
+<h1></h1>
+<p>ipv4-family vpnv4<br>
+policy vpn-target<br>
+peer 7.7.7.7 enable</p>
+<h1></h1>
+<p>ipv4-family vpn-instance aa<br>
+peer 10.0.45.4 as-number 100</p>
+<h1></h1>
+<p>ipv4-family vpn-instance bb<br>
+peer 10.0.54.4 as-number 100</p>
+<h1></h1>
 <p><img src="/2024/08/20/MPLSVPN%E8%B7%A8%E5%9F%9F/QQ%E6%88%AA%E5%9B%BE20240820220218.png" alt="QQ截图20240820220218"></p>
 <p>此时R11能学习到R10的10.10.10.10路由，能通</p>
 <p>同理下边的VPN也是</p>
-<h1 id="Option-B"><a href="#Option-B" class="headerlink" title="Option B"></a>Option B</h1><img src="/2024/08/20/MPLSVPN%E8%B7%A8%E5%9F%9F/QQ截图20240820220343.png" alt="QQ截图20240820220343" style="zoom:80%;">
-
+<h1>Option B</h1>
+<img src="/2024/08/20/MPLSVPN%E8%B7%A8%E5%9F%9F/QQ截图20240820220343.png" alt="QQ截图20240820220343" style="zoom:80%;">
 <p><img src="/2024/08/20/MPLSVPN%E8%B7%A8%E5%9F%9F/QQ%E6%88%AA%E5%9B%BE20240820220442.png" alt="QQ截图20240820220442"></p>
 <p>从PE1传递到ASBR1，再到ASBR2，之间不比较RT，RT还是之前最原始的RT，<strong>所以PE1和PE2的RT要匹配（一样）</strong></p>
 <p><img src="/2024/08/20/MPLSVPN%E8%B7%A8%E5%9F%9F/QQ%E6%88%AA%E5%9B%BE20240820220446.png" alt="QQ截图20240820220446"></p>
@@ -2455,18 +2564,128 @@
 <p>各AS内的MPLS骨干网上分别配置MPLS基本能力和MPLS LDP，建立LDP LSP。（略）</p>
 <p>各AS内，PE与ASBR-PE之间建立MP-IBGP对等体关系，交换VPN路由信息。（略）</p>
 <p>各AS内，与CE相连的PE上需配置VPN实例，PE与CE之间建立EBGP对等体关系，交换VPN路由信息。（略）</p>
-<p><strong>在ASBR上与另一ASBR相连接口上分别使能MPLS</strong>，且ASBR之间建立MP-EBGP对等体关系，<strong>并且不对接收的VPNv4路由进行VPN-target过滤。</strong> </p>
+<p><strong>在ASBR上与另一ASBR相连接口上分别使能MPLS</strong>，且ASBR之间建立MP-EBGP对等体关系，<strong>并且不对接收的VPNv4路由进行VPN-target过滤。</strong></p>
 <p>（OptionA中ASBR之间走的是ipv4，所以不需要，mpls，ipv4报文携带数据过去。OptionB中两个ASBR之间传递vpnv4路由，所以要开启mpls走隧道，并且要开启分配标签apply-label per-nexthop，并且不比较RT undo policy vpn-target）两端的RT必须一样才能接受</p>
 <p>R4配置</p>
-<p>sysname R4<br>#</p>
-<h1 id="-3"><a href="#-3" class="headerlink" title></a></h1><p>mpls lsr-id 4.4.4.4<br>mpls<br>#<br>mpls ldp<br>#</p>
-<p>interface GigabitEthernet0&#x2F;0&#x2F;0<br> ip address 10.0.34.4 255.255.255.0<br> mpls<br> mpls ldp<br>#<br>interface GigabitEthernet0&#x2F;0&#x2F;1<br> ip address 10.0.45.4 255.255.255.0<br> mpls<br>#</p>
-<h1 id="-4"><a href="#-4" class="headerlink" title></a></h1><p>interface LoopBack0</p>
-<p> ip address 4.4.4.4 255.255.255.255<br>#<br>bgp 100<br> peer 2.2.2.2 as-number 100<br> peer 2.2.2.2 connect-interface LoopBack0<br> peer 10.0.45.5 as-number 200<br> #<br> ipv4-family unicast<br>  undo synchronization<br>  peer 2.2.2.2 enable<br>  peer 10.0.45.5 enable（ASBR之间开启MP-BGP）<br> #<br> ipv4-family vpnv4<br>  undo policy vpn-target（不比较RT）<br>  apply-label per-nexthop（给ASBR之间喷配标签）<br>  peer 2.2.2.2 enable<br>  peer 10.0.45.5 enable<br>#</p>
-<p>ospf 1<br> area 0.0.0.0<br>  network 10.0.34.0 0.0.0.255<br>  network 4.4.4.4 0.0.0.0</p>
+<p>sysname R4</p>
+<h1></h1>
+<h1></h1>
+<p>mpls lsr-id 4.4.4.4<br>
+mpls</p>
+<h1></h1>
+<p>mpls ldp</p>
+<h1></h1>
+<p>interface GigabitEthernet0/0/0<br>
+ip address 10.0.34.4 255.255.255.0<br>
+mpls<br>
+mpls ldp</p>
+<h1></h1>
+<p>interface GigabitEthernet0/0/1<br>
+ip address 10.0.45.4 255.255.255.0<br>
+mpls</p>
+<h1></h1>
+<h1></h1>
+<p>interface LoopBack0</p>
+<p>ip address 4.4.4.4 255.255.255.255</p>
+<h1></h1>
+<p>bgp 100<br>
+peer 2.2.2.2 as-number 100<br>
+peer 2.2.2.2 connect-interface LoopBack0<br>
+peer 10.0.45.5 as-number 200</p>
+<h1></h1>
+<p>ipv4-family unicast<br>
+undo synchronization<br>
+peer 2.2.2.2 enable<br>
+peer 10.0.45.5 enable（ASBR之间开启MP-BGP）</p>
+<h1></h1>
+<p>ipv4-family vpnv4<br>
+undo policy vpn-target（不比较RT）<br>
+apply-label per-nexthop（给ASBR之间喷配标签）<br>
+peer 2.2.2.2 enable<br>
+peer 10.0.45.5 enable</p>
+<h1></h1>
+<p>ospf 1<br>
+area 0.0.0.0<br>
+network 10.0.34.0 0.0.0.255<br>
+network 4.4.4.4 0.0.0.0</p>
 <p>R5</p>
-<h1 id="-5"><a href="#-5" class="headerlink" title></a></h1><p>sysname R5<br>#<br>mpls lsr-id 5.5.5.5<br>mpls<br>#<br>mpls ldp<br>#<br>isis 1<br> is-level level-2<br> network-entity 49.0000.0000.0005.00<br>#<br>interface GigabitEthernet0&#x2F;0&#x2F;0<br> ip address 10.0.45.5 255.255.255.0<br> mpls<br>#</p>
-<p>interface GigabitEthernet0&#x2F;0&#x2F;1<br> ip address 10.0.56.5 255.255.255.0<br> isis enable 1<br> mpls<br> mpls ldp<br>#<br>interface GigabitEthernet0&#x2F;0&#x2F;2<br>#<br>interface GigabitEthernet0&#x2F;0&#x2F;3<br>#<br>interface LoopBack0<br> ip address 5.5.5.5 255.255.255.255<br> isis enable 1<br>#<br>bgp 200<br> peer 7.7.7.7 as-number 200<br> peer 7.7.7.7 connect-interface LoopBack0<br> peer 10.0.45.4 as-number 100<br> #<br> ipv4-family unicast<br>  undo synchronization<br>  peer 7.7.7.7 enable<br>  peer 10.0.45.4 enable<br> #<br> ipv4-family vpnv4<br>  undo policy vpn-target<br>  apply-label per-nexthop<br>  peer 7.7.7.7 enable<br>  peer 10.0.45.4 enable<br>#</p>
+<h1></h1>
+<p>sysname R5</p>
+<h1></h1>
+<p>mpls lsr-id 5.5.5.5<br>
+mpls</p>
+<h1></h1>
+<p>mpls ldp</p>
+<h1></h1>
+<p>isis 1<br>
+is-level level-2<br>
+network-entity 49.0000.0000.0005.00</p>
+<h1></h1>
+<p>interface GigabitEthernet0/0/0<br>
+ip address 10.0.45.5 255.255.255.0<br>
+mpls</p>
+<h1></h1>
+<p>interface GigabitEthernet0/0/1<br>
+ip address 10.0.56.5 255.255.255.0<br>
+isis enable 1<br>
+mpls<br>
+mpls ldp</p>
+<h1></h1>
+<p>interface GigabitEthernet0/0/2</p>
+<h1></h1>
+<p>interface GigabitEthernet0/0/3</p>
+<h1></h1>
+<p>interface LoopBack0<br>
+ip address 5.5.5.5 255.255.255.255<br>
+isis enable 1</p>
+<h1></h1>
+<p>bgp 200<br>
+peer 7.7.7.7 as-number 200<br>
+peer 7.7.7.7 connect-interface LoopBack0<br>
+peer 10.0.45.4 as-number 100</p>
+<h1></h1>
+<p>ipv4-family unicast<br>
+undo synchronization<br>
+peer 7.7.7.7 enable<br>
+peer 10.0.45.4 enable</p>
+<h1></h1>
+<p>ipv4-family vpnv4<br>
+undo policy vpn-target<br>
+apply-label per-nexthop<br>
+peer 7.7.7.7 enable<br>
+peer 10.0.45.4 enable</p>
+<h1></h1>
+<h2 id="有RR">有RR</h2>
+<p><img src="/2024/08/20/MPLSVPN%E8%B7%A8%E5%9F%9F/QQ%E6%88%AA%E5%9B%BE20240821110859.png" alt="QQ截图20240821110859"></p>
+<p>两端RT一样</p>
+<p>interface GigabitEthernet0/0/0<br>
+ip address 10.0.31.1 255.255.255.0</p>
+<p>RR1配置</p>
+<p>interface LoopBack0<br>
+ip address 11.11.11.11 255.255.255.255</p>
+<h1></h1>
+<p>bgp 100<br>
+peer 2.2.2.2 as-number 100<br>
+peer 2.2.2.2 connect-interface LoopBack0<br>
+peer 4.4.4.4 as-number 100<br>
+peer 4.4.4.4 connect-interface LoopBack0</p>
+<h1></h1>
+<p>ipv4-family unicast<br>
+undo synchronization<br>
+peer 2.2.2.2 enable<br>
+peer 4.4.4.4 enable</p>
+<h1></h1>
+<p>ipv4-family vpnv4<br>
+undo policy vpn-target<br>
+peer 2.2.2.2 enable<br>
+peer 2.2.2.2 reflect-client<br>
+peer 4.4.4.4 enable<br>
+peer 4.4.4.4 reflect-client</p>
+<h1></h1>
+<p>ospf 1<br>
+area 0.0.0.0<br>
+network 10.0.31.0 0.0.0.255<br>
+network 11.11.11.11 0.0.0.0</p>
 ]]></content>
       <categories>
         <category>ie实验</category>
